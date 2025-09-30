@@ -1,0 +1,188 @@
+{% extends 'tutor/base.html' %}
+{% load markdown_extras %}
+
+{% block title %}{{ lesson.title }} - AstraLearn{% endblock %}
+
+{% block sidebar_content %}
+<div class="flex items-center mb-4">
+    <div class="p-2 bg-pink-100 rounded-md">
+        <i class="fas fa-lightbulb text-pink-600"></i>
+    </div>
+    <h2 class="ml-3 font-bold text-lg">{{ course.title }}</h2>
+</div>
+<nav>
+    <ul>
+        {% for m in course.modules.all %}
+        <li class="mt-4">
+            <p class="font-bold text-gray-800 {% if m.id in module_progress %}text-green-500{% endif %}">
+                {% if m.id in module_progress %}
+                    <i class="fas fa-check-circle mr-2"></i>
+                {% else %}
+                    <i class="far fa-circle mr-2"></i>
+                {% endif %}
+                {{ m.order|add:1 }}. {{ m.title }}
+            </p>
+            <ul class="mt-2 ml-4 border-l border-gray-200">
+                {% for lsn in m.lessons.all %}
+                <li>
+                    <a href="{% url 'tutor:lesson_detail' course.id m.id lsn.id %}" class="block py-2 px-4 text-sm rounded-md {% if lsn.id == lesson.id %} bg-blue-100 text-blue-700 font-bold {% else %} text-gray-600 hover:bg-gray-100 {% endif %}">
+                        {{ lsn.title }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="flex h-screen">
+    <div class="flex-1 p-8 overflow-y-auto">
+        <p class="text-gray-500">Module {{ lesson.module.order|add:1 }}: {{ lesson.module.title }}</p>
+        <h1 class="text-3xl font-bold mt-1">{{ lesson.title }}</h1>
+        
+        <div class="mt-6 border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8" id="lesson-tabs">
+                <button data-tab="content" class="tab-button py-4 px-1 border-b-2 border-indigo-500 font-medium text-indigo-600">Content</button>
+                <button data-tab="simplify" class="tab-button py-4 px-1 border-b-2 border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">Simplify</button>
+                
+                {% if has_quiz %}
+                    <a href="{% url 'tutor:quiz_detail' lesson.quiz.id %}" class="tab-button py-4 px-1 border-b-2 border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">Quiz</a>
+                {% else %}
+                    <button data-tab="quiz" class="tab-button py-4 px-1 border-b-2 border-transparent text-gray-500 cursor-not-allowed opacity-50">Quiz</button>
+                {% endif %}
+
+                <button data-tab="example" class="tab-button py-4 px-1 border-b-2 border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">Example</button>
+            </nav>
+        </div>
+        
+        <div class="mt-6">
+            <div id="tab-content-panel" class="prose max-w-none tab-panel">
+                {{ lesson.content|convert_markdown|safe }}
+            </div>
+            <div id="tab-simplify-panel" class="prose max-w-none tab-panel hidden" {% if lesson.simplified_content %}data-loaded="true"{% endif %}>
+                {% if lesson.simplified_content %}
+                    {{ lesson.simplified_content|convert_markdown|safe }}
+                {% else %}
+                    <p>Simplified content is being generated...</p>
+                {% endif %}
+            </div>
+            <div id="tab-quiz-panel" class="prose max-w-none tab-panel hidden">
+                <p>No quiz available for this lesson.</p>
+            </div>
+            <div id="tab-example-panel" class="prose max-w-none tab-panel hidden" {% if lesson.example_content %}data-loaded="true"{% endif %}>
+                {% if lesson.example_content %}
+                    {{ lesson.example_content|convert_markdown|safe }}
+                {% else %}
+                    <p>A relevant example is being generated...</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mt-10 flex justify-between items-center">
+             {% if prev_lesson %}
+                <a href="{% url 'tutor:lesson_detail' course.id prev_lesson.module.id prev_lesson.id %}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                    <i class="fas fa-arrow-left mr-2"></i> Previous Lesson
+                </a>
+            {% else %}
+                <span></span>
+            {% endif %}
+
+            <form method="post" action="{% url 'tutor:mark_lesson_complete' lesson.id %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-purple-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-purple-700">
+                    Mark as Complete
+                </button>
+            </form>
+            
+            {% if next_lesson %}
+                <a href="{% url 'tutor:lesson_detail' course.id next_lesson.module.id next_lesson.id %}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                    Next Lesson <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+            {% else %}
+                 <span></span>
+            {% endif %}
+        </div>
+    </div>
+
+    <button id="ai-assistant-btn" class="absolute bottom-8 right-8 mr-4 bg-purple-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-700">
+        <i class="fas fa-shield-alt text-2xl"></i>
+    </button>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabsContainer = document.getElementById('lesson-tabs');
+    const tabButtons = tabsContainer.querySelectorAll('.tab-button');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabsContainer.addEventListener('click', (e) => {
+        const clickedTab = e.target.closest('.tab-button');
+        if (!clickedTab || clickedTab.tagName === 'A') return; // Ignore clicks on actual links like the Quiz tab
+
+        e.preventDefault();
+
+        // Deactivate all tabs and panels
+        tabsContainer.querySelectorAll('a, button').forEach(button => {
+            if (button.tagName === 'BUTTON') {
+                button.classList.remove('border-indigo-500', 'text-indigo-600');
+                button.classList.add('border-transparent', 'text-gray-500');
+            }
+        });
+        tabPanels.forEach(panel => {
+            panel.classList.add('hidden');
+        });
+
+        // Activate the clicked tab and corresponding panel
+        clickedTab.classList.add('border-indigo-500', 'text-indigo-600');
+        clickedTab.classList.remove('border-transparent', 'text-gray-500');
+        
+        const tabName = clickedTab.dataset.tab;
+        const activePanel = document.getElementById(`tab-${tabName}-panel`);
+        if (activePanel) {
+            activePanel.classList.remove('hidden');
+
+            // Fetch content if it's for simplify or example and not already loaded
+            if (tabName === 'simplify' && !activePanel.dataset.loaded) {
+                fetchAndDisplay(
+                    `/api/lesson/{{ lesson.id }}/simplify/`,
+                    activePanel
+                );
+            } else if (tabName === 'example' && !activePanel.dataset.loaded) {
+                fetchAndDisplay(
+                    `/api/lesson/{{ lesson.id }}/example/`,
+                    activePanel
+                );
+            }
+        }
+    });
+
+    async function fetchAndDisplay(url, panelElement) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            if (data.content) {
+                panelElement.innerHTML = marked.parse(data.content); // Use marked.js to render markdown
+            } else {
+                panelElement.innerHTML = `<p class="text-red-500">${data.error || 'Failed to load content.'}</p>`;
+            }
+            panelElement.dataset.loaded = 'true'; // Mark as loaded
+        } catch (error) {
+            console.error('Fetch error:', error);
+            panelElement.innerHTML = `<p class="text-red-500">An error occurred while fetching the content. Please try again later.</p>`;
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,262 @@
+{% extends 'tutor/base.html' %}
+
+{% block title %}{{ quiz.title }} - AstraLearn{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 bg-indigo-50">
+        <div class="flex items-center justify-between">
+            <div>
+                <nav class="flex" aria-label="Breadcrumb">
+                    <ol class="flex items-center space-x-2">
+                        <li>
+                            <a href="{% url 'tutor:course_list' %}" class="text-indigo-600 hover:text-indigo-800">
+                                <i class="fas fa-home"></i>
+                                <span class="sr-only">Home</span>
+                            </a>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <a href="{% url 'tutor:course_detail' lesson.module.course.id %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                                    {{ lesson.module.course.title }}
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <a href="{% url 'tutor:lesson_detail' lesson.module.course.id lesson.module.id lesson.id %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                                    {{ lesson.title }}
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <span class="text-sm font-medium text-gray-500">{{ quiz.title }}</span>
+                            </div>
+                        </li>
+                    </ol>
+                </nav>
+                <h1 class="mt-2 text-2xl font-bold text-gray-900">{{ quiz.title }}</h1>
+                <p class="mt-1 text-sm text-gray-600">
+                    {{ quiz.description|default:"Test your knowledge with this quiz." }}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="px-4 py-5 sm:p-6">
+        <div id="quiz-container">
+            <div id="quiz-intro" class="text-center py-8">
+                <i class="fas fa-question-circle text-5xl text-indigo-500 mb-4"></i>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Ready to test your knowledge?</h2>
+                <p class="text-gray-600 mb-6">This quiz contains {{ quiz.questions.count }} questions. Take your time and do your best!</p>
+                <button onclick="startQuiz()" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-play mr-2"></i> Start Quiz
+                </button>
+            </div>
+            
+            <form id="quiz-form" class="hidden">
+                <div id="questions-container" class="space-y-8">
+                    <!-- Questions will be inserted here by JavaScript -->
+                </div>
+                
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <div class="flex justify-end">
+                        <button type="button" onclick="submitQuiz()" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-paper-plane mr-2"></i> Submit Quiz
+                        </button>
+                    </div>
+                </div>
+            </form>
+            
+            <div id="quiz-results" class="hidden text-center py-12">
+                <div id="quiz-success" class="hidden">
+                    <div class="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-green-100">
+                        <i class="fas fa-check text-5xl text-green-600"></i>
+                    </div>
+                    <h3 class="mt-4 text-2xl font-medium text-gray-900">Quiz Submitted Successfully!</h3>
+                    <p class="mt-2 text-gray-600">Your score: <span id="quiz-score" class="font-bold">0</span>%</p>
+                    <p id="quiz-message" class="mt-2 text-gray-600"></p>
+                    <div class="mt-6">
+                        <a href="{% url 'tutor:lesson_detail' lesson.module.course.id lesson.module.id lesson.id %}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-arrow-left mr-2"></i> Back to Lesson
+                        </a>
+                    </div>
+                </div>
+                <div id="quiz-error" class="hidden">
+                    <div class="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-red-100">
+                        <i class="fas fa-exclamation-triangle text-5xl text-red-600"></i>
+                    </div>
+                    <h3 class="mt-4 text-2xl font-medium text-gray-900">Something went wrong</h3>
+                    <p id="error-message" class="mt-2 text-gray-600">Please try again later.</p>
+                    <div class="mt-6">
+                        <button onclick="location.reload()" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-sync-alt mr-2"></i> Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Assistant Button (floating) -->
+<button onclick="toggleChat()" class="fixed bottom-6 right-6 bg-indigo-600 text-white rounded-full p-4 shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+    <i class="fas fa-robot text-2xl"></i>
+</button>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Quiz data from the server
+    const quizData = {{ quiz_data|safe }};
+    let currentQuestion = 0;
+    
+    // DOM Elements
+    const quizIntro = document.getElementById('quiz-intro');
+    const quizForm = document.getElementById('quiz-form');
+    const questionsContainer = document.getElementById('questions-container');
+    const quizResults = document.getElementById('quiz-results');
+    const quizSuccess = document.getElementById('quiz-success');
+    const quizError = document.getElementById('quiz-error');
+    const quizScore = document.getElementById('quiz-score');
+    const quizMessage = document.getElementById('quiz-message');
+    const errorMessage = document.getElementById('error-message');
+    
+    // Start the quiz
+    function startQuiz() {
+        quizIntro.classList.add('hidden');
+        quizForm.classList.remove('hidden');
+        renderQuestion(0);
+    }
+    
+    // Render a question
+    function renderQuestion(index) {
+        if (index >= quizData.length) {
+            return;
+        }
+        
+        const question = quizData[index];
+        let choicesHtml = '';
+        
+        question.choices.forEach((choice, i) => {
+            choicesHtml += `
+                <div class="flex items-center">
+                    <input id="q${question.id}-c${i}" name="q${question.id}" type="radio" value="${choice.id}" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                    <label for="q${question.id}-c${i}" class="ml-3 block text-sm font-medium text-gray-700">
+                        ${choice.text}
+                    </label>
+                </div>
+            `;
+        });
+        
+        const questionHtml = `
+            <div class="question" data-question-id="${question.id}">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">${index + 1}. ${question.text}</h3>
+                <div class="space-y-3">
+                    ${choicesHtml}
+                </div>
+                ${question.explanation ? `
+                    <div class="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-lightbulb text-yellow-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">${question.explanation}</p>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+        questionsContainer.innerHTML = questionHtml;
+    }
+    
+    // Submit the quiz
+    async function submitQuiz() {
+        // Collect answers
+        const answers = {};
+        const formData = new FormData(quizForm);
+        
+        for (let [name, value] of formData.entries()) {
+            const questionId = name.substring(1); // Remove 'q' prefix
+            answers[questionId] = value;
+        }
+        
+        // Validate that all questions are answered
+        if (Object.keys(answers).length < quizData.length) {
+            alert('Please answer all questions before submitting.');
+            return;
+        }
+        
+        // Submit to server
+        try {
+            const response = await fetch(`/api/quiz/{{ quiz.id }}/submit/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({
+                    answers: answers
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Show success message
+                quizForm.classList.add('hidden');
+                quizResults.classList.remove('hidden');
+                quizSuccess.classList.remove('hidden');
+                
+                // Update score and message
+                quizScore.textContent = data.score.toFixed(1);
+                
+                if (data.passed) {
+                    quizMessage.textContent = 'Congratulations! You passed the quiz.';
+                    quizMessage.className = 'mt-2 text-green-600 font-medium';
+                    
+                    // Mark lesson as completed
+                    fetch(`/api/lessons/{{ lesson.id }}/complete/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        },
+                        body: JSON.stringify({
+                            completed: true
+                        })
+                    });
+                } else {
+                    quizMessage.textContent = 'You need to score at least 70% to pass. Try again!';
+                    quizMessage.className = 'mt-2 text-yellow-600 font-medium';
+                }
+            } else {
+                showError(data.error || 'An error occurred while submitting the quiz.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showError('An error occurred while submitting the quiz. Please try again.');
+        }
+    }
+    
+    // Show error message
+    function showError(message) {
+        quizForm.classList.add('hidden');
+        quizResults.classList.remove('hidden');
+        quizError.classList.remove('hidden');
+        errorMessage.textContent = message;
+    }
+    
+    // Initialize the quiz
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add any initialization code here
+    });
+</script>
+{% endblock %}

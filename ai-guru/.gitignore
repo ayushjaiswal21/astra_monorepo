@@ -1,0 +1,72 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node
+node_modules/
+build/
+
+# VSCode
+.vscode/
+
+# Environment variables - CRITICAL SECURITY
+.env*
+!.env.example
+.env.local
+.env.production
+.env.staging
+.env.development
+.env.test
+
+# API Keys and credentials - NEVER COMMIT THESE
+config.json
+secrets.json
+credentials.json
+service-account.json
+*.key
+*.pem
+*.p12
+*-key.json
+auth.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Large files and media
+*.wav
+*.mp3
+*.mp4
+*.avi
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.7z
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.webm
+*.pdf
+*.docx
+*.xlsx
+*.pptx

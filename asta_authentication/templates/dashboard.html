@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AstraLearn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f2ee; }
+
+        /* --- General Interactive Elements --- */
+        .interactive {
+            transition: all 0.2s ease-in-out;
+        }
+
+        /* --- Header Nav --- */
+        .icon-link:hover .nav-text,
+        .icon-link:hover .nav-icon {
+            color: #2563eb; /* blue-600 */
+        }
+        .icon-link:hover {
+            transform: translateY(-2px);
+        }
+
+        /* --- Post Action Buttons --- */
+        .post-action-btn {
+            border-radius: 6px;
+        }
+        .post-action-btn:hover {
+            background-color: #f3f4f6; /* gray-100 */
+        }
+
+        /* --- Sidebar Links & Cards --- */
+        .sidebar-link:hover {
+            background-color: #eff6ff; /* blue-50 */
+            color: #1d4ed8; /* blue-700 */
+        }
+        .sidebar-link {
+            display: block;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('dashboard') }}" class="text-2xl font-bold text-blue-600">AstraLearn</a>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="icon-link text-center text-gray-500 interactive">
+                        <i class="fas fa-home text-2xl nav-icon"></i>
+                        <span class="block text-xs font-medium nav-text">Home</span>
+                    </a>
+                    <a href="#" class="icon-link text-center text-gray-500 interactive">
+                        <i class="fas fa-users text-2xl nav-icon"></i>
+                        <span class="block text-xs font-medium nav-text">People</span>
+                    </a>
+                    <a href="#" class="icon-link text-center text-gray-500 interactive">
+                        <i class="fas fa-briefcase text-2xl nav-icon"></i>
+                        <span class="block text-xs font-medium nav-text">Internships</span>
+                    </a>
+                    <a href="#" class="icon-link text-center text-gray-500 interactive">
+                        <i class="fas fa-comment-dots text-2xl nav-icon"></i>
+                        <span class="block text-xs font-medium nav-text">Messages</span>
+                    </a>
+                    <a href="#" class="icon-link text-center text-gray-500 interactive">
+                        <i class="fas fa-bell text-2xl nav-icon"></i>
+                        <span class="block text-xs font-medium nav-text">Notifications</span>
+                    </a>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <div class="text-center">
+                        <img class="h-8 w-8 rounded-full mx-auto" src="https://via.placeholder.com/32" alt="User profile picture">
+                        <span class="block text-xs font-medium text-gray-500">Me</span>
+                    </div>
+                    <div class="border-l h-8 border-gray-200"></div>
+                    <a href="{{ url_for('logout') }}" class="text-sm font-medium text-gray-600 hover:text-red-600 p-2 rounded-md interactive">Logout</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+
+            <aside class="md:col-span-3">
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden interactive card">
+                    <div class="p-6 text-center border-b">
+                        <img class="h-24 w-24 rounded-full mx-auto mb-4" src="https://via.placeholder.com/80" alt="Profile Picture">
+                        <h2 class="text-xl font-bold text-gray-800">
+                            {{ user.name }}                        </h2>
+                        {% if user.role == 'Seeker' %}
+                            <p class="text-sm text-gray-500 mt-1">Student | Lifelong Learner</p>
+                        {% elif user.role == 'Provider' %}
+                            <p class="text-sm text-gray-500 mt-1">Teacher | Industry Expert</p>
+                        {% endif %}
+                    </div>
+                    <div class="p-4 space-y-2">
+                        <div class="flex justify-between items-center text-sm font-medium">
+                            <span class="text-gray-600">Skill Test</span>
+                            <a href="#" onclick="toggleAiGuru()" class="text-blue-600 hover:underline">AI Guru ✨</a>
+                        </div>
+                        {% if user.role == 'Seeker' %}
+                        <div class="flex justify-between items-center text-sm font-medium">
+                            <span class="text-gray-600">My Learning Path</span>
+                            <span class="text-blue-600">20%</span>
+                        </div>
+                        {% endif %}
+                        <a href="#" class="sidebar-link interactive">Saved Courses</a>
+                    </div>
+                    <div class="border-t p-4">
+                        <ul class="space-y-1">
+                            <li><a href="#" class="sidebar-link interactive">Groups</a></li>
+                            <li><a href="#" class="sidebar-link interactive">Events</a></li>
+                            <li><a href="#" class="sidebar-link interactive">Workshops</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="md:col-span-6">
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                    <div class="flex border-b">
+                        <button class="flex-1 text-center py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-t-md border-b-2 border-blue-600 text-blue-600 interactive"><i class="fas fa-photo-video mr-2"></i>Media</button>
+                        <button class="flex-1 text-center py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-t-md interactive"><i class="fas fa-award mr-2"></i>Contribute expertise</button>
+                        <button class="flex-1 text-center py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-t-md interactive"><i class="fas fa-pen-nib mr-2"></i>Write article</button>
+                    </div>
+                    <textarea class="w-full mt-4 p-2 border-none focus:ring-0" rows="2" placeholder="What do you want to talk about?"></textarea>
+                </div>
+                
+                <!-- AI Guru Section -->
+                <div id="ai-guru-section" class="{% if show_ai_guru %}bg-white rounded-lg shadow-sm p-6 mb-6{% else %}hidden bg-white rounded-lg shadow-sm p-6 mb-6{% endif %}">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">AI Guru Chat</h2>
+                    <div id="chat-box" class="h-64 overflow-y-auto border rounded-md p-4 mb-4 bg-gray-50">
+                        <!-- Chat messages will appear here -->
+                        <div class="text-gray-500">Welcome! Ask me anything.</div>
+                    </div>
+                    <div class="flex">
+                        <input type="text" id="chat-input" class="flex-grow border rounded-l-md p-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Type your message...">
+                        <button id="send-button" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700">Send</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden interactive card">
+                    <div class="p-4">
+                        <div class="flex items-start">
+                            <img class="h-12 w-12 rounded-full mr-4" src="https://via.placeholder.com/48" alt="Author">
+                            <div class="flex-1">
+                                <p class="font-bold">AstraLearn News <span class="font-normal text-gray-500">· Official</span></p>
+                                <p class="text-xs text-gray-500">1.2M Followers</p>
+                                <p class="text-xs text-gray-500">1d · <i class="fas fa-globe-americas"></i></p>
+                            </div>
+                            <button class="text-blue-600 font-bold hover:text-blue-800 interactive"><i class="fas fa-plus"></i> Follow</button>
+                        </div>
+                        <p class="mt-4 text-sm text-gray-700">
+                            Welcome to the new AstraLearn dashboard! We've rolled out a fresh look and new features to help you connect, learn, and grow. Explore the new layout and let us know what you think!
+                        </p>
+                    </div>
+                    <img class="w-full" src="https://via.placeholder.com/600x300" alt="Post image">
+                    <div class="p-4">
+                        <div class="flex justify-between items-center text-xs text-gray-500">
+                            <span><i class="fas fa-thumbs-up text-blue-500"></i> 1,907 others</span>
+                            <span>244 comments · 207 reposts</span>
+                        </div>
+                        <div class="border-t my-2"></div>
+                        <div class="flex justify-around text-gray-600 font-semibold text-sm">
+                            <button class="w-full py-2 post-action-btn interactive"><i class="far fa-thumbs-up mr-2"></i>Like</button>
+                            <button class="w-full py-2 post-action-btn interactive"><i class="far fa-comment mr-2"></i>Comment</button>
+                            <button class="w-full py-2 post-action-btn interactive"><i class="fas fa-retweet mr-2"></i>Repost</button>
+                            <button class="w-full py-2 post-action-btn interactive"><i class="fas fa-paper-plane mr-2"></i>Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="md:col-span-3">
+                <div class="bg-white rounded-lg shadow-sm p-4 interactive card">
+                    <h3 class="font-bold text-md mb-2">AstraLearn News</h3>
+                    <ul class="space-y-1">
+                        <li><a href="#" class="sidebar-link interactive">The Future of Remote Work</a></li>
+                        <li><a href="#" class="sidebar-link interactive">New Partnership with Tech Inc.</a></li>
+                        <li><a href="#" class="sidebar-link interactive">AI in Education: A Deep Dive</a></li>
+                    </ul>
+                    <a href="#" class="text-sm text-blue-600 hover:underline mt-3 inline-block">See More</a>
+                </div>
+                 <div class="bg-white rounded-lg shadow-sm p-4 mt-6 interactive card">
+                    <h3 class="font-bold text-md mb-2">Games</h3>
+                    <ul class="space-y-1">
+                        <li><a href="#" class="sidebar-link interactive">Puzzles & Brain Teasers</a></li>
+                        <li><a href="#" class="sidebar-link interactive">Coding Challenges</a></li>
+                        <li><a href="#" class="sidebar-link interactive">Design Competitions</a></li>
+                    </ul>
+                </div>
+            </aside>
+
+        </div>
+<script>
+    function toggleAiGuru() {
+        const section = document.getElementById('ai-guru-section');
+        section.classList.toggle('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const chatBox = document.getElementById('chat-box');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+
+        const addMessage = (message, sender) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('mb-2');
+            messageElement.innerHTML = `<span class="font-bold ${sender === 'user' ? 'text-blue-600' : 'text-green-600'}">${sender === 'user' ? 'You' : 'AI Guru'}:</span> ${message}`;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        const sendToAiGuru = async (message) => {
+            addMessage(message, 'user');
+            chatInput.value = '';
+            try {
+                const response = await fetch('http://localhost:8001/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: message })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                addMessage(data.response, 'ai');
+            } catch (error) {
+                console.error('Error fetching from AI Guru:', error);
+                addMessage('Sorry, I am having trouble connecting to the AI Guru service.', 'ai');
+            }
+        };
+
+        sendButton.addEventListener('click', () => {
+            const message = chatInput.value.trim();
+            if (message) {
+                sendToAiGuru(message);
+            }
+        });
+
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const message = chatInput.value.trim();
+                if (message) {
+                    sendToAiGuru(message);
+                }
+            }
+        });
+    });
+</script>
