@@ -1,16 +1,29 @@
 import os
-from flask import Flask
+from flask import Flask, g
 from flask_wtf.csrf import CSRFProtect
 import sqlite3
 from blueprints import init_db, google_bp
 from auth_routes import auth_bp
 from main_routes import main_bp
 
+# Database functions
+def get_db():
+    if 'db' not in g:
+        g.db = sqlite3.connect('users.db')
+        g.db.row_factory = sqlite3.Row
+    return g.db
+
 # --- App Initialization ---
 app = Flask(__name__)
 
+@app.teardown_appcontext
+def close_db(e=None):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
+
 # --- Configuration ---
-app.secret_key = os.environ.get("SECRET_KEY", "a-very-long-and-random-secret-key-for-dev")
+app.secret_key = os.environ.get("SECRET_KEY") or "dev-secret-key-change-in-production-12345"
 DEBUG_MODE = os.environ.get("FLASK_DEBUG", "True").lower() in ["true", "1", "t"]
 
 # Allow insecure transport for OAuth only in debug mode

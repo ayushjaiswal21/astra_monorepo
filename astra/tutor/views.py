@@ -12,7 +12,6 @@ from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress
 
 from .tasks import generate_lesson_content, generate_modules_and_lessons
 
-genai.configure(api_key=settings.GEMINI_API_KEY)
 
 
 # New view to render the dedicated "Create Course" page

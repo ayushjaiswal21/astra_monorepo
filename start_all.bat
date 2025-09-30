@@ -11,7 +11,7 @@ echo Starting Astra Authentication app (Flask)...
 start "Astra Auth App" cmd /k "cd asta_authentication && python app.py"
 
 echo Starting Astra modules (Django)...
-start "Astra Modules" cmd /k "cd astra && python manage.py runserver"
+start "Astra Modules" cmd /k "cd astra && python manage.py runserver --noreload --verbosity=0"
 
 echo All projects are starting in separate windows.
 echo.

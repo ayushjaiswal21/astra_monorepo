@@ -7,3 +7,8 @@ class TutorConfig(AppConfig):
     
     def ready(self):
         import tutor.signals
+        from django.conf import settings
+        import google.generativeai as genai
+
+        if settings.GEMINI_API_KEY:
+            genai.configure(api_key=settings.GEMINI_API_KEY)

@@ -69,9 +69,6 @@ def clean_llm_response(response_text):
 
 # --- Celery Tasks ---
 
-# It's good practice to configure the client within the task
-# to ensure it's initialized in the worker process.
-genai.configure(api_key=settings.GEMINI_API_KEY)
 
 @shared_task
 def generate_modules_and_lessons(course_id, topic):

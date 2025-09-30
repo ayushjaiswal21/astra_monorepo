@@ -21,12 +21,12 @@
                 <h1 class="text-4xl font-bold text-gray-800 mb-6">Your Journey to Success Starts Here.</h1>
                 <p class="text-gray-600 mb-8">Join a community of learners and experts.</p>
 
-                <a href="{{ url_for('google.login') }}" class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-full shadow-sm text-md font-medium text-gray-700 bg-white hover:bg-gray-50 mb-4">
+                <a href="/login" class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-full shadow-sm text-md font-medium text-gray-700 bg-white hover:bg-gray-50 mb-4">
                     <img class="h-6 w-6 mr-3" src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google logo">
                     Continue with Google
                 </a>
 
-                <a href="{{ url_for('signin_email') }}" class="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-blue-600 hover:bg-blue-700">
+                <a href="{{ url_for('auth.signin_email') }}" class="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-blue-600 hover:bg-blue-700">
                     Sign in with email
                 </a>
 
@@ -35,7 +35,7 @@
                 </p>
 
                 <div class="mt-8 text-center">
-                    <p class="text-gray-600">New to AstraLearn? <a href="{{ url_for('join') }}" class="font-semibold text-blue-600 hover:underline">Join Now</a></p>
+                    <p class="text-gray-600">New to AstraLearn? <a href="{{ url_for('auth.join') }}" class="font-semibold text-blue-600 hover:underline">Join Now</a></p>
                 </div>
             </div>
         </div>

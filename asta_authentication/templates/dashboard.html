@@ -3,245 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - AstraLearn</title>
+    <title>AstraLearn Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f4f2ee; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #f3f2ef; }
+        .nav-icon { transition: all 0.2s; }
+        .nav-icon:hover { color: #0a66c2; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.1); transition: box-shadow 0.2s; }
+        .card:hover { box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.1); }
+        .btn-action { transition: all 0.2s; border-radius: 4px; padding: 8px 16px; }
+        .btn-action:hover { background: rgba(0,0,0,0.05); }
+        .post-img { border-radius: 4px; overflow: hidden; }
+        .modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 12px; width: 95%; max-width: 1200px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        /* --- General Interactive Elements --- */
-        .interactive {
-            transition: all 0.2s ease-in-out;
-        }
-
-        /* --- Header Nav --- */
-        .icon-link:hover .nav-text,
-        .icon-link:hover .nav-icon {
-            color: #2563eb; /* blue-600 */
-        }
-        .icon-link:hover {
-            transform: translateY(-2px);
-        }
-
-        /* --- Post Action Buttons --- */
-        .post-action-btn {
-            border-radius: 6px;
-        }
-        .post-action-btn:hover {
-            background-color: #f3f4f6; /* gray-100 */
-        }
-
-        .sidebar-link:hover {
-            background-color: #eff6ff; /* blue-50 */
-            color: #1d4ed8; /* blue-700 */
-        }
-        .sidebar-link {
-            display: block;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-weight: 500;
-        }
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-        }
-
-        /* --- Mobile Responsive Styles --- */
-        @media (max-width: 768px) {
-            .nav-icons {
-                display: none;
-            }
-            .mobile-nav {
-                display: flex !important;
-            }
-            .sidebar-link {
-                padding: 12px 16px;
-                font-size: 16px;
-            }
-            .post-action-btn {
-                padding: 12px 16px;
-                font-size: 14px;
-            }
-        }
-
+        /* Loading and error states for iframes */
+        .iframe-container { position: relative; background: #f8f9fa; }
+        .iframe-loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #6b7280; }
+        .iframe-error { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #ef4444; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    </style>
 </head>
-<body class="bg-gray-100">
-
-    <header class="bg-white shadow-sm sticky top-0 z-50">
-        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-4">
-                    <a href="{{ url_for('dashboard') }}" class="text-2xl font-bold text-blue-600">AstraLearn</a>
-                </div>
-
-                <div class="hidden md:flex items-center space-x-8 nav-icons">
-                    <a href="#" class="icon-link text-center text-gray-500 interactive">
-                        <i class="fas fa-home text-2xl nav-icon"></i>
-                        <span class="block text-xs font-medium nav-text">Home</span>
-                    </a>
-                    <a href="#" class="icon-link text-center text-gray-500 interactive">
-                        <i class="fas fa-users text-2xl nav-icon"></i>
-                        <span class="block text-xs font-medium nav-text">People</span>
-                    </a>
-                    <a href="#" class="icon-link text-center text-gray-500 interactive">
-                        <i class="fas fa-briefcase text-2xl nav-icon"></i>
-                        <span class="block text-xs font-medium nav-text">Internships</span>
-                    </a>
-                    <a href="#" class="icon-link text-center text-gray-500 interactive">
-                        <i class="fas fa-comment-dots text-2xl nav-icon"></i>
-                        <span class="block text-xs font-medium nav-text">Messages</span>
-                    </a>
-                    <a href="#" class="icon-link text-center text-gray-500 interactive">
-                        <i class="fas fa-bell text-2xl nav-icon"></i>
-                        <span class="block text-xs font-medium nav-text">Notifications</span>
-                    </a>
-                </div>
-
-                <div class="flex items-center space-x-4">
-                    <div class="text-center">
-                        <img class="h-8 w-8 rounded-full mx-auto" src="https://via.placeholder.com/32" alt="User profile picture">
-                        <span class="block text-xs font-medium text-gray-500">Me</span>
+<body>
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-14">
+                <div class="flex items-center space-x-2">
+                    <div class="flex items-center">
+                        <div class="w-9 h-9 bg-blue-600 rounded flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-white text-lg"></i>
+                        </div>
+                        <span class="ml-2 text-xl font-bold text-blue-600">AstraLearn</span>
                     </div>
-                    <div class="border-l h-8 border-gray-200"></div>
-                    <a href="{{ url_for('logout') }}" class="text-sm font-medium text-gray-600 hover:text-red-600 p-2 rounded-md interactive">Logout</a>
+                    <input type="text" placeholder="Search" class="hidden md:block ml-2 w-64 px-3 py-1.5 bg-gray-100 rounded text-sm focus:outline-none focus:bg-white focus:border focus:border-gray-300">
                 </div>
+                <nav class="flex items-center space-x-6">
+                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-home text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Home</span>
+                    </a>
+                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-user-friends text-xl mb-1"></i>
+                        <span class="text-xs font-medium">People</span>
+                    </a>
+                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-briefcase text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Internships</span>
+                    </a>
+                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-comment-dots text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Messages</span>
+                    </a>
+                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-bell text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Notifications</span>
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <div class="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-semibold mb-1">
+                            {{ user.name[0]|upper }}
+                        </div>
+                        <span class="text-xs font-medium">Me</span>
+                    </a>
+                </nav>
             </div>
-        </nav>
+        </div>
     </header>
 
-    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
-
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
             <aside class="md:col-span-3">
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden interactive card">
-                    <div class="p-6 text-center border-b">
-                        <img class="h-24 w-24 rounded-full mx-auto mb-4" src="https://via.placeholder.com/80" alt="Profile Picture">
-                        <h2 class="text-xl font-bold text-gray-800">
-                            {{ user.name }}                        </h2>
-                        {% if user.role == 'Seeker' %}
-                            <p class="text-sm text-gray-500 mt-1">Student | Lifelong Learner</p>
-                        {% elif user.role == 'Provider' %}
-                            <p class="text-sm text-gray-500 mt-1">Teacher | Industry Expert</p>
-                        {% endif %}
-                    </div>
-                    <div class="p-4 space-y-2">
-                        <div class="flex justify-between items-center text-sm font-medium">
-                            <span class="text-gray-600">AI Guru</span>
-                            <a href="{{ url_for('ai_guru') }}" class="text-blue-600 hover:underline">AI Guru ✨</a>
+                <div class="card mb-4">
+                    <div class="h-14 bg-gradient-to-r from-blue-400 to-purple-500"></div>
+                    <div class="px-4 pb-4 text-center -mt-8">
+                        <div class="w-16 h-16 mx-auto bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white mb-2">
+                            {{ user.name[0]|upper }}
                         </div>
-                        {% if user.role == 'Seeker' %}
-                        <div class="flex justify-between items-center text-sm font-medium">
-                            <span class="text-gray-600">My Learning Path</span>
-                            <span class="text-blue-600">20%</span>
-                        </div>
-                        {% endif %}
-                        <a href="#" class="sidebar-link interactive">Saved Courses</a>
-                    </div>
-                    <div class="border-t p-4">
-                        <ul class="space-y-1">
-                            <li><a href="#" class="sidebar-link interactive">Groups</a></li>
-                            <li><a href="#" class="sidebar-link interactive">Events</a></li>
-                            <li><a href="#" class="sidebar-link interactive">Workshops</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </aside>
-
-            <div class="md:col-span-6">
-                <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Your Courses</h2>
-                    <div id="courses-container" class="space-y-4">
-                        <!-- Courses will be loaded here -->
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
-                    <div class="flex border-b">
-                        <button class="flex-1 text-center py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-t-md interactive"><i class="fas fa-award mr-2"></i>Contribute expertise</button>
-                        <button class="flex-1 text-center py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-t-md interactive"><i class="fas fa-pen-nib mr-2"></i>Write article</button>
-                    </div>
-                    <textarea class="w-full mt-4 p-2 border-none focus:ring-0" rows="2" placeholder="What do you want to talk about?"></textarea>
-                </div>
-
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden interactive card">
-                    <div class="p-4">
-                        <div class="flex items-start">
-                            <img class="h-12 w-12 rounded-full mr-4" src="https://via.placeholder.com/48" alt="Author">
-                            <div class="flex-1">
-                                <p class="font-bold">AstraLearn News <span class="font-normal text-gray-500">· Official</span></p>
-                                <p class="text-xs text-gray-500">1.2M Followers</p>
-                                <p class="text-xs text-gray-500">1d · <i class="fas fa-globe-americas"></i></p>
+                        <h3 class="font-semibold text-gray-900">{{ user.name }}</h3>
+                        <p class="text-xs text-gray-600 mb-3">{% if user.role == 'Seeker' %}Learning Enthusiast{% else %}Knowledge Provider{% endif %}</p>
+                        <div class="border-t border-gray-200 pt-3 text-xs">
+                            <div onclick="openModule('ai-guru')" class="flex justify-between py-1.5 hover:bg-gray-50 px-2 rounded cursor-pointer">
+                                <span class="text-gray-600">Skill Test</span>
+                                <span class="text-blue-600 font-semibold">AI Guru 🤖</span>
                             </div>
-                            <button class="text-blue-600 font-bold hover:text-blue-800 interactive"><i class="fas fa-plus"></i> Follow</button>
-                        </div>
-                        <p class="mt-4 text-sm text-gray-700">
-                            Welcome to the new AstraLearn dashboard! We've rolled out a fresh look and new features to help you connect, learn, and grow. Explore the new layout and let us know what you think!
-                        </p>
-                    </div>
-                    <img class="w-full" src="https://via.placeholder.com/600x300" alt="Post image">
-                    <div class="p-4">
-                        <div class="flex justify-between items-center text-xs text-gray-500">
-                            <span><i class="fas fa-thumbs-up text-blue-500"></i> 1,907 others</span>
-                            <span>244 comments · 207 reposts</span>
-                        </div>
-                        <div class="border-t my-2"></div>
-                        <div class="flex justify-around text-gray-600 font-semibold text-sm">
-                            <button class="w-full py-2 post-action-btn interactive"><i class="far fa-thumbs-up mr-2"></i>Like</button>
-                            <button class="w-full py-2 post-action-btn interactive"><i class="far fa-comment mr-2"></i>Comment</button>
-                            <button class="w-full py-2 post-action-btn interactive"><i class="fas fa-retweet mr-2"></i>Repost</button>
-                            <button class="w-full py-2 post-action-btn interactive"><i class="fas fa-paper-plane mr-2"></i>Send</button>
+                            <div onclick="openModule('courses')" class="flex justify-between py-1.5 hover:bg-gray-50 px-2 rounded cursor-pointer">
+                                <span class="text-gray-600">My Learning Path</span>
+                                <i class="fas fa-route text-gray-400"></i>
+                            </div>
+                            <div class="py-1.5 hover:bg-gray-50 px-2 rounded cursor-pointer text-gray-600">
+                                Saved Items
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <aside class="md:col-span-3">
-                <div class="bg-white rounded-lg shadow-sm p-4 interactive card">
-                    <h3 class="font-bold text-md mb-2">AstraLearn News</h3>
-                    <ul class="space-y-1">
-                        <li><a href="#" class="sidebar-link interactive">The Future of Remote Work</a></li>
-                        <li><a href="#" class="sidebar-link interactive">New Partnership with Tech Inc.</a></li>
-                        <li><a href="#" class="sidebar-link interactive">AI in Education: A Deep Dive</a></li>
-                    </ul>
-                    <a href="#" class="text-sm text-blue-600 hover:underline mt-3 inline-block">See More</a>
-                </div>
-                 <div class="bg-white rounded-lg shadow-sm p-4 mt-6 interactive card">
-                    <h3 class="font-bold text-md mb-2">Games</h3>
-                    <ul class="space-y-1">
-                        <li><a href="#" class="sidebar-link interactive">Puzzles & Brain Teasers</a></li>
-                        <li><a href="#" class="sidebar-link interactive">Coding Challenges</a></li>
-                        <li><a href="#" class="sidebar-link interactive">Design Competitions</a></li>
-                    </ul>
+                <div class="card p-3 text-sm">
+                    <div class="space-y-2">
+                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Groups</a>
+                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Events</a>
+                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Workshops</a>
+                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Internships</a>
+                        <a href="#" onclick="openModule('ai-guru'); return false;" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-blue-600 font-semibold">**AiGuru</a>
+                    </div>
                 </div>
             </aside>
 
+            <main class="md:col-span-6">
+                <div class="card p-4 mb-4">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                            {{ user.name[0]|upper }}
+                        </div>
+                        <input type="text" placeholder="Start a post..." class="flex-1 px-4 py-2 border border-gray-300 rounded-full hover:bg-gray-50 cursor-pointer">
+                    </div>
+                    <div class="flex justify-around pt-2 border-t border-gray-200">
+                        <button class="btn-action flex items-center space-x-2 text-gray-600">
+                            <i class="fas fa-image text-blue-500"></i>
+                            <span class="text-sm font-medium">Media</span>
+                        </button>
+                        <button onclick="openModule('ai-guru')" class="btn-action flex items-center space-x-2 text-gray-600">
+                            <i class="fas fa-robot text-purple-600"></i>
+                            <span class="text-sm font-medium">Ask AI Guru</span>
+                        </button>
+                        <button onclick="openModule('courses')" class="btn-action flex items-center space-x-2 text-gray-600">
+                            <i class="fas fa-graduation-cap text-red-500"></i>
+                            <span class="text-sm font-medium">Browse Courses</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card p-4 mb-4">
+                    <div class="flex items-start space-x-3 mb-3">
+                        <div class="w-12 h-12 bg-gray-300 rounded-full overflow-hidden">
+                            <img src="https://via.placeholder.com/48" alt="User" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">DC Palter • <span class="text-sm font-normal text-gray-600">2nd</span></h3>
+                                    <p class="text-xs text-gray-600">Fractional business leader and climatech startup...</p>
+                                    <p class="text-xs text-gray-500">4d • Edited • 🌍</p>
+                                </div>
+                                <button class="text-blue-600 font-semibold text-sm px-4 py-1 border border-blue-600 rounded-full hover:bg-blue-50">+ Follow</button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-900 mb-3 leading-relaxed">
+                        I realize this is a strange request coming from someone who has invested in 150 startups. But I meet too many earnest founders taking venture funding that will destroy their businesses and their lives. I've met too many founders who ...<a href="#" class="text-gray-600 hover:text-blue-600">more</a>
+                    </p>
+                    <div class="post-img mb-3">
+                        <img src="https://via.placeholder.com/600x300/87CEEB/ffffff?text=Please+Don't+Take+Venture+Capital" alt="Article" class="w-full">
+                        <div class="bg-gray-50 p-3 border border-gray-200">
+                            <h4 class="font-semibold text-sm mb-1">Please Don't Take Venture Capital</h4>
+                            <p class="text-xs text-gray-600">ehandbook.com</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-gray-600 pb-2 border-b border-gray-200 mb-2">
+                        <div class="flex items-center space-x-1">
+                            <div class="flex -space-x-1">
+                                <div class="w-4 h-4 bg-blue-500 rounded-full border border-white"></div>
+                                <div class="w-4 h-4 bg-red-500 rounded-full border border-white"></div>
+                                <div class="w-4 h-4 bg-green-500 rounded-full border border-white"></div>
+                            </div>
+                            <span>Rakesh Bonjam and 1,907 others</span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <span>244 comments</span>
+                            <span>•</span>
+                            <span>207 reposts</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-around">
+                        <button class="btn-action flex items-center space-x-2 text-gray-600">
+                            <i class="far fa-thumbs-up text-lg"></i>
+                            <span class="text-sm font-medium">Like</span>
+                        </button>
+                        <button class="btn-action flex items-center space-x-2 text-gray-600">
+                            <i class="far fa-comment text-lg"></i>
+                            <span class="text-sm font-medium">Comment</span>
+                        </button>
+                        <button class="btn-action flex items-center space-x-2 text-gray-600">
+                            <i class="fas fa-retweet text-lg"></i>
+                            <span class="text-sm font-medium">Repost</span>
+                        </button>
+                        <button class="btn-action flex items-center space-x-2 text-gray-600">
+                            <i class="far fa-paper-plane text-lg"></i>
+                            <span class="text-sm font-medium">Send</span>
+                        </button>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="md:col-span-3">
+                <div class="card p-4 mb-4">
+                    <h3 class="font-semibold text-gray-900 mb-3">AstraLearn News</h3>
+                    <p class="text-xs text-gray-600 mb-3">Top Stories</p>
+                    <ul class="space-y-3 text-sm">
+                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                            <div class="font-medium text-gray-900 mb-0.5">• Story -1</div>
+                        </li>
+                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                            <div class="font-medium text-gray-900 mb-0.5">• Story -2</div>
+                        </li>
+                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                            <div class="font-medium text-gray-900 mb-0.5">• Story -3</div>
+                        </li>
+                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                            <div class="font-medium text-gray-900 mb-0.5">• Story -4</div>
+                        </li>
+                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                            <div class="font-medium text-gray-900 mb-0.5">• Story -5</div>
+                        </li>
+                    </ul>
+                    <a href="#" class="block mt-3 text-sm text-gray-600 hover:text-blue-600">See More</a>
+                </div>
+
+                <div class="card p-4">
+                    <h3 class="font-semibold text-gray-900 mb-3">Quick Actions</h3>
+                    <ul class="space-y-2 text-sm text-gray-700">
+                        <li onclick="openModule('ai-guru')" class="hover:bg-gray-50 p-2 rounded cursor-pointer flex items-center">
+                            <i class="fas fa-robot text-blue-600 mr-2"></i> AI Guru Chat
+                        </li>
+                        <li onclick="openModule('courses')" class="hover:bg-gray-50 p-2 rounded cursor-pointer flex items-center">
+                            <i class="fas fa-book text-purple-600 mr-2"></i> My Courses
+                        </li>
+                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer flex items-center">
+                            <i class="fas fa-gamepad text-green-600 mr-2"></i> Learning Games
+                        </li>
+                    </ul>
+                </div>
+            </aside>
         </div>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        fetch('http://127.0.0.1:8000/api/courses/')
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('courses-container');
-                if (data.courses.length > 0) {
-                    data.courses.forEach(course => {
-                        const courseElement = document.createElement('div');
-                        courseElement.className = 'p-4 border rounded-lg';
-                        courseElement.innerHTML = `
-                            <h3 class="font-bold text-lg">${course.title}</h3>
-                            <p class="text-gray-600">${course.description}</p>
-                            <a href="http://127.0.0.1:8000/courses/${course.id}" class="text-blue-600 hover:underline">View Course</a>
-                        `;
-                        container.appendChild(courseElement);
-                    });
-                } else {
-                    container.innerHTML = '<p>No courses found.</p>';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching courses:', error);
-                const container = document.getElementById('courses-container');
-                container.innerHTML = '<p>Could not load courses.</p>';
-            });
-    });
-</script>
+    </div>
+
+    <!-- AI Guru Modal -->
+    <div id="ai-guru-modal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">AI Guru</h2>
+                        <p class="text-white text-opacity-90 text-sm">Your Intelligent Learning Assistant</p>
+                    </div>
+                </div>
+                <button onclick="closeModule()" class="text-white hover:text-opacity-75 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="iframe-container">
+                <div class="iframe-loading" id="ai-guru-loading">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p>Loading AI Guru...</p>
+                </div>
+                <div class="iframe-error hidden" id="ai-guru-error">
+                    <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                    <h3 class="font-semibold mb-2">Unable to Load AI Guru</h3>
+                    <p class="mb-4 text-sm">Please ensure the AI Guru service is running on port 3000</p>
+                    <button onclick="retryLoad('ai-guru')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Retry</button>
+                </div>
+                <iframe
+                    id="ai-guru-frame"
+                    src="http://localhost:3000"
+                    class="w-full h-[700px] border-0 hidden"
+                    title="AI Guru"
+                    onload="hideLoading('ai-guru')"
+                    onerror="showError('ai-guru')">
+                </iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Courses Modal -->
+    <div id="courses-modal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-pink-500 to-red-500 px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-book text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">My Courses</h2>
+                        <p class="text-white text-opacity-90 text-sm">Browse and Manage Your Learning</p>
+                    </div>
+                </div>
+                <button onclick="closeModule()" class="text-white hover:text-opacity-75 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="iframe-container">
+                <div class="iframe-loading" id="courses-loading">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600 mx-auto mb-2"></div>
+                    <p>Loading Courses...</p>
+                </div>
+                <div class="iframe-error hidden" id="courses-error">
+                    <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                    <h3 class="font-semibold mb-2">Unable to Load Courses</h3>
+                    <p class="mb-4 text-sm">Please ensure the Django server is running on port 8000</p>
+                    <button onclick="retryLoad('courses')" class="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded text-sm">Retry</button>
+                </div>
+                <iframe
+                    id="courses-frame"
+                    src="http://localhost:8000/tutor/"
+                    class="w-full h-[700px] border-0 hidden"
+                    title="Courses"
+                    onload="hideLoading('courses')"
+                    onerror="showError('courses')">
+                </iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModule(module) {
+            // Show modal
+            if (module === 'ai-guru') {
+                document.getElementById('ai-guru-modal').classList.add('active');
+                document.getElementById('ai-guru-loading').classList.remove('hidden');
+                document.getElementById('ai-guru-error').classList.add('hidden');
+            } else if (module === 'courses') {
+                document.getElementById('courses-modal').classList.add('active');
+                document.getElementById('courses-loading').classList.remove('hidden');
+                document.getElementById('courses-error').classList.add('hidden');
+            }
+        }
+
+        function closeModule() {
+            document.getElementById('ai-guru-modal').classList.remove('active');
+            document.getElementById('courses-modal').classList.remove('active');
+        }
+
+        function hideLoading(module) {
+            if (module === 'ai-guru') {
+                document.getElementById('ai-guru-loading').classList.add('hidden');
+                document.getElementById('ai-guru-frame').style.display = 'block';
+            } else if (module === 'courses') {
+                document.getElementById('courses-loading').classList.add('hidden');
+                document.getElementById('courses-frame').style.display = 'block';
+            }
+        }
+
+        function showError(module) {
+            if (module === 'ai-guru') {
+                document.getElementById('ai-guru-loading').classList.add('hidden');
+                document.getElementById('ai-guru-error').classList.remove('hidden');
+                document.getElementById('ai-guru-frame').style.display = 'none';
+            } else if (module === 'courses') {
+                document.getElementById('courses-loading').classList.add('hidden');
+                document.getElementById('courses-error').classList.remove('hidden');
+                document.getElementById('courses-frame').style.display = 'none';
+            }
+        }
+
+        function retryLoad(module) {
+            if (module === 'ai-guru') {
+                document.getElementById('ai-guru-loading').classList.remove('hidden');
+                document.getElementById('ai-guru-error').classList.add('hidden');
+                document.getElementById('ai-guru-frame').style.display = 'none';
+                // Reload iframe
+                const iframe = document.getElementById('ai-guru-frame');
+                iframe.src = iframe.src;
+            } else if (module === 'courses') {
+                document.getElementById('courses-loading').classList.remove('hidden');
+                document.getElementById('courses-error').classList.add('hidden');
+                document.getElementById('courses-frame').style.display = 'none';
+                // Reload iframe
+                const iframe = document.getElementById('courses-frame');
+                iframe.src = iframe.src;
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                closeModule();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModule();
+            }
+        });
+    </script>
+</body>
+</html>
