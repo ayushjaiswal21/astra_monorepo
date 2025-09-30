@@ -20,12 +20,6 @@ def get_db():
         g.db.row_factory = sqlite3.Row
     return g.db
 
-@main_bp.teardown_appcontext
-def close_db(e=None):
-    db = g.pop('db', None)
-    if db is not None:
-        db.close()
-
 def init_db():
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()

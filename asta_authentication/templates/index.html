@@ -81,12 +81,12 @@
                 {% if user_info %}
                     <div class="flex items-center space-x-4">
                         <span class="font-medium">Welcome, {{ user_info.name or user_info.split('@')[0] }}!</span>
-                        <a href="{{ url_for('logout') }}" class="btn bg-red-500 text-white font-bold py-2 px-5 rounded-full hover:bg-red-600">Logout</a>
+                        <a href="{{ url_for('auth.logout') }}" class="btn bg-red-500 text-white font-bold py-2 px-5 rounded-full hover:bg-red-600">Logout</a>
                     </div>
                 {% else %}
                     <div class="flex items-center space-x-2">
-                        <a href="{{ url_for('join') }}" class="btn text-gray-600 font-bold py-2 px-5 rounded-full hover:bg-gray-100">Join Now</a>
-                        <a href="{{ url_for('signin') }}" class="btn text-blue-600 font-bold py-2 px-5 rounded-full border-2 border-blue-600 btn-signin">Sign In</a>
+                        <a href="{{ url_for('auth.join') }}" class="btn text-gray-600 font-bold py-2 px-5 rounded-full hover:bg-gray-100">Join Now</a>
+                        <a href="{{ url_for('auth.signin') }}" class="btn text-blue-600 font-bold py-2 px-5 rounded-full border-2 border-blue-600 btn-signin">Sign In</a>
                     </div>
                 {% endif %}
             </div>
@@ -94,14 +94,13 @@
     </header>
 
     <main class="container mx-auto px-6 lg:px-8 py-16">
-
         <section class="min-h-[70vh] flex flex-col md:flex-row items-center justify-center gap-12 mb-24">
             <div class="md:w-1/2 text-center md:text-left fade-in delay-1">
                 <h1 class="text-5xl lg:text-6xl font-extrabold text-gray-800 leading-tight mb-6">
                     World values what you can do, not just what you know!
                 </h1>
                 <p class="text-lg text-gray-500">
-                    New to AstraLearn? <a href="{{ url_for('join') }}" class="text-blue-600 font-bold hover:underline">Join Now</a>
+                    New to AstraLearn? <a href="{{ url_for('auth.join') }}" class="text-blue-600 font-bold hover:underline">Join Now</a>
                 </p>
             </div>
             <div class="md:w-1/2 fade-in delay-2">
@@ -110,12 +109,11 @@
         </section>
 
         <section class="min-h-[70vh] flex flex-col md:flex-row-reverse items-center justify-center gap-12 mb-24">
-            <div class="md:w-1/2 text-center md:text-left fade-in delay-1">
                 <h1 class="text-5xl lg:text-6xl font-extrabold text-gray-800 leading-tight mb-6">
                     Master any skill, anytime, anywhere – Distraction-free!
                 </h1>
                  <p class="text-lg text-gray-500">
-                    New to AstraLearn? <a href="{{ url_for('join') }}" class="text-blue-600 font-bold hover:underline">Join Now</a>
+                    New to AstraLearn? <a href="{{ url_for('auth.join') }}" class="text-blue-600 font-bold hover:underline">Join Now</a>
                 </p>
             </div>
             <div class="md:w-1/2 fade-in delay-2">
@@ -129,7 +127,7 @@
                     Connect, learn, and grow together. Whether 1-on-1, in groups, or through peer insights.
                 </h1>
                  <p class="text-lg text-gray-500">
-                    New to AstraLearn? <a href="{{ url_for('join') }}" class="text-blue-600 font-bold hover:underline">Join Now</a>
+                    New to AstraLearn? <a href="{{ url_for('auth.join') }}" class="text-blue-600 font-bold hover:underline">Join Now</a>
                 </p>
             </div>
             <div class="md:w-1/2 fade-in delay-2">

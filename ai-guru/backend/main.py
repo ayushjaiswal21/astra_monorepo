@@ -33,35 +33,8 @@ if missing_vars:
 
 # Configure Gemini
 gemini_api_key = os.getenv('GEMINI_API_KEY')
-if gemini_api_key == "your_gemini_api_key_here" or len(gemini_api_key) < 30:
-    print("⚠️  WARNING: Invalid or missing Gemini API key detected!")
-    print("🔧 Application will run in DEMO MODE without AI functionality.")
-    print("📝 To enable AI features, set a valid GEMINI_API_KEY in your .env file")
-    print("🌐 Get your API key from: https://makersuite.google.com/")
-    print()
-
-    # Set demo mode flag
-    DEMO_MODE = True
-
-    # Create mock models that return demo responses
-    class MockModel:
-        def generate_content(self, prompt):
-            return MockResponse("This is a demo response. Please set up your Gemini API key to enable real AI functionality.")
-
-    class MockResponse:
-        def __init__(self, text):
-            self.text = text
-
-    text_model = MockModel()
-    vision_model = MockModel()
-else:
-    print("✅ Valid Gemini API key detected - AI features enabled!")
-    DEMO_MODE = False
-    genai.configure(api_key=gemini_api_key)
-
-    # Initialize Gemini models with free tier compatible names
-    text_model = genai.GenerativeModel('gemini-2.0-flash')
-    vision_model = genai.GenerativeModel('gemini-2.0-flash')  # Using same model for both
+if not gemini_api_key:
+    raise ValueError("No GEMINI_API_KEY set for AI Guru application")
 
 # MongoDB connection config with SSL settings
 MONGODB_URI = os.getenv('MONGODB_URI')
@@ -72,7 +45,6 @@ try:
     # Configure MongoDB client with proper settings
     client = MongoClient(
         MONGODB_URI,
-        tlsInsecure=True,  # Disable SSL certificate verification
         serverSelectionTimeoutMS=10000,
         connectTimeoutMS=10000,
         socketTimeoutMS=10000,

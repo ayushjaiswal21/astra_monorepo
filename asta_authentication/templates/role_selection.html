@@ -30,7 +30,7 @@
 
         <div class="flex flex-col md:flex-row gap-8">
             <!-- Seeker Card -->
-            <form action="{{ url_for('save_role') }}" method="POST">
+            <form action="{{ url_for('auth.save_role') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <input type="hidden" name="role" value="Seeker">
                 <button type="submit" class="role-card bg-white rounded-lg shadow-md p-8 text-center w-64 cursor-pointer border-2 border-transparent hover:border-blue-500">
@@ -41,7 +41,7 @@
             </form>
             
             <!-- Provider Card -->
-            <form action="{{ url_for('save_role') }}" method="POST">
+            <form action="{{ url_for('auth.save_role') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <input type="hidden" name="role" value="Provider">
                  <button type="submit" class="role-card bg-white rounded-lg shadow-md p-8 text-center w-64 cursor-pointer border-2 border-transparent hover:border-blue-500">

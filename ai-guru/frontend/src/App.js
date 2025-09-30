@@ -13,6 +13,7 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isConverting, setIsConverting] = useState(false); // Track if converting voice to text
   const [recordedAudio, setRecordedAudio] = useState(null); // Store recorded audio blob
+  const [processingMessages, setProcessingMessages] = useState(new Set()); // Track messages being processed
 
   // Web Speech API states
   const [recognition, setRecognition] = useState(null);
@@ -1531,11 +1532,13 @@ function App() {
                     ) : (
                       <>
                         <div
-                          dangerouslySetInnerHTML={{
-                            __html: marked.parse(msg.text || "", {
-                              breaks: true,
-                              gfm: true,
-                            }),
+                          ref={(el) => {
+                            if (el) {
+                              el.innerHTML = marked.parse(msg.text || "", {
+                                breaks: true,
+                                gfm: true,
+                              });
+                            }
                           }}
                           style={{
                             lineHeight: "1.6",

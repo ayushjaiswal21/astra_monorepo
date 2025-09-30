@@ -20,7 +20,7 @@
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             <a href="/" class="text-2xl font-bold text-blue-600">AstraLearn</a>
             <div>
-                <a href="{{ url_for('join') }}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Join Now</a>
+                <a href="{{ url_for('auth.join') }}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Join Now</a>
             </div>
         </nav>
     </header>
@@ -38,7 +38,7 @@
                     {% endfor %}
                   {% endif %}
                 {% endwith %}
-                <form action="{{ url_for('signin_email') }}" method="POST">
+                <form action="{{ url_for('auth.signin_email') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="mb-4">
                         <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email or Phone</label>
@@ -50,7 +50,7 @@
                          <span id="togglePassword" class="absolute right-3 top-10 text-blue-600 font-semibold toggle-password">Show</span>
                     </div>
                     <div class="mb-6">
-                        <a href="{{ url_for('forgot_password') }}" class="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800">
+                        <a href="{{ url_for('auth.forgot_password') }}" class="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800">
                             Forgot Password?
                         </a>
                     </div>
