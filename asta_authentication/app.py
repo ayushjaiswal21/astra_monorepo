@@ -142,22 +142,8 @@ def google_login_callback():
 
 @app.route('/ai-guru')
 def ai_guru():
-    if 'user_id' not in session:
-        return redirect(url_for('signin'))
-    
-    # Check if this is an AJAX request (e.g., for dynamic content)
-    if request.headers.get('Content-Type') == 'application/json' or request.args.get('ajax') == '1':
-        return jsonify({
-            'message': 'Welcome to AI Guru!',
-            'suggestions': [
-                'Focus on Python for data science.',
-                'Practice coding challenges daily.',
-                'Explore machine learning basics.'
-            ]
-        })
-    
-    # For direct visits, redirect back to dashboard with a flag to show AI Guru section
-    return redirect(url_for('dashboard', show_ai_guru='true'))
+    # This will redirect the user to the AI Guru frontend
+    return redirect('http://127.0.0.1:3000/')
 
 @app.route('/save_role', methods=['POST'])
 def save_role():
