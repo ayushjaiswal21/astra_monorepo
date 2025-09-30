@@ -68,11 +68,17 @@
             <div class="border rounded-lg p-2">
                 {% block sidebar_content %}
                 <nav class="space-y-1">
+                    <a href="{% url 'tutor:dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                    </a>
                     <a href="{% url 'tutor:course_list' %}" class="sidebar-link {% if request.resolver_match.url_name == 'course_list' or request.resolver_match.url_name == 'course_detail' %}active{% endif %}">
-                        Current Course
+                        <i class="fas fa-book mr-2"></i>My Courses
                     </a>
                     <a href="{% url 'tutor:create_course_page' %}" class="sidebar-link {% if request.resolver_match.url_name == 'create_course_page' %}active{% endif %}">
-                        Create Course
+                        <i class="fas fa-plus mr-2"></i>Create Course
+                    </a>
+                    <a href="http://localhost:3000" class="sidebar-link" target="_blank">
+                        <i class="fas fa-robot mr-2"></i>AI Guru
                     </a>
                 </nav>
                 {% endblock %}

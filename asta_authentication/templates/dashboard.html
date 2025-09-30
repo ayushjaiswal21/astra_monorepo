@@ -111,8 +111,8 @@
                     </div>
                     <div class="p-4 space-y-2">
                         <div class="flex justify-between items-center text-sm font-medium">
-                            <span class="text-gray-600">Skill Test</span>
-                            <a href="#" onclick="toggleAiGuru()" class="text-blue-600 hover:underline">AI Guru ✨</a>
+                            <span class="text-gray-600">AI Guru</span>
+                            <a href="{{ url_for('ai_guru') }}" class="text-blue-600 hover:underline">AI Guru ✨</a>
                         </div>
                         {% if user.role == 'Seeker' %}
                         <div class="flex justify-between items-center text-sm font-medium">
@@ -133,26 +133,19 @@
             </aside>
 
             <div class="md:col-span-6">
+                <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Your Courses</h2>
+                    <div id="courses-container" class="space-y-4">
+                        <!-- Courses will be loaded here -->
+                    </div>
+                </div>
+
                 <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
                     <div class="flex border-b">
-                        <button class="flex-1 text-center py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-t-md border-b-2 border-blue-600 text-blue-600 interactive"><i class="fas fa-photo-video mr-2"></i>Media</button>
                         <button class="flex-1 text-center py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-t-md interactive"><i class="fas fa-award mr-2"></i>Contribute expertise</button>
                         <button class="flex-1 text-center py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-t-md interactive"><i class="fas fa-pen-nib mr-2"></i>Write article</button>
                     </div>
                     <textarea class="w-full mt-4 p-2 border-none focus:ring-0" rows="2" placeholder="What do you want to talk about?"></textarea>
-                </div>
-                
-                <!-- AI Guru Section -->
-                <div id="ai-guru-section" class="{% if show_ai_guru %}bg-white rounded-lg shadow-sm p-6 mb-6{% else %}hidden bg-white rounded-lg shadow-sm p-6 mb-6{% endif %}">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">AI Guru Chat</h2>
-                    <div id="chat-box" class="h-64 overflow-y-auto border rounded-md p-4 mb-4 bg-gray-50">
-                        <!-- Chat messages will appear here -->
-                        <div class="text-gray-500">Welcome! Ask me anything.</div>
-                    </div>
-                    <div class="flex">
-                        <input type="text" id="chat-input" class="flex-grow border rounded-l-md p-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Type your message...">
-                        <button id="send-button" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700">Send</button>
-                    </div>
                 </div>
 
                 <div class="bg-white rounded-lg shadow-sm overflow-hidden interactive card">
@@ -209,60 +202,30 @@
 
         </div>
 <script>
-    function toggleAiGuru() {
-        const section = document.getElementById('ai-guru-section');
-        section.classList.toggle('hidden');
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
-        const chatBox = document.getElementById('chat-box');
-        const chatInput = document.getElementById('chat-input');
-        const sendButton = document.getElementById('send-button');
-
-        const addMessage = (message, sender) => {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('mb-2');
-            messageElement.innerHTML = `<span class="font-bold ${sender === 'user' ? 'text-blue-600' : 'text-green-600'}">${sender === 'user' ? 'You' : 'AI Guru'}:</span> ${message}`;
-            chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        };
-
-        const sendToAiGuru = async (message) => {
-            addMessage(message, 'user');
-            chatInput.value = '';
-            try {
-                const response = await fetch('http://localhost:8001/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: message })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+        fetch('http://127.0.0.1:8000/api/courses/')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('courses-container');
+                if (data.courses.length > 0) {
+                    data.courses.forEach(course => {
+                        const courseElement = document.createElement('div');
+                        courseElement.className = 'p-4 border rounded-lg';
+                        courseElement.innerHTML = `
+                            <h3 class="font-bold text-lg">${course.title}</h3>
+                            <p class="text-gray-600">${course.description}</p>
+                            <a href="http://127.0.0.1:8000/courses/${course.id}" class="text-blue-600 hover:underline">View Course</a>
+                        `;
+                        container.appendChild(courseElement);
+                    });
+                } else {
+                    container.innerHTML = '<p>No courses found.</p>';
                 }
-
-                const data = await response.json();
-                addMessage(data.response, 'ai');
-            } catch (error) {
-                console.error('Error fetching from AI Guru:', error);
-                addMessage('Sorry, I am having trouble connecting to the AI Guru service.', 'ai');
-            }
-        };
-
-        sendButton.addEventListener('click', () => {
-            const message = chatInput.value.trim();
-            if (message) {
-                sendToAiGuru(message);
-            }
-        });
-
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const message = chatInput.value.trim();
-                if (message) {
-                    sendToAiGuru(message);
-                }
-            }
-        });
+            })
+            .catch(error => {
+                console.error('Error fetching courses:', error);
+                const container = document.getElementById('courses-container');
+                container.innerHTML = '<p>Could not load courses.</p>';
+            });
     });
 </script>

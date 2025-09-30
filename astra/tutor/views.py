@@ -49,9 +49,17 @@ def create_course(request):
 
 
 
-def course_list(request):
+def course_list_api(request):
     courses = Course.objects.all().order_by('-created_at')
-    return render(request, 'tutor/course_list.html', {'courses': courses})
+    course_list = []
+    for course in courses:
+        course_list.append({
+            'id': course.id,
+            'title': course.title,
+            'description': course.description,
+            'created_at': course.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        })
+    return JsonResponse({'courses': course_list})
 
 def course_detail(request, course_id):
     course = get_object_or_404(Course, id=course_id)
