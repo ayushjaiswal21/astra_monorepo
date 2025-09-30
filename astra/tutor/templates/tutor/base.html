@@ -55,15 +55,49 @@
         .prose a:hover {
             text-decoration: underline;
         }
+
+        /* Mobile sidebar styles */
+        .mobile-sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .mobile-sidebar.open {
+            transform: translateX(0);
+        }
+
+        /* Overlay for mobile sidebar */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+        }
+        .sidebar-overlay.active {
+            display: block;
+        }
     </style>
 </head>
 <body class="h-full bg-white">
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
     <div class="flex h-full">
-        <div class="w-64 bg-white border-r border-gray-200 flex flex-col p-4">
+        <!-- Sidebar -->
+        <div id="sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col p-4 mobile-sidebar md:relative md:translate-x-0 fixed top-0 left-0 h-full z-50">
             <div class="p-4 mb-4">
-                <a href="{% url 'tutor:course_list' %}">
-                    <h1 class="text-3xl font-bold text-blue-600">AstraLearn</h1>
-                </a>
+                <div class="flex items-center justify-between md:justify-start">
+                    <a href="{% url 'tutor:course_list' %}">
+                        <h1 class="text-3xl font-bold text-blue-600">AstraLearn</h1>
+                    </a>
+                    <!-- Mobile close button -->
+                    <button onclick="toggleMobileSidebar()" class="md:hidden text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
             </div>
             <div class="border rounded-lg p-2">
                 {% block sidebar_content %}
@@ -85,12 +119,53 @@
             </div>
         </div>
 
+        <!-- Main content -->
         <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Mobile header with hamburger menu -->
+            <header class="bg-white border-b border-gray-200 md:hidden">
+                <div class="flex items-center justify-between p-4">
+                    <button onclick="toggleMobileSidebar()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h1 class="text-xl font-semibold text-gray-800">AstraLearn</h1>
+                    <div class="w-8"></div> <!-- Spacer for centering -->
+                </div>
+            </header>
+
             <main class="flex-1 overflow-y-auto bg-gray-50">
                 {% block content %}{% endblock %}
             </main>
         </div>
     </div>
+
+    <script>
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.getElementById('sidebar-overlay').addEventListener('click', function() {
+            if (window.innerWidth < 768) {
+                toggleMobileSidebar();
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            if (window.innerWidth >= 768) {
+                sidebar.classList.remove('mobile-sidebar', 'open');
+                overlay.classList.remove('active');
+            }
+        });
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

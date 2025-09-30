@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'compressor',
     'tutor',
     'django_celery_results',
 ]
@@ -99,9 +100,34 @@ STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# CDN Configuration (Optional)
+CDN_URL = os.getenv('CDN_URL', '')  # e.g., 'https://cdn.yourdomain.com'
+USE_CDN = os.getenv('USE_CDN', 'False').lower() in ('true', '1', 't')
+
+if USE_CDN and CDN_URL:
+    # Override static URL to use CDN in production
+    STATIC_URL = f'{CDN_URL}/static/'
+
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+if USE_CDN and CDN_URL:
+    MEDIA_URL = f'{CDN_URL}/media/'
+
+# Compressor settings for minification
+COMPRESS_ENABLED = True
+COMPRESS_CSS_FILTERS = [
+    'compressor.filters.css_default.CssAbsoluteFilter',
+    'compressor.filters.cssmin.CSSMinFilter'
+]
+COMPRESS_JS_FILTERS = [
+    'compressor.filters.jsmin.JSMinFilter'
+]
+COMPRESS_PRECOMPILERS = (
+    ('module', 'compressor_toolkit.precompilers.ES6Compiler'),
+)
+COMPRESS_OFFLINE = True
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

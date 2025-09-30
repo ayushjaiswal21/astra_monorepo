@@ -32,7 +32,6 @@
             background-color: #f3f4f6; /* gray-100 */
         }
 
-        /* --- Sidebar Links & Cards --- */
         .sidebar-link:hover {
             background-color: #eff6ff; /* blue-50 */
             color: #1d4ed8; /* blue-700 */
@@ -48,7 +47,24 @@
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
 
-    </style>
+        /* --- Mobile Responsive Styles --- */
+        @media (max-width: 768px) {
+            .nav-icons {
+                display: none;
+            }
+            .mobile-nav {
+                display: flex !important;
+            }
+            .sidebar-link {
+                padding: 12px 16px;
+                font-size: 16px;
+            }
+            .post-action-btn {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+        }
+
 </head>
 <body class="bg-gray-100">
 
@@ -59,7 +75,7 @@
                     <a href="{{ url_for('dashboard') }}" class="text-2xl font-bold text-blue-600">AstraLearn</a>
                 </div>
 
-                <div class="hidden md:flex items-center space-x-8">
+                <div class="hidden md:flex items-center space-x-8 nav-icons">
                     <a href="#" class="icon-link text-center text-gray-500 interactive">
                         <i class="fas fa-home text-2xl nav-icon"></i>
                         <span class="block text-xs font-medium nav-text">Home</span>
