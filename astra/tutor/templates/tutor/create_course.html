@@ -1,0 +1,121 @@
+{% extends 'tutor/base.html' %}
+
+{% block title %}Create New Course - AstraLearn{% endblock %}
+
+{% block content %}
+<div class="p-10">
+    <h1 class="text-3xl font-bold text-gray-800">Create New Course</h1>
+
+    <div class="mt-6 bg-white p-8 rounded-lg shadow-md">
+        <div class="flex items-center">
+            <input type="text" id="course-topic-input" placeholder="Search any topic to create a custom course..." class="flex-1 p-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button id="create-course-btn" class="bg-indigo-600 text-white px-6 py-3 rounded-r-md hover:bg-indigo-700 font-semibold">Create Course</button>
+        </div>
+        <div class="mt-4 flex items-center space-x-2">
+            <span class="text-sm text-gray-500">Suggested Topics:</span>
+            <button class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm hover:bg-gray-300">Productivity</button>
+            <button class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm hover:bg-gray-300">Creative Writing</button>
+            <button class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm hover:bg-gray-300">Public Speaking</button>
+        </div>
+    </div>
+</div>
+
+<div id="personalization-modal" class="fixed z-10 inset-0 overflow-y-auto hidden">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
+        <div class="bg-white rounded-lg shadow-xl transform transition-all sm:max-w-lg sm:w-full p-8">
+            <h3 class="text-xl font-bold text-center text-gray-900">Please help us personalize!</h3>
+            <form id="personalization-form" class="mt-6 space-y-6">
+                <div>
+                    <label class="font-semibold">I want to use AI Tutor as a</label>
+                    <div class="mt-2 space-y-2">
+                        <label class="flex items-center"><input type="radio" name="role" value="Educator" class="mr-2"> Somebody who wants to educate others</label>
+                        <label class="flex items-center"><input type="radio" name="role" value="Learner" class="mr-2"> Somebody who wants to learn</label>
+                        <label class="flex items-center"><input type="radio" name="role" value="Both" class="mr-2" checked> Somebody who wants to do both</label>
+                    </div>
+                </div>
+                <div>
+                    <label for="age-group" class="font-semibold">What is your age group?</label>
+                    <select id="age-group" name="age_group" class="mt-2 block w-full p-2 border border-gray-300 rounded-md">
+                        <option>13-17</option>
+                        <option selected>18-24</option>
+                        <option>25-34</option>
+                        <option>35+</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="education-level" class="font-semibold">What is your current highest completed education level?</label>
+                    <select id="education-level" name="education_level" class="mt-2 block w-full p-2 border border-gray-300 rounded-md">
+                        <option>High School</option>
+                        <option selected>Bachelor's Degree</option>
+                        <option>Master's Degree</option>
+                        <option>Doctorate</option>
+                    </select>
+                </div>
+                <div class="text-center">
+                    <button type="submit" id="submit-personalization-btn" class="w-full bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700">Continue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const createCourseBtn = document.getElementById('create-course-btn');
+    const modal = document.getElementById('personalization-modal');
+    const form = document.getElementById('personalization-form');
+    const topicInput = document.getElementById('course-topic-input');
+
+    createCourseBtn.addEventListener('click', () => {
+        if (!topicInput.value.trim()) {
+            alert('Please enter a topic to create a course.');
+            return;
+        }
+        modal.classList.remove('hidden');
+    });
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const topic = topicInput.value;
+        const formData = new FormData(form);
+        const personalization = Object.fromEntries(formData.entries());
+
+        const submitBtn = document.getElementById('submit-personalization-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Generating...';
+
+        fetch("{% url 'tutor:create_course' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ topic: topic, personalization: personalization })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.warning) {
+                alert('Warning:\n' + data.warning);
+            }
+            if (data.success) {
+                window.location.href = `/courses/${data.course_id}/`;
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An unexpected error occurred.');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Continue';
+            modal.classList.add('hidden');
+        });
+    });
+});
+</script>
+{% endblock %}
