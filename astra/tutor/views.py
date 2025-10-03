@@ -10,7 +10,43 @@ import google.generativeai as genai
 
 from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress, UserQuizAttempt, ModuleProgress
 
-from .tasks import generate_lesson_content, generate_modules_and_lessons
+from .tasks import generate_course_content
+
+
+
+def dashboard(request):
+    if not request.session.session_key:
+        request.session.create()
+    session_key = request.session.session_key
+
+    courses = Course.objects.all().order_by('-created_at')
+    total_courses = courses.count()
+
+    all_lessons = Lesson.objects.filter(module__course__in=courses)
+    total_lessons = all_lessons.count()
+
+    completed_lessons = UserProgress.objects.filter(
+        session_key=session_key,
+        completed=True
+    ).count()
+
+    progress_percentage = (completed_lessons / total_lessons) * 100 if total_lessons > 0 else 0
+
+    context = {
+        'courses': courses,
+        'total_courses': total_courses,
+        'completed_lessons': completed_lessons,
+        'total_lessons': total_lessons,
+        'progress_percentage': progress_percentage,
+    }
+    return render(request, 'tutor/dashboard.html', context)
+
+def course_list(request):
+    courses = Course.objects.all().order_by('-created_at')
+    context = {
+        'courses': courses,
+    }
+    return render(request, 'tutor/course_list.html', context)
 
 
 
@@ -30,14 +66,13 @@ def create_course(request):
         topic = data.get('topic', 'Unnamed Topic')
 
         # --- Step 1: Create a placeholder Course object ---
-        # The background task will update the title and description later.
         course = Course.objects.create(
             title=f"New Course on {topic}", 
             description="Course content is being generated in the background. Please check back in a few moments."
         )
 
         # --- Step 2: Dispatch the background task to do all the work ---
-        generate_modules_and_lessons.delay(course.id, topic)
+        generate_course_content.delay(course.id, topic)
 
         # --- Step 3: Return an immediate response ---
         return JsonResponse({'success': True, 'course_id': course.id})

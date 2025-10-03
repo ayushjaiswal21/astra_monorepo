@@ -9,8 +9,6 @@ whitenoise==6.9.0
 google-generativeai==0.4.1
 python-dotenv==1.0.1
 django_celery_results==2.5.1
-django-compressor==4.4
-compressor-toolkit==0.6.0
 Markdown==3.6
 daphne==4.1.2
 uvicorn==0.27.1
