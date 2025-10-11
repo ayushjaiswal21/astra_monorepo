@@ -28,5 +28,5 @@ urlpatterns = [
     path('api/lesson/<int:lesson_id>/simplify/', views.simplify_content, name='simplify_content'),
     path('api/lesson/<int:lesson_id>/example/', views.generate_example, name='generate_example'),
 
-    path('lesson/<int:lesson_id>/complete/', views.mark_lesson_complete, name='mark_lesson_complete'),
+    path('api/lessons/<int:lesson_id>/complete/', views.mark_lesson_complete, name='mark_lesson_complete'),
 ]

@@ -67,6 +67,8 @@ ASGI_APPLICATION = 'astralearn.asgi.application'
 # Database
 DATABASES = {
     'default': dj_database_url.config(
+        # In production, set the DATABASE_URL environment variable.
+        # e.g., DATABASE_URL=postgres://user:password@host/dbname
         default='sqlite:///db.sqlite3',
         conn_max_age=600
     )

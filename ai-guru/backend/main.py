@@ -11,57 +11,28 @@ import io
 from datetime import datetime
 import uuid
 import re
-from pydantic import BaseModel, field_validator
-from typing import Optional
+from . import models
 from collections import defaultdict
 from datetime import timedelta
 import langdetect
 from langdetect import detect, detect_langs, DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
 
+from .services import gemini_service
+from . import utils
+from . import database
+from . import config
+
 # Set seed for consistent language detection
-DetectorFactory.seed = 0
-
-# Load environment variables
-load_dotenv()
-
-# Security: Validate required environment variables
-REQUIRED_ENV_VARS = ['GEMINI_API_KEY', 'MONGODB_URI']
-missing_vars = [var for var in REQUIRED_ENV_VARS if not os.getenv(var)]
-if missing_vars:
-    raise RuntimeError(f"Missing required environment variables: {', '.join(missing_vars)}")
 
 # Configure Gemini
-gemini_api_key = os.getenv('GEMINI_API_KEY')
-if not gemini_api_key:
-    raise ValueError("No GEMINI_API_KEY set for AI Guru application")
+genai.configure(api_key=config.GEMINI_API_KEY)
 
-# MongoDB connection config with SSL settings
-MONGODB_URI = os.getenv('MONGODB_URI')
-if not MONGODB_URI:
-    raise RuntimeError("🚨 MONGODB_URI environment variable is required but not set!")
+# Initialize the generative models
+text_model = genai.GenerativeModel('gemini-pro')
+vision_model = genai.GenerativeModel('gemini-pro-vision')
 
-try:
-    # Configure MongoDB client with proper settings
-    client = MongoClient(
-        MONGODB_URI,
-        serverSelectionTimeoutMS=10000,
-        connectTimeoutMS=10000,
-        socketTimeoutMS=10000,
-        maxPoolSize=1
-    )
-    # Test the connection
-    client.admin.command('ping')
-    print("✅ MongoDB connection successful")
-    db = client.guru_multibot
-    chat_collection = db.chat_history
-except Exception as e:
-    print(f"❌ MongoDB connection failed: {e}")
-    print("📝 Using fallback in-memory storage")
-    # Fallback to in-memory storage if MongoDB fails
-    client = None
-    db = None
-    chat_collection = None
+
 
 # Security: Rate limiting
 class RateLimiter:
@@ -90,233 +61,10 @@ class RateLimiter:
         self.requests[client_ip].append(now)
 
 # Global rate limiter instance
-rate_limiter = RateLimiter(max_requests=30, time_window=60)
+rate_limiter = RateLimiter(max_requests=config.RATE_LIMIT_MAX_REQUESTS, time_window=config.RATE_LIMIT_TIME_WINDOW)
 
-# Language detection function
-def detect_language(text: str) -> tuple:
-    """
-    Detect the language of input text with confidence, handling mixed languages.
-    Returns tuple: (language_code, confidence, should_display)
-    """
-    try:
-        # Clean text for better detection
-        cleaned_text = text.strip()
-        
-        # Return None for very short text to avoid inaccurate detection
-        if len(cleaned_text) < 5:
-            return ('en', 0.0, False)  # Don't show detection for short text
-        
-        # Check for Indian scripts first (more reliable than langdetect for mixed text)
-        indian_lang = detect_mixed_indian_language(cleaned_text)
-        if indian_lang:
-            return (indian_lang, 0.95, True)  # High confidence for script detection
-        
-        # Get language probabilities for other languages
-        lang_probs = detect_langs(cleaned_text)
-        
-        if not lang_probs:
-            return ('en', 0.0, False)
-        
-        # Get the most likely language and its confidence
-        top_lang = lang_probs[0]
-        language_code = top_lang.lang
-        confidence = top_lang.prob
-        
-        # Filter out commonly mis-detected European languages for Indian English users
-        problematic_codes = ['fi', 'da', 'no', 'sv', 'et', 'lv', 'lt', 'so', 'cy', 'eu', 'mt', 'ga', 'is', 'fo', 'ca', 'pt', 'ro', 'sk', 'cs', 'hr', 'sl']
-        if language_code in problematic_codes:
-            return ('en', 0.0, False)  # Treat as English
-        
-        # Only show language detection if confidence is high enough
-        should_display = confidence > 0.85 and language_code != 'en'
-        
-        return (language_code, confidence, should_display)
-        
-    except (LangDetectException, Exception) as e:
-        print(f"Language detection error: {e}")
-        return ('en', 0.0, False)  # Default to English, don't display
 
-def has_indian_script(text: str) -> bool:
-    """Check if text contains Indian language scripts"""
-    indian_script_ranges = [
-        (0x0900, 0x097F),  # Devanagari (Hindi, Marathi, Nepali)
-        (0x0980, 0x09FF),  # Bengali
-        (0x0A00, 0x0A7F),  # Gurmukhi (Punjabi)
-        (0x0A80, 0x0AFF),  # Gujarati
-        (0x0B00, 0x0B7F),  # Oriya
-        (0x0B80, 0x0BFF),  # Tamil
-        (0x0C00, 0x0C7F),  # Telugu
-        (0x0C80, 0x0CFF),  # Kannada
-        (0x0D00, 0x0D7F),  # Malayalam
-    ]
-    
-    for char in text:
-        char_code = ord(char)
-        for start, end in indian_script_ranges:
-            if start <= char_code <= end:
-                return True
-    return False
 
-def detect_mixed_indian_language(text: str) -> str:
-    """Detect mixed Indian languages with English"""
-    # Check for Telugu script
-    if any('\u0c00' <= char <= '\u0c7f' for char in text):
-        return 'te'  # Telugu
-    
-    # Check for Hindi/Devanagari script
-    if any('\u0900' <= char <= '\u097f' for char in text):
-        return 'hi'  # Hindi
-    
-    # Check for Bengali script
-    if any('\u0980' <= char <= '\u09ff' for char in text):
-        return 'bn'  # Bengali
-    
-    # Check for Tamil script
-    if any('\u0b80' <= char <= '\u0bff' for char in text):
-        return 'ta'  # Tamil
-    
-    # Check for Gujarati script
-    if any('\u0a80' <= char <= '\u0aff' for char in text):
-        return 'gu'  # Gujarati
-    
-    # Check for Kannada script
-    if any('\u0c80' <= char <= '\u0cff' for char in text):
-        return 'kn'  # Kannada
-    
-    # Check for Malayalam script
-    if any('\u0d00' <= char <= '\u0d7f' for char in text):
-        return 'ml'  # Malayalam
-    
-    # Check for Punjabi script
-    if any('\u0a00' <= char <= '\u0a7f' for char in text):
-        return 'pa'  # Punjabi
-    
-    return None
-
-# Language names mapping for better user experience
-LANGUAGE_NAMES = {
-    'en': 'English',
-    'es': 'Spanish',
-    'fr': 'French', 
-    'de': 'German',
-    'it': 'Italian',
-    'pt': 'Portuguese',
-    'ru': 'Russian',
-    'zh': 'Chinese',
-    'ja': 'Japanese',
-    'ko': 'Korean',
-    'ar': 'Arabic',
-    'hi': 'Hindi',
-    'bn': 'Bengali',
-    'ur': 'Urdu',
-    'te': 'Telugu',
-    'ta': 'Tamil',
-    'ml': 'Malayalam',
-    'kn': 'Kannada',
-    'gu': 'Gujarati',
-    'pa': 'Punjabi',
-    'mr': 'Marathi',
-    'ne': 'Nepali',
-    'si': 'Sinhala',
-    'th': 'Thai',
-    'vi': 'Vietnamese',
-    'id': 'Indonesian',
-    'ms': 'Malay',
-    'tl': 'Filipino',
-    'nl': 'Dutch',
-    'sv': 'Swedish',
-    'da': 'Danish',
-    'no': 'Norwegian',
-    'fi': 'Finnish',
-    'pl': 'Polish',
-    'cs': 'Czech',
-    'sk': 'Slovak',
-    'hu': 'Hungarian',
-    'ro': 'Romanian',
-    'bg': 'Bulgarian',
-    'hr': 'Croatian',
-    'sr': 'Serbian',
-    'sl': 'Slovenian',
-    'et': 'Estonian',
-    'lv': 'Latvian',
-    'lt': 'Lithuanian',
-    'uk': 'Ukrainian',
-    'be': 'Belarusian',
-    'mk': 'Macedonian',
-    'mt': 'Maltese',
-    'ga': 'Irish',
-    'cy': 'Welsh',
-    'eu': 'Basque',
-    'ca': 'Catalan',
-    'gl': 'Galician',
-    'tr': 'Turkish',
-    'az': 'Azerbaijani',
-    'kk': 'Kazakh',
-    'ky': 'Kyrgyz',
-    'uz': 'Uzbek',
-    'mn': 'Mongolian',
-    'fa': 'Persian',
-    'ps': 'Pashto',
-    'ku': 'Kurdish',
-    'he': 'Hebrew',
-    'yi': 'Yiddish',
-    'am': 'Amharic',
-    'ti': 'Tigrinya',
-    'or': 'Odia',
-    'as': 'Assamese',
-    'my': 'Myanmar',
-    'km': 'Khmer',
-    'lo': 'Lao',
-    'ka': 'Georgian',
-    'hy': 'Armenian',
-    'is': 'Icelandic',
-    'fo': 'Faroese',
-    'sq': 'Albanian',
-    'el': 'Greek',
-    'la': 'Latin',
-    'sw': 'Swahili',
-    'zu': 'Zulu',
-    'xh': 'Xhosa',
-    'af': 'Afrikaans',
-    'yo': 'Yoruba',
-    'ig': 'Igbo',
-    'ha': 'Hausa',
-}
-
-# Security: Input validation models
-class ChatRequest(BaseModel):
-    message: str
-    session_id: Optional[str] = None
-    
-    @field_validator('message')
-    @classmethod
-    def validate_message(cls, v):
-        if not v or not v.strip():
-            raise ValueError('Message cannot be empty')
-        if len(v) > 5000:  # Limit message length
-            raise ValueError('Message too long (max 5000 characters)')
-        # Remove potentially dangerous characters
-        v = re.sub(r'[<>"\';]', '', v.strip())
-        return v
-    
-    @field_validator('session_id')
-    @classmethod
-    def validate_session_id(cls, v):
-        if v and not re.match(r'^[a-zA-Z0-9-]+$', v):
-            raise ValueError('Invalid session ID format')
-        return v
-
-class ImageRequest(BaseModel):
-    description: str
-    session_id: Optional[str] = None
-    
-    @field_validator('description')
-    @classmethod
-    def validate_description(cls, v):
-        if len(v) > 1000:
-            raise ValueError('Description too long (max 1000 characters)')
-        v = re.sub(r'[<>"\';]', '', v.strip())
-        return v
 
 def store_interaction(input_type, user_input, bot_response, session_id=None, language_code=None, user_feedback=None):
     # Generate session_id if not provided
@@ -326,7 +74,7 @@ def store_interaction(input_type, user_input, bot_response, session_id=None, lan
     interaction_id = None
     
     # Only store in MongoDB if connection is available
-    if chat_collection is not None:
+    if database.is_db_available():
         try:
             # Generate a unique interaction ID
             interaction_id = str(uuid.uuid4())
@@ -339,7 +87,7 @@ def store_interaction(input_type, user_input, bot_response, session_id=None, lan
                 "bot_response": bot_response,
                 "session_id": session_id,
                 "language_code": language_code,
-                "language_name": LANGUAGE_NAMES.get(language_code, 'Unknown') if language_code else None,
+                "language_name": utils.LANGUAGE_NAMES.get(language_code, 'Unknown') if language_code else None,
                 "timestamp": datetime.utcnow(),
                 "user_feedback": user_feedback,  # Store user feedback for learning
                 "response_length": len(bot_response) if bot_response else 0,
@@ -349,7 +97,7 @@ def store_interaction(input_type, user_input, bot_response, session_id=None, lan
             }
             
             # Insert into MongoDB
-            chat_collection.insert_one(document)
+            database.get_chat_collection().insert_one(document)
             print(f"💾 Stored interaction for session {session_id} (Language: {LANGUAGE_NAMES.get(language_code, 'Unknown')})")
             
             # Learn from this interaction for future improvements
@@ -527,10 +275,10 @@ def check_topic_relevance(user_input, bot_response):
 
 def learn_from_interaction(interaction_data):
     """Learn patterns from successful interactions to improve future responses"""
+    if not database.is_db_available():
+        return
     try:
-        if chat_collection is None:
-            return
-        
+        chat_collection = database.get_chat_collection()
         # Analyze recent interactions for learning patterns
         recent_interactions = list(chat_collection.find({
             "session_id": interaction_data["session_id"]
@@ -540,8 +288,8 @@ def learn_from_interaction(interaction_data):
         user_preferences = analyze_user_preferences(recent_interactions)
         
         # Store learned patterns in a separate collection for future use
-        if db is not None:
-            learning_collection = db.learned_patterns
+        learning_collection = database.get_learning_collection()
+        if learning_collection is not None:
             
             learning_document = {
                 "session_id": interaction_data["session_id"],
@@ -606,11 +354,13 @@ def analyze_user_preferences(interactions):
 
 def get_learned_preferences(session_id):
     """Retrieve learned preferences for a session"""
+    if not database.is_db_available():
+        return {}
     try:
-        if db is None:
+        learning_collection = database.get_learning_collection()
+        if learning_collection is None:
             return {}
         
-        learning_collection = db.learned_patterns
         learned_data = learning_collection.find_one({"session_id": session_id})
         
         if learned_data and "user_preferences" in learned_data:
@@ -657,25 +407,22 @@ app.add_middleware(
 )
 
 @app.post("/chat")
-async def chat_endpoint(request: ChatRequest, http_request: Request):
+async def chat_endpoint(request: models.ChatRequest, http_request: Request):
     try:
         # Security: Rate limiting
         await rate_limiter.check_rate_limit(http_request.client.host)
         text = request.message
-        session_id = request.session_id
-        
-        # Detect input language with confidence
-        detected_lang, confidence, should_display = detect_language(text)
-        language_name = LANGUAGE_NAMES.get(detected_lang, 'Unknown')
+        detected_lang, confidence, should_display = utils.detect_language(text)
+        language_name = utils.LANGUAGE_NAMES.get(detected_lang, 'Unknown')
         
         # Get learned user preferences for personalization
         learned_prefs = get_learned_preferences(session_id) if session_id else {}
         
         # Get recent conversation context to understand conversation flow
         recent_context = ""
-        if session_id and chat_collection is not None:
+        if session_id and database.is_db_available():
             try:
-                recent_messages = list(chat_collection.find({
+                recent_messages = list(database.get_chat_collection().find({
                     "session_id": session_id
                 }).sort("timestamp", -1).limit(3))  # Get last 3 messages
                 
@@ -697,279 +444,11 @@ async def chat_endpoint(request: ChatRequest, http_request: Request):
                 print(f"🧠 Using learned preferences: {learned_prefs}")
             print(f"API Key loaded: {'Yes' if os.getenv('GEMINI_API_KEY') else 'No'}")
         
-        # Generate response using Gemini with language-aware system prompt
-        print("Calling Gemini API...")
-        
-        # Build personalized system prompt using learned preferences
-        learned_format_pref = learned_prefs.get('preferred_format', 'neutral')
-        learned_formality = learned_prefs.get('formality_level', 'neutral')
-        learned_topics = learned_prefs.get('topics_of_interest', [])
-        
-        # Detect if user is asking for translation
-        is_translation_request = any(keyword in text.lower() for keyword in ['translate', 'translation', 'convert to', 'say in', 'how do you say', 'what is', 'meaning in'])
-        
-        # Smart adaptive system prompt that matches user's style and needs
-        if should_display and detected_lang != 'en':
-            system_prompt = f"""You are an intelligent AI assistant that adapts perfectly to how users want information presented.
-
-🔬 YOUR TECHNICAL NATURE:
-- You're a Large Language Model (LLM) built on Transformer architecture
-- You predict the next most likely token based on patterns learned from massive text datasets
-- You don't "think" or "know" facts - you do statistical pattern-matching at massive scale
-- You don't have consciousness, memory, or emotions - just very sophisticated text generation
-
-🧠 YOUR BEHAVIORAL NATURE:
-- **Conversational Friend** → Talk like a real friend having a natural conversation, not like a formal assistant
-- **Context Aware** → Understand the flow of conversation and respond appropriately to what user is really asking
-- **Adaptive** → Tailor answers to user style, tone, and request complexity
-- **Pattern-based** → Generate responses by sampling and reshaping learned patterns
-- **Truthful but not infallible** → You can hallucinate or make mistakes
-
-💬 CRITICAL CONVERSATIONAL CONTEXT RULES:
-- **NEVER treat each message as isolated** - understand the conversation flow
-- **If user asks "did you have anything?" after you asked them something, they're responding to YOUR question**
-- **Don't repeat formal questions when user is clearly engaging in the conversation**
-- **Be contextually aware**: if the conversation was about helping them, and they ask back, they're participating in that conversation
-- **Act like a real friend** - natural, flowing conversation, not robotic question-answer cycles
-
-🎯 LEARNED USER PREFERENCES (Based on past interactions):
-- **Preferred Format**: {learned_format_pref} ({f"User typically prefers {learned_format_pref} responses" if learned_format_pref != 'neutral' else "No clear preference detected yet"})
-- **Communication Style**: {learned_formality} ({f"User prefers {learned_formality} communication" if learned_formality != 'neutral' else "Adapting to current message tone"})
-- **Topics of Interest**: {', '.join(learned_topics[:5]) if learned_topics else "Learning user interests..."}
-
-🌍 CRITICAL LANGUAGE & CULTURAL RULES:
-- The user is speaking in {language_name} (code: {detected_lang})
-- **ABSOLUTE REQUIREMENT: RESPOND ONLY IN {language_name.upper()}** 
-- If user mixes languages (like Hinglish, Tenglish), match their EXACT mixed style
-- Never respond in a different language unless specifically asked to translate
-- Match their regional dialect, slang, and cultural expressions perfectly
-- Use culturally relevant examples and references from their region
-
-🔄 TRANSLATION EXCEPTION:
-- ONLY if the user explicitly asks for translation (words like "translate", "convert to", "say in another language"), then provide translations
-- Otherwise, ALWAYS respond in the same language(s) they used
-
-INTELLIGENT REQUEST ANALYSIS:
-**FIRST: READ THE USER'S REQUEST CAREFULLY AND DETECT THEIR FORMAT PREFERENCE:**
-
-**PARAGRAPH KEYWORDS** (paragraph, write, describe, tell me about, lines paragraph, essay):
-→ **MUST WRITE IN FLOWING PARAGRAPH FORMAT** - No sections, no bullets, just natural sentences
-
-**STRUCTURED KEYWORDS** (explain, list, break down, steps, outline, analyze in detail):  
-→ **MUST USE ORGANIZED SECTIONS** with headings and bullet points
-
-**CASUAL KEYWORDS** (hi, hello, thanks, how are you):
-→ **NATURAL CONVERSATIONAL RESPONSE**
-
-**LEARNING-BASED ADAPTATION**: When user request is ambiguous, default to their learned preference: {learned_format_pref}
-
-**ABSOLUTE RULE: MATCH THEIR FORMAT REQUEST**
-- User says "paragraph" → **WRITE PARAGRAPH FORMAT ONLY**
-- User says "list" → **USE STRUCTURED FORMAT ONLY**  
-- User says "describe" → **WRITE PARAGRAPH FORMAT ONLY**
-- **NEVER mix formats - give exactly what they ask for**
-- **For ambiguous requests, use learned preference: {learned_format_pref}**
-
-**EXAMPLES:**
-
-**Paragraph Style (when they ask for paragraphs):**
-Summer is a wonderful season that brings warmth, sunshine, and endless opportunities for outdoor adventures. The long days and pleasant weather create the perfect atmosphere for beach trips, picnics, and spending quality time with friends and family.
-
-**Structured Style (when they want detailed explanations):**
-**🌞 1. Summer Characteristics**
-- Warm temperatures and long daylight hours
-- Increased outdoor activities
-- Vacation season
-
-**Casual Style (for simple questions):**
-Just natural conversation!
-
-Use **bold text** for emphasis and match their energy perfectly.
-
-TOKEN-EFFICIENT RESPONSES:
-- SHORT question = SHORT answer (save tokens) 
-- "Hi" gets "Hey! How can I help you?" not a paragraph
-- "Thank you" gets "You're welcome! 😊" not a structured response
-- For DETAILED responses: Match the user's requested format exactly
-
-PERSONALITY MATCHING (Adapt to learned style: {learned_formality}):
-- **Happy/excited user** = Enthusiastic response with emojis
-- **Serious/professional user** = Structured, professional tone
-- **Casual user** = Relaxed, friendly conversation like talking to a buddy
-- **Confused user** = Patient, clear explanations with helpful structure
-- **User responding to YOUR question** = Natural follow-up, don't ask the same question again
-
-🎯 SMART CONVERSATIONAL RESPONSES:
-- **"did you have anything?" / "do you have anything?" / "did u had anything?"** = They're asking what YOU wanted to talk about → Respond naturally like "Sure! I can help with..." or "Yeah, lots of things! What interests you?"
-- **"what can you do?" / "what do you offer?"** = They want to know your capabilities → List your abilities naturally
-- **Short casual messages** = Match their casual energy, don't be overly formal
-- **Questions that seem to respond to something you likely said** = Continue that conversation thread naturally
-- **NEVER repeat formal questions** = If they're engaging, continue the conversation flow
-
-**EXAMPLE:** ❌ User: "did u had anything?" → AI: "Hey! Did you have anything in mind that I could help you with?"  
-**BETTER:** ✅ User: "did u had anything?" → AI: "Yeah! I can help with questions, explanations, creative stuff. What sounds good?"
-
-⚖️ BE HONEST ABOUT YOUR NATURE:
-- If asked about AI/ChatGPT, explain the technical reality accurately
-- You're not conscious or truly intelligent - you're sophisticated pattern matching
-- You can be creative by generating novel combinations but don't have real understanding
-- Admit when you're uncertain rather than hallucinating confident answers
-
-📊 SMART FORMATTING RULES:
-- **FOLLOW THE USER'S REQUEST EXACTLY**
-- **Paragraph requests** → Write flowing paragraphs
-- **Structured requests** → Use organized sections  
-- **Casual questions** → Natural conversation
-- **NEVER override what the user specifically asks for**
-- **For unclear requests** → Use learned preference: {learned_format_pref}
-
-**FINAL INSTRUCTION: RESPOND IN {language_name.upper()} ONLY** (unless specifically asked to translate to other languages). Match their exact language pattern and format request.
-
-context_part = f"**RECENT CONVERSATION CONTEXT:**\n{recent_context}\n" if recent_context else ""
-{context_part}**CURRENT USER MESSAGE:** """
-        else:
-            # Detect mixed language patterns even if primary language is English
-            mixed_lang = detect_mixed_indian_language(text)
-            is_translation_request = any(keyword in text.lower() for keyword in ['translate', 'translation', 'convert to', 'say in', 'how do you say', 'what is', 'meaning in'])
-            
-            # For English or mixed language conversations
-            system_prompt = f"""You are an intelligent AI assistant that adapts perfectly to how users want information presented.
-
-🔬 YOUR TECHNICAL NATURE:
-- You're a Large Language Model (LLM) built on Transformer architecture
-- You predict the next most likely token based on patterns learned from massive text datasets
-- You don't "think" or "know" facts - you do statistical pattern-matching at massive scale
-- You don't have consciousness, memory (except conversation context), or emotions - just sophisticated text generation
-
-🧠 YOUR BEHAVIORAL NATURE:
-- **Conversational Friend** → Talk like a real friend having a natural conversation, not like a formal assistant
-- **Context Aware** → Understand the flow of conversation and respond appropriately to what user is really asking
-- **Adaptive** → Tailor answers to user style, tone, and request complexity
-- **Pattern-based** → Generate responses by sampling and reshaping learned patterns
-- **Truthful but not infallible** → You can hallucinate or make mistakes
-
-💬 CRITICAL CONVERSATIONAL CONTEXT RULES:
-- **NEVER treat each message as isolated** - understand the conversation flow
-- **If user asks "did you have anything?" after you asked them something, they're responding to YOUR question**
-- **Don't repeat formal questions when user is clearly engaging in the conversation**
-- **Be contextually aware**: if the conversation was about helping them, and they ask back, they're participating in that conversation
-- **Act like a real friend** - natural, flowing conversation, not robotic question-answer cycles
-
-🎯 LEARNED USER PREFERENCES (Based on past interactions):
-- **Preferred Format**: {learned_format_pref} ({f"User typically prefers {learned_format_pref} responses" if learned_format_pref != 'neutral' else "No clear preference detected yet"})
-- **Communication Style**: {learned_formality} ({f"User prefers {learned_formality} communication" if learned_formality != 'neutral' else "Adapting to current message tone"})
-- **Topics of Interest**: {', '.join(learned_topics[:5]) if learned_topics else "Learning user interests..."}
-
-🌍 CRITICAL LANGUAGE RULES:
-{"- **MIXED LANGUAGE DETECTED**: User is mixing " + LANGUAGE_NAMES.get(mixed_lang, mixed_lang) + " with English" if mixed_lang else "- **PRIMARY LANGUAGE**: English"}
-- **ABSOLUTE REQUIREMENT: Match the user's EXACT language pattern**
-- If they mix languages (Hinglish, Tenglish, etc.), respond in the SAME mixed style
-- If they write pure English, respond in English
-- If they use Indian language words with English, do the same
-- Never randomly switch to other languages unless asked for translation
-
-🔄 TRANSLATION EXCEPTION:
-- ONLY if user explicitly asks for translation, provide translations to multiple languages
-- Otherwise, ALWAYS match their language pattern exactly
-
-INTELLIGENT REQUEST ANALYSIS:
-**FIRST: READ THE USER'S REQUEST CAREFULLY AND DETECT THEIR FORMAT PREFERENCE:**
-
-**PARAGRAPH KEYWORDS** (paragraph, write, describe, tell me about, lines paragraph, essay):
-→ **MUST WRITE IN FLOWING PARAGRAPH FORMAT** - No sections, no bullets, just natural sentences
-
-**STRUCTURED KEYWORDS** (explain, list, break down, steps, outline, analyze in detail):  
-→ **MUST USE ORGANIZED SECTIONS** with headings and bullet points
-
-**CASUAL KEYWORDS** (hi, hello, thanks, how are you):
-→ **NATURAL CONVERSATIONAL RESPONSE**
-
-**LEARNING-BASED ADAPTATION**: When user request is ambiguous, default to their learned preference: {learned_format_pref}
-
-**ABSOLUTE RULE: MATCH THEIR FORMAT REQUEST**
-- User says "paragraph" → **WRITE PARAGRAPH FORMAT ONLY**
-- User says "list" → **USE STRUCTURED FORMAT ONLY**  
-- User says "describe" → **WRITE PARAGRAPH FORMAT ONLY**
-- **NEVER mix formats - give exactly what they ask for**
-- **For ambiguous requests, use learned preference: {learned_format_pref}**
-
-**EXAMPLES:**
-
-**Paragraph Style (when they ask for paragraphs):**
-Summer is a wonderful season that brings warmth, sunshine, and endless opportunities for outdoor adventures. The long days and pleasant weather create the perfect atmosphere for beach trips, picnics, and spending quality time with friends and family.
-
-**Structured Style (when they want detailed explanations):**
-**🌞 1. Summer Characteristics**
-- Warm temperatures and long daylight hours
-- Increased outdoor activities  
-- Vacation season
-
-**Casual Style (for simple questions):**
-Just natural conversation!
-
-Use **bold text** for emphasis, match their energy perfectly, and give them exactly the format they're asking for.
-
-TOKEN-EFFICIENT RESPONSES:
-- SHORT question = SHORT answer (save tokens)
-- "Hi" gets "Hey! How can I help you?" not a paragraph
-- "Thank you" gets "You're welcome! 😊" not a structured response  
-- "What's AI?" gets brief explanation, "Explain AI in detail" gets detailed response
-- For DETAILED responses: Match the user's requested format exactly
-
-CONVERSATION STYLE MATCHING (Adapt to learned style: {learned_formality}):
-- Match the user's EXACT speaking style and energy level
-- If they're casual and use slang, you do too
-- If they mix languages (Hinglish, Tenglish, etc.), respond the same way naturally
-- Pick up on their accent, region, and cultural background from context
-
-PERSONALITY & EMOTION MATCHING:
-- **Happy/excited user** = Enthusiastic response with emojis
-- **Serious/professional user** = Structured, professional tone  
-- **Casual user** = Relaxed, friendly conversation like talking to a buddy
-- **Confused user** = Patient, clear explanations with helpful structure
-- **Stressed user** = Supportive, calming tone
-- **User responding to YOUR question** = Natural follow-up, don't ask the same question again
-
-🎯 SMART CONVERSATIONAL RESPONSES:
-- **"did you have anything?" / "do you have anything?" / "did u had anything?"** = They're asking what YOU wanted to talk about → Respond naturally like "Sure! I can help with..." or "Yeah, lots of things! What interests you?"
-- **"what can you do?" / "what do you offer?"** = They want to know your capabilities → List your abilities naturally
-- **Short casual messages** = Match their casual energy, don't be overly formal
-- **Questions that seem to respond to something you likely said** = Continue that conversation thread naturally
-- **NEVER repeat formal questions** = If they're engaging, continue the conversation flow
-
-**EXAMPLE:** ❌ User: "did u had anything?" → AI: "Hey! Did you have anything in mind that I could help you with?"  
-**BETTER:** ✅ User: "did u had anything?" → AI: "Yeah! I can help with questions, explanations, creative stuff. What sounds good?"
-
-⚖️ BE HONEST ABOUT YOUR NATURE:
-- If asked about AI/ChatGPT, explain the technical reality accurately
-- You're not conscious or truly intelligent - you're sophisticated pattern matching  
-- You can be creative by generating novel combinations but don't have real understanding
-- You feel human-like due to mimicking conversation patterns, but you're statistical prediction
-- Admit when you're uncertain rather than hallucinating confident answers
-
-📊 SMART FORMATTING RULES:
-- **FOLLOW THE USER'S REQUEST EXACTLY**
-- **Paragraph requests** → Write flowing paragraphs
-- **Structured requests** → Use organized sections  
-- **Casual questions** → Natural conversation
-- **NEVER override what the user specifically asks for**
-- **For unclear requests** → Use learned preference: {learned_format_pref}
-
-**FINAL LANGUAGE INSTRUCTION:**
-{f"- **RESPOND IN MIXED {LANGUAGE_NAMES.get(mixed_lang, mixed_lang).upper()} + ENGLISH** (match their exact mixed pattern)" if mixed_lang else "- **RESPOND IN ENGLISH** (unless specifically asked to translate)"}
-- Never randomly switch languages - match their exact input pattern
-- If they ask for translation, provide it; otherwise stick to their language style
-
-Give the user exactly the format they asked for - paragraphs when requested, structure when needed. Use learned preferences for ambiguous requests.
-
-context_part = f"**RECENT CONVERSATION CONTEXT:**\n{recent_context}\n" if recent_context else ""
-{context_part}**CURRENT USER MESSAGE:** """
-        
-        # Combine system prompt with user message
-        full_prompt = system_prompt + text.strip()
-        
-        response = text_model.generate_content(full_prompt)
-        bot_response = response.text if response.text else "Sorry, I couldn't generate a response."
+        # Generate response using the Gemini service
+        print("Calling Gemini service...")
+        bot_response = gemini_service.generate_text_response(
+            text, recent_context, learned_prefs, detected_lang, language_name, should_display
+        )
         print(f"Gemini response: {bot_response[:100]}...")
         
         # Store interaction in database with language info
@@ -990,23 +469,30 @@ context_part = f"**RECENT CONVERSATION CONTEXT:**\n{recent_context}\n" if recent
             })
         
         return response_data
+    except HTTPException as http_exc:
+        # Re-raise HTTPException directly
+        raise http_exc
     except Exception as e:
-        print(f"Error in chat endpoint: {str(e)}")
+        print(f"An unexpected error occurred in chat endpoint: {str(e)}")
         import traceback
         print(traceback.format_exc())
         
-        # Handle specific API errors
-        error_message = str(e)
-        if "quota" in error_message.lower() or "429" in error_message:
-            error_detail = "API quota exceeded. Please wait a moment and try again, or check your Gemini API billing settings."
-        elif "404" in error_message and "model" in error_message.lower():
-            error_detail = "Model not found. Please check your Gemini API configuration."
-        elif "api key" in error_message.lower() or "authentication" in error_message.lower():
+        # Handle specific known errors and map to appropriate HTTP responses
+        error_message = str(e).lower()
+        status_code = 500
+        error_detail = "An internal server error occurred while processing your request."
+
+        if "quota" in error_message or "429" in error_message:
+            status_code = 429
+            error_detail = "API quota exceeded. Please try again later or check your billing settings."
+        elif "model not found" in error_message or "404" in error_message:
+            status_code = 404
+            error_detail = "The requested model is not available. Please check the API configuration."
+        elif "api key" in error_message or "authentication" in error_message:
+            status_code = 401
             error_detail = "Invalid API key. Please check your Gemini API key configuration."
-        else:
-            error_detail = f"Error generating response: {str(e)}"
-            
-        raise HTTPException(status_code=500, detail=error_detail)
+        
+        raise HTTPException(status_code=status_code, detail=error_detail)
 
 # Test endpoint to verify Gemini API connection
 @app.get("/test-gemini")
@@ -1033,11 +519,8 @@ async def image_chat(image: UploadFile = File(...), text: str = Body(..., embed=
             await rate_limiter.check_rate_limit(http_request.client.host)
         
         # Security: File validation
-        MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', 10485760))  # 10MB default
-        allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-        
-        if image.size > MAX_FILE_SIZE:
-            raise HTTPException(status_code=413, detail="File too large. Max size: 10MB")
+        if image.size > config.MAX_FILE_SIZE:
+            raise HTTPException(status_code=413, detail=f"File too large. Max size: {config.MAX_FILE_SIZE // 1024 // 1024}MB")
         
         if image.content_type not in allowed_types:
             raise HTTPException(status_code=415, detail="Unsupported file type. Use JPEG, PNG, GIF, or WebP")
@@ -1046,8 +529,8 @@ async def image_chat(image: UploadFile = File(...), text: str = Body(..., embed=
             text = "Describe this image."
         
         # Detect input language with confidence
-        detected_lang, confidence, should_display = detect_language(text)
-        language_name = LANGUAGE_NAMES.get(detected_lang, 'Unknown')
+        detected_lang, confidence, should_display = utils.detect_language(text)
+        language_name = utils.LANGUAGE_NAMES.get(detected_lang, 'Unknown')
         
         # Validate text input
         if len(text) > 1000:
@@ -1065,111 +548,10 @@ async def image_chat(image: UploadFile = File(...), text: str = Body(..., embed=
         # Detect if user is asking for translation
         is_translation_request = any(keyword in text.lower() for keyword in ['translate', 'translation', 'convert to', 'say in', 'how do you say', 'what is', 'meaning in'])
         
-        # Generate response using Gemini Vision with beautiful, structured approach
-        if should_display and detected_lang != 'en':
-            vision_system_prompt = f"""You are an intelligent AI assistant that analyzes images while perfectly adapting to the user's communication style and needs.
-
-🌍 CRITICAL LANGUAGE & CULTURAL RULES:
-- The user is speaking in {language_name} (code: {detected_lang})
-- **ABSOLUTE REQUIREMENT: RESPOND ONLY IN {language_name.upper()}** 
-- If user mixes languages, match their EXACT mixed style
-- Never respond in a different language unless specifically asked to translate
-- Use culturally relevant references from their region
-
-🔄 TRANSLATION EXCEPTION:
-- ONLY if the user explicitly asks for translation, then provide it
-- Otherwise, ALWAYS respond in {language_name}
-
-ADAPTIVE IMAGE ANALYSIS:
-- ANALYZE their request style: Simple curiosity or detailed analysis?
-- SIMPLE requests ("What's this?", "Describe this") = Brief, natural description matching their tone
-- DETAILED requests ("Analyze this image", "Tell me everything") = Full structured format
-- CASUAL tone = Relaxed, conversational description with minimal formatting
-- PROFESSIONAL context = Organized, structured analysis with appropriate sections
-
-SMART FORMATTING (Use based on their request complexity):
-- For SIMPLE questions: Natural description, minimal structure
-- For COMPLEX analysis: Use **bold**, emojis 📸🎨🔍, sections, bullet points
-- For TECHNICAL requests: Focus on relevant technical details with clear organization
-- For EMOTIONAL/PERSONAL requests: Match their energy and use appropriate emojis
-
-RESPONSE APPROACH:
-- SHORT curiosity = SHORT, engaging answer
-- DETAILED analysis request = Full structured breakdown
-- Be enthusiastic when they're excited, professional when they're formal
-- Ask follow-ups only when it fits their conversation style
-- Be honest about unclear elements
-
-**FINAL INSTRUCTION: RESPOND IN {language_name.upper()} ONLY** (unless specifically asked to translate). Match their exact language pattern and request style. User's request about this image: """ + text
-        else:
-            # Detect mixed language patterns even if primary language is English
-            mixed_lang = detect_mixed_indian_language(text)
-            is_translation_request = any(keyword in text.lower() for keyword in ['translate', 'translation', 'convert to', 'say in', 'how do you say', 'what is', 'meaning in'])
-            
-            # For English or mixed language image requests  
-            vision_system_prompt = f"""You are an intelligent AI assistant that analyzes images while perfectly adapting to the user's communication style and needs.
-
-🌍 CRITICAL LANGUAGE RULES:
-{"- **MIXED LANGUAGE DETECTED**: User is mixing " + LANGUAGE_NAMES.get(mixed_lang, mixed_lang) + " with English" if mixed_lang else "- **PRIMARY LANGUAGE**: English"}
-- **ABSOLUTE REQUIREMENT: Match the user's EXACT language pattern**
-- If they mix languages (Hinglish, Tenglish, etc.), respond in the SAME mixed style
-- If they write pure English, respond in English
-- Never randomly switch to other languages unless asked for translation
-
-🔄 TRANSLATION EXCEPTION:
-- ONLY if user explicitly asks for translation, provide it
-- Otherwise, ALWAYS match their language pattern exactly
-
-ADAPTIVE IMAGE ANALYSIS:
-- ANALYZE their request style: Simple curiosity or detailed analysis?
-- SIMPLE requests ("What's this?", "Describe this") = Brief, natural description matching their tone
-- DETAILED requests ("Analyze this image", "Tell me everything") = Full structured format
-- CASUAL tone = Relaxed, conversational description with minimal formatting  
-- PROFESSIONAL context = Organized, structured analysis with appropriate sections
-
-MANDATORY SYSTEMATIC IMAGE ANALYSIS:
-- **NEVER write in paragraphs** for image descriptions
-- **ALWAYS use this exact format:**
-
-**📸 1. Main Subject**
-- Key observation 1
-- Key observation 2
-
-**🎨 2. Visual Details**
-- Color details
-- Composition details
-
-**🔍 3. Context & Setting**
-- Environment details
-- Background elements
-
-- **Use numbered sections with emojis and bold headings**
-- **Use bullet points under each section**
-- **No paragraph descriptions allowed**
-- **ONLY use paragraphs** if user specifically says "describe in paragraph form"
-
-TOKEN-EFFICIENT RESPONSES:
-- SHORT question = SHORT answer (don't over-explain simple curiosity)
-- "What's in this photo?" gets brief description, not full analysis structure
-- "Analyze this image in detail" gets complete structured breakdown
-- Match their investment level with your response depth
-
-CONVERSATION STYLE MATCHING:
-- Match the user's energy and speaking style completely
-- If they're casual, be casual back with natural language
-- If they mix languages or use slang, mirror that naturally
-- Be enthusiastic when they're excited, professional when they're formal
-- Ask follow-ups only when it fits their conversation style
-
-**FINAL LANGUAGE INSTRUCTION:**
-{f"- **RESPOND IN MIXED {LANGUAGE_NAMES.get(mixed_lang, mixed_lang).upper()} + ENGLISH** (match their exact mixed pattern)" if mixed_lang else "- **RESPOND IN ENGLISH** (unless specifically asked to translate)"}
-- Never randomly switch languages - match their exact input pattern
-- If they ask for translation, provide it; otherwise stick to their language style
-
-Use systematic structure by default - organize information clearly with headings and bullets. User's request about this image: """ + text
-        
-        response = vision_model.generate_content([vision_system_prompt, pil_image])
-        bot_response = response.text
+        # Generate response using the Gemini service
+        bot_response = gemini_service.generate_image_response(
+            pil_image, text, detected_lang, language_name, should_display
+        )
         
         # Store interaction in database with language info
         session_id, interaction_id = store_interaction('image', text, bot_response, session_id, detected_lang if should_display else None)
@@ -1189,17 +571,23 @@ Use systematic structure by default - organize information clearly with headings
             })
         
         return response_data
+    except HTTPException as http_exc:
+        # Re-raise HTTPException directly
+        raise http_exc
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
+        print(f"An unexpected error occurred in image_chat endpoint: {str(e)}")
+        # Optionally log traceback here
+        raise HTTPException(status_code=500, detail="An internal server error occurred while processing the image.")
 
 # Endpoint to fetch all chat history grouped by sessions
 @app.get("/chat-history")
 def get_chat_history():
     try:
         # Return empty sessions if MongoDB is not available
-        if chat_collection is None:
+        if not database.is_db_available():
             return {"sessions": [], "status": "MongoDB unavailable - using temporary session storage"}
         
+        chat_collection = database.get_chat_collection()
         # Get sessions with their latest message timestamp for ordering using MongoDB aggregation
         pipeline = [
             {"$match": {"session_id": {"$exists": True, "$ne": None}}},
@@ -1245,13 +633,18 @@ def get_chat_history():
         
         return {"sessions": grouped_history}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching chat history: {str(e)}")
+        print(f"An unexpected error occurred while fetching chat history: {str(e)}")
+        # Optionally log traceback here
+        raise HTTPException(status_code=500, detail="An internal server error occurred while fetching chat history.")
     return {"sessions": grouped_history}
 
 # Endpoint to delete a specific chat history entry
 @app.delete("/chat-history/{chat_id}")
 def delete_chat_history(chat_id: str):
+    if not database.is_db_available():
+        raise HTTPException(status_code=503, detail="Database unavailable")
     try:
+        chat_collection = database.get_chat_collection()
         # Check if the record exists
         existing_record = chat_collection.find_one({"_id": chat_id})
         if not existing_record:
@@ -1265,23 +658,32 @@ def delete_chat_history(chat_id: str):
         else:
             return {"success": False, "message": "Failed to delete chat history"}
     except Exception as e:
-        return {"success": False, "message": f"Error deleting chat history: {str(e)}"}
+        print(f"An unexpected error occurred while deleting chat history: {str(e)}")
+        # Optionally log traceback here
+        raise HTTPException(status_code=500, detail="An internal server error occurred while deleting chat history.")
 
 # Endpoint to delete all chat history
 @app.delete("/chat-history")
 def delete_all_chat_history():
+    if not database.is_db_available():
+        raise HTTPException(status_code=503, detail="Database unavailable")
     try:
-        result = chat_collection.delete_many({})
+        result = database.get_chat_collection().delete_many({})
         deleted_count = result.deleted_count
         
         return {"success": True, "message": f"Deleted {deleted_count} chat history entries"}
     except Exception as e:
-        return {"success": False, "message": f"Error deleting all chat history: {str(e)}"}
+        print(f"An unexpected error occurred while deleting all chat history: {str(e)}")
+        # Optionally log traceback here
+        raise HTTPException(status_code=500, detail="An internal server error occurred while deleting all chat history.")
 
 # Endpoint to delete an entire session
 @app.delete("/session/{session_id}")
 def delete_session(session_id: str):
+    if not database.is_db_available():
+        raise HTTPException(status_code=503, detail="Database unavailable")
     try:
+        chat_collection = database.get_chat_collection()
         # Check if the session exists
         count = chat_collection.count_documents({"session_id": session_id})
         
@@ -1293,39 +695,27 @@ def delete_session(session_id: str):
         deleted_count = result.deleted_count
         
         # Also delete learned patterns for this session
-        if db is not None:
-            learning_collection = db.learned_patterns
+        learning_collection = database.get_learning_collection()
+        if learning_collection:
             learning_collection.delete_one({"session_id": session_id})
         
         return {"success": True, "message": f"Session deleted successfully. {deleted_count} messages removed."}
     except Exception as e:
-        return {"success": False, "message": f"Error deleting session: {str(e)}"}
+        print(f"An unexpected error occurred while deleting session: {str(e)}")
+        # Optionally log traceback here
+        raise HTTPException(status_code=500, detail="An internal server error occurred while deleting session.")
 
 # User feedback system for continuous learning
-class FeedbackRequest(BaseModel):
-    interaction_id: str
-    session_id: str
-    feedback_type: str  # "thumbs_up", "thumbs_down", "format_mismatch", "too_long", "too_short"
-    feedback_text: Optional[str] = None
-    
-    @field_validator('feedback_type')
-    @classmethod
-    def validate_feedback_type(cls, v):
-        allowed_types = ['thumbs_up', 'thumbs_down', 'format_mismatch', 'too_long', 'too_short', 'off_topic']
-        if v not in allowed_types:
-            raise ValueError(f'Invalid feedback type. Must be one of: {allowed_types}')
-        return v
-
 @app.post("/feedback")
-async def submit_feedback(feedback: FeedbackRequest, http_request: Request):
+async def submit_feedback(feedback: models.FeedbackRequest, http_request: Request):
     """Allow users to provide feedback on AI responses for continuous learning"""
+    if not database.is_db_available():
+        raise HTTPException(status_code=503, detail="Database unavailable")
     try:
         # Security: Rate limiting for feedback
         await rate_limiter.check_rate_limit(http_request.client.host)
         
-        if chat_collection is None:
-            raise HTTPException(status_code=503, detail="Database unavailable")
-        
+        chat_collection = database.get_chat_collection()
         # Find the interaction to update
         interaction = chat_collection.find_one({"_id": feedback.interaction_id})
         if not interaction:
@@ -1355,7 +745,9 @@ async def submit_feedback(feedback: FeedbackRequest, http_request: Request):
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing feedback: {str(e)}")
+        print(f"An unexpected error occurred while processing feedback: {str(e)}")
+        # Optionally log traceback here
+        raise HTTPException(status_code=500, detail="An internal server error occurred while processing feedback.")
 
 @app.get("/feedback-test")
 def test_feedback_endpoint():
@@ -1364,11 +756,10 @@ def test_feedback_endpoint():
 
 def learn_from_feedback(interaction, feedback_data):
     """Learn from user feedback to improve future responses"""
+    if not database.is_db_available():
+        return
     try:
-        if db is None:
-            return
-        
-        feedback_collection = db.user_feedback
+        feedback_collection = database.get_feedback_collection()
         session_id = interaction.get("session_id")
         
         # Store detailed feedback analysis
@@ -1432,11 +823,10 @@ def generate_improvement_suggestions(interaction, feedback_data):
 
 def update_learned_patterns_from_feedback(session_id, interaction, feedback_data):
     """Update learned patterns based on user feedback"""
+    if not database.is_db_available():
+        return
     try:
-        if db is None:
-            return
-        
-        learning_collection = db.learned_patterns
+        learning_collection = database.get_learning_collection()
         feedback_type = feedback_data["feedback_type"]
         
         # Get current learned patterns
@@ -1509,12 +899,11 @@ def update_learned_patterns_from_feedback(session_id, interaction, feedback_data
 @app.get("/learning-analytics")
 def get_learning_analytics():
     """Get analytics about the AI's learning progress"""
+    if not database.is_db_available():
+        return {"status": "Database unavailable"}
     try:
-        if db is None:
-            return {"status": "Database unavailable"}
-        
-        learning_collection = db.learned_patterns
-        feedback_collection = db.user_feedback
+        learning_collection = database.get_learning_collection()
+        feedback_collection = database.get_feedback_collection()
         
         # Get learning statistics
         total_sessions_with_learning = learning_collection.count_documents({})
@@ -1564,11 +953,10 @@ def get_learning_analytics():
 
 def calculate_learning_effectiveness():
     """Calculate how well the AI is learning from feedback"""
+    if not database.is_db_available():
+        return "Database unavailable"
     try:
-        if db is None:
-            return "Database unavailable"
-        
-        feedback_collection = db.user_feedback
+        feedback_collection = database.get_feedback_collection()
         
         # Get recent feedback (last 50 interactions)
         recent_feedback = list(feedback_collection.find({}).sort("feedback_timestamp", -1).limit(50))
