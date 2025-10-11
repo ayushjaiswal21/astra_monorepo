@@ -97,14 +97,16 @@ def course_list_api(request):
 
 def course_detail(request, course_id):
     course = get_object_or_404(Course, id=course_id)
+    modules = course.modules.all().prefetch_related('lessons').order_by('order')
     return render(request, 'tutor/course_detail.html', {
         'course': course,
-        'modules': course.modules.all().order_by('order'),
+        'modules': modules,
     })
 
 def lesson_detail(request, course_id, module_id, lesson_id):
     lesson = get_object_or_404(
-        Lesson, id=lesson_id, module_id=module_id, module__course_id=course_id
+        Lesson.objects.select_related('module__course'), 
+        id=lesson_id, module_id=module_id, module__course_id=course_id
     )
 
     if not request.session.session_key:
@@ -154,11 +156,12 @@ def lesson_detail(request, course_id, module_id, lesson_id):
     })
 
 def quiz_detail(request, quiz_id):
-    quiz = get_object_or_404(Quiz, id=quiz_id)
+    quiz = get_object_or_404(Quiz.objects.prefetch_related('questions__choices'), id=quiz_id)
     questions = quiz.questions.all().order_by('order')
     
     quiz_data = []
     for question in questions:
+        # Thanks to prefetch_related, this does not hit the database again
         choices = [
             {'id': choice.id, 'text': choice.choice_text}
             for choice in question.choices.all()
