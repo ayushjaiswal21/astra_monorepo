@@ -1,0 +1,24 @@
+<div class="modal fade" id="editExperienceModal-{{ exp.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Experience</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('profile.edit_experience', exp_id=exp.id) }}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="mb-3"><label class="form-label">Title*</label><input type="text" class="form-control" name="title" value="{{ exp.title }}" required></div>
+                    <div class="mb-3"><label class="form-label">Company*</label><input type="text" class="form-control" name="company" value="{{ exp.company }}" required></div>
+                    <div class="mb-3"><label class="form-label">Location</label><input type="text" class="form-control" name="location" value="{{ exp.location }}"></div>
+                    <div class="mb-3"><label class="form-label">Dates</label><input type="text" class="form-control" name="dates" value="{{ exp.dates }}"></div>
+                    <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="4">{{ exp.description }}</textarea></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

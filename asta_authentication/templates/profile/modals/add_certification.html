@@ -1,0 +1,38 @@
+<!-- Add Certification Modal -->
+<div class="modal fade" id="addCertificationModal" tabindex="-1" aria-labelledby="addCertificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCertificationModalLabel">Add license or certification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('profile.add_certification') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="mb-3">
+                        <label for="certName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="certName" name="name" placeholder="Ex: Microsoft Certified: Azure Fundamentals">
+                    </div>
+                    <div class="mb-3">
+                        <label for="issuingOrg" class="form-label">Issuing organization</label>
+                        <input type="text" class="form-control" id="issuingOrg" name="issuing_organization" placeholder="Ex: Microsoft">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="issueDate" class="form-label">Issue Date</label>
+                            <input type="text" class="form-control" id="issueDate" name="issue_date" placeholder="Ex: Issued Jun 2023">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="credentialUrl" class="form-label">Credential URL</label>
+                        <input type="text" class="form-control" id="credentialUrl" name="credential_url">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
