@@ -5,6 +5,7 @@ import sqlite3
 from blueprints import init_db, google_bp
 from auth_routes import auth_bp
 from main_routes import main_bp
+from profile_routes import profile_bp
 
 # Database functions
 def get_db():
@@ -40,6 +41,7 @@ init_db()
 app.register_blueprint(google_bp, url_prefix="/login")
 app.register_blueprint(auth_bp, url_prefix="/auth")
 app.register_blueprint(main_bp)
+app.register_blueprint(profile_bp)
 
 if __name__ == '__main__':
     init_db()

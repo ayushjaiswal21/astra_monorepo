@@ -1,0 +1,14 @@
+<div class="modal fade" id="editAboutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Edit About</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form action="{{ url_for('profile.edit_about') }}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <textarea class="form-control" name="about_text" rows="8">{{ user.about }}</textarea>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button><button type="submit" class="btn btn-primary">Save changes</button></div>
+            </form>
+        </div>
+    </div>
+</div>

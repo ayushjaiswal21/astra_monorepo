@@ -1,0 +1,220 @@
+{% extends 'layout.html' %}
+
+{% block title %}{{ user.name }}'s Profile{% endblock %}
+
+{% block content %}
+    <form id="imageUploadForm" action="{{ url_for('profile.upload_images') }}" method="POST" enctype="multipart/form-data" class="d-none">
+        <input type="file" id="bannerUpload" name="banner_image" onchange="this.form.submit()">
+        <input type="file" id="profilePicUpload" name="profile_picture" onchange="this.form.submit()">
+    </form>
+
+    <div class="card profile-header-card">
+        <div class="profile-banner-container">
+            <img src="{{ user.banner_url or url_for('static', filename='images/bg.png') }}" alt="Banner Image" class="profile-banner">
+            <a class="edit-icon-overlay" style="top: 15px; right: 15px;" onclick="document.getElementById('bannerUpload').click();" title="Edit banner">
+                <i class="fas fa-camera"></i>
+            </a>
+            <img src="{{ user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}" alt="Profile Picture" class="profile-picture">
+        </div>
+        
+        <div class="profile-header-content">
+            <a class="edit-icon-overlay" style="top: auto; bottom: 15px; right: 15px;" onclick="document.getElementById('profilePicUpload').click();" title="Edit profile picture">
+                <i class="fas fa-camera"></i>
+            </a>
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h2 class="mb-0 fw-bold">{{ user.name }}</h2>
+                    <p class="text-muted fs-5">{{ user.headline }}</p>
+                    <small class="text-muted">{{ user.location }} · <a href="#">Contact info</a></small>
+                </div>
+                <div>
+                    <h5 class="fw-bold"><i class="fas fa-university me-2"></i>{{ user.university }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="card-title fw-bold">About</h5>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#editAboutModal" title="Edit about section"><i class="fas fa-pencil-alt"></i></a>
+        </div>
+        <div class="card-body">
+            <p>{{ user.about }}</p>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="card-title fw-bold">Experience</h5>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#addExperienceModal" title="Add experience">
+                <i class="fas fa-plus"></i>
+            </a>
+        </div>
+        <div class="card-body">
+            <ul class="list-unstyled mb-0">
+                {% if user.experience %}
+                    {% for exp in user.experience %}
+                    <li class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}">
+                        <div class="flex-shrink-0 me-3">
+                            {% if exp.logo %}
+                                <img src="{{ exp.logo }}" alt="{{ exp.company }} logo" style="width: 50px; height: 50px; border-radius: 4px; object-fit: contain;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-briefcase text-secondary fs-4"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-0">{{ exp.title }}</h6>
+                            <p class="mb-1 text-sm">{{ exp.company }}</p>
+                            <small class="text-muted d-block">{{ exp.dates }} · {{ exp.location }}</small>
+                            <p class="mt-2 mb-0 text-sm">{{ exp.description }}</p>
+                        </div>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#editExperienceModal-{{ exp.id }}" title="Edit experience" class="text-secondary ms-3"><i class="fas fa-pencil-alt"></i></a>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No experience information added yet.</p>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="card-title fw-bold">Education</h5>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#addEducationModal" title="Add education">
+                <i class="fas fa-plus"></i>
+            </a>
+        </div>
+        <div class="card-body">
+            <ul class="list-unstyled mb-0">
+                {% if user.education %}
+                    {% for edu in user.education %}
+                    <li class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}">
+                        <div class="flex-shrink-0 me-3">
+                            {% if edu.logo %}
+                                <img src="{{ edu.logo }}" alt="{{ edu.school }} logo" style="width: 50px; height: 50px; border-radius: 4px; object-fit: contain;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-university text-secondary fs-4"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-0">{{ edu.school }}</h6>
+                            <p class="mb-1 text-sm">{{ edu.degree }}</p>
+                            <small class="text-muted d-block">{{ edu.dates }}</small>
+                        </div>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#editEducationModal-{{ edu.id }}" title="Edit education" class="text-secondary ms-3"><i class="fas fa-pencil-alt"></i></a>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No education information added yet.</p>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="card-title fw-bold">Skills</h5>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#addSkillModal" title="Add new skill">
+                <i class="fas fa-plus"></i>
+            </a>
+        </div>
+        <div class="card-body">
+            {% if user.skills %}
+                {% for skill in user.skills[:7] %}
+                <p class="py-2 mb-0 {% if not loop.last %}border-bottom{% endif %}">{{ skill }}</p>
+                {% endfor %}
+
+                {% if user.skills|length > 7 %}
+                <div class="collapse" id="moreSkills">
+                    {% for skill in user.skills[7:] %}
+                    <p class="py-2 mb-0 {% if not loop.last %}border-bottom{% endif %}">{{ skill }}</p>
+                    {% endfor %}
+                </div>
+                <div class="text-center mt-3">
+                    <a class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" href="#moreSkills" role="button" aria-expanded="false" aria-controls="moreSkills">
+                        <span class="when-collapsed">Show all {{ user.skills|length - 7 }} skills <i class="fas fa-chevron-down ms-1"></i></span>
+                        <span class="when-expanded">Show less <i class="fas fa-chevron-up ms-1"></i></span>
+                    </a>
+                </div>
+                {% endif %}
+            {% else %}
+                <p class="text-muted">No skills added yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <style>
+    .when-expanded { display: none; }
+    .collapsed .when-expanded { display: inline; }
+    .collapsed .when-collapsed { display: none; }
+    </style>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="card-title fw-bold">Licenses & certifications</h5>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#addCertificationModal" title="Add certification">
+                <i class="fas fa-plus"></i>
+            </a>
+        </div>
+        <div class="card-body">
+            <ul class="list-unstyled mb-0">
+                {% if user.certifications %}
+                    {% for cert in user.certifications %}
+                    <li class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}">
+                        <div class="flex-shrink-0 me-3">
+                            {% if cert.logo %}
+                                <img src="{{ cert.logo }}" alt="{{ cert.issuing_organization }} logo" style="width: 50px; height: 50px; border-radius: 4px; object-fit: contain;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-award text-secondary fs-4"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-0">{{ cert.name }}</h6>
+                            <p class="mb-1 text-sm">{{ cert.issuing_organization }}</p>
+                            <small class="text-muted d-block">{{ cert.issue_date }}</small>
+                            <a href="{{ cert.credential_url }}" class="btn btn-sm btn-outline-secondary mt-2" target="_blank">Show credential <i class="fas fa-external-link-alt ms-1"></i></a>
+                        </div>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#editCertificationModal-{{ cert.id }}" title="Edit certification" class="text-secondary ms-3"><i class="fas fa-pencil-alt"></i></a>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No certifications added yet.</p>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    {% include 'profile/modals/edit_about.html' %}
+
+    {# Add Modals #}
+    {% include 'profile/modals/add_education.html' %}
+    {% include 'profile/modals/add_experience.html' %}
+    {% include 'profile/modals/add_skill.html' %}
+    {% include 'profile/modals/add_certification.html' %}
+
+    <!-- Edit Modals -->
+    {% for edu in user.education %}
+        {% include 'profile/modals/edit_education.html' %}
+    {% endfor %}
+    {% for exp in user.experience %}
+        {% include 'profile/modals/edit_experience.html' %}
+    {% endfor %}
+    {% for skill in user.skills %}
+        {% with index=loop.index %}
+        {% include 'profile/modals/edit_skill.html' %}
+        {% endwith %}
+    {% endfor %}
+    {% if user.certifications %}
+    {% for cert in user.certifications %}
+        {% include 'profile/modals/edit_certification.html' %}
+    {% endfor %}
+    {% endif %}
+{% endblock %}
