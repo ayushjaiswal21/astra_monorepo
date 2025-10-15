@@ -1,156 +1,101 @@
-{% extends "layout.html" %}
-
-{% block title %}My Network | AstraLearn{% endblock %}
-
-{% block content %}
-<style>
-    .suggestion-card {
-        border-radius: 10px;
-        border: 1px solid #dcdcdc;
-        background-color: #fff;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-        transition: box-shadow .2s ease-in-out;
-    }
-    .suggestion-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .suggestion-card .banner {
-        height: 80px;
-        background-color: #6c757d;
-    }
-    .suggestion-card .profile-pic {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        border: 3px solid white;
-        margin: -40px auto 0 auto;
-        position: relative;
-        background-color: #f8f9fa;
-    }
-    .suggestion-card .card-body {
-        padding-top: 1rem;
-    }
-    .suggestion-card .card-title {
-        font-size: 1rem;
-        font-weight: 600;
-    }
-    .suggestion-card .card-text {
-        font-size: 0.85rem;
-        color: #6c757d;
-        min-height: 40px; /* To align buttons */
-    }
-    .sidebar-link {
-        color: #212529;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        padding: 0.5rem 0;
-    }
-    .sidebar-link:hover {
-        color: #0d6efd;
-    }
-    .sidebar-link i {
-        width: 25px;
-        margin-right: 10px;
-        text-align: center;
-    }
-</style>
-
-<div class="container py-4">
-    <div class="row">
-        <!-- Left Column -->
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-3">Manage my network</h5>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <a href="#" class="sidebar-link"><i class="fas fa-user-friends"></i> Connections</a>
-                            <span class="badge bg-secondary rounded-pill">{{ network.stats.connections }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <a href="#" class="sidebar-link"><i class="fas fa-address-book"></i> Contacts</a>
-                            <span class="badge bg-secondary rounded-pill">{{ network.stats.contacts }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <a href="#" class="sidebar-link"><i class="fas fa-user-plus"></i> Following & followers</a>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <a href="#" class="sidebar-link"><i class="fas fa-users"></i> Groups</a>
-                            <span class="badge bg-secondary rounded-pill">{{ network.stats.groups }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <a href="#" class="sidebar-link"><i class="fas fa-calendar-alt"></i> Events</a>
-                            <span class="badge bg-secondary rounded-pill">{{ network.stats.events }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <a href="#" class="sidebar-link"><i class="fas fa-flag"></i> Pages</a>
-                            <span class="badge bg-secondary rounded-pill">{{ network.stats.pages }}</span>
-                        </li>
-                    </ul>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstraLearn Network</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #f3f2ef; }
+        .nav-icon { transition: all 0.2s; }
+        .nav-icon:hover { color: #0a66c2; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.1); transition: box-shadow 0.2s; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-14">
+                <div class="flex items-center space-x-2">
+                    <div class="flex items-center">
+                        <div class="w-9 h-9 bg-blue-600 rounded flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-white text-lg"></i>
+                        </div>
+                        <span class="ml-2 text-xl font-bold text-blue-600">AstraLearn</span>
+                    </div>
+                    <input type="text" placeholder="Search" class="hidden md:block ml-2 w-64 px-3 py-1.5 bg-gray-100 rounded text-sm focus:outline-none focus:bg-white focus:border focus:border-gray-300">
                 </div>
+                <nav class="flex items-center space-x-6">
+                    <a href="{{ url_for('main.dashboard') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-home text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Home</span>
+                    </a>
+                    <a href="{{ url_for('main.network') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-user-friends text-xl mb-1"></i>
+                        <span class="text-xs font-medium">People</span>
+                    </a>
+                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-briefcase text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Internships</span>
+                    </a>
+                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-comment-dots text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Messages</span>
+                    </a>
+                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-bell text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Notifications</span>
+                    </a>
+                    <a href="{{ url_for('profile.view_profile', username=current_user.username) }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <div class="w-6 h-6 rounded-full overflow-hidden">
+                           <img src="{{ current_user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
+                        </div>
+                        <span class="text-xs font-medium">Me</span>
+                    </a>
+                </nav>
             </div>
         </div>
+    </header>
 
-        <!-- Right Column -->
-        <div class="col-md-9">
-            <!-- Invitations Card -->
-            <div class="card mb-4">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">Invitations</h5>
-                    <a href="#" class="text-decoration-none">See all {{ network.invitations|length }}</a>
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <!-- Left Sidebar -->
+            <aside class="md:col-span-3">
+                <div class="card p-3 text-sm">
+                    <h3 class="font-semibold text-gray-900 mb-3">My Network</h3>
+                    <div class="space-y-2">
+                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Connections</a>
+                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Invitations</a>
+                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">People You May Know</a>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <ul class="list-unstyled mb-0">
-                        {% for invitation in network.invitations %}
-                        <li class="d-flex align-items-center justify-content-between py-3 {% if not loop.last %}border-bottom{% endif %}">
-                            <div class="d-flex align-items-center">
-                                <img src="https://placehold.co/60x60/E2E8F0/4A5568?text={{ invitation.name[0] }}" alt="{{ invitation.name }}" class="rounded-circle me-3">
-                                <div>
-                                    <h6 class="mb-0 fw-bold">{{ invitation.name }}</h6>
-                                    <p class="text-muted small mb-1">{{ invitation.headline }}</p>
-                                    <small class="text-muted"><i class="fas fa-users me-1"></i>{{ invitation.mutual }} mutual connections</small>
-                                </div>
-                            </div>
-                            <div>
-                                <button class="btn btn-sm btn-link text-muted">Ignore</button>
-                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Accept</button>
-                            </div>
-                        </li>
-                        {% else %}
-                        <p class="text-muted mb-0">No pending invitations.</p>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
+            </aside>
 
-            <!-- Suggestions Card -->
-            <div class="card">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0 fw-bold">People you may know</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-4">
-                        {% for person in network.suggestions %}
-                        <div class="col">
-                            <div class="suggestion-card h-100">
-                                <img src="{{ person.banner_url }}" class="banner card-img-top" alt="Banner">
-                                <img src="{{ person.profile_pic_url }}" class="profile-pic" alt="{{ person.name }}">
-                                <div class="card-body d-flex flex-column">
-                                    <h6 class="card-title"><a href="#" class="text-decoration-none text-dark">{{ person.name }}</a></h6>
-                                    <p class="card-text flex-grow-1">{{ person.headline }}</p>
-                                    <p class="text-muted small"><i class="fas fa-users me-1"></i>{{ person.mutual }} mutual connections</p>
-                                    <a href="#" class="btn btn-sm btn-outline-primary rounded-pill w-100 mt-auto">Connect</a>
+            <!-- Center Feed -->
+            <main class="md:col-span-9">
+                <div class="card p-4">
+                    <h2 class="text-xl font-semibold mb-4">People on AstraLearn</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {% for user in users %}
+                        <div class="card p-4 text-center">
+                            <a href="{{ url_for('profile.view_profile', username=user.username) }}">
+                                <div class="w-24 h-24 mx-auto rounded-full overflow-hidden border-4 border-white mb-2">
+                                    <img src="{{ user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
                                 </div>
-                            </div>
+                                <h3 class="font-semibold text-gray-900">{{ user.name or user.username }}</h3>
+                                <p class="text-xs text-gray-600">{{ user.headline or '' }}</p>
+                            </a>
+                            <button class="mt-4 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">Connect</button>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
     </div>
-</div>
-{% endblock %}
+</body>
+</html>
