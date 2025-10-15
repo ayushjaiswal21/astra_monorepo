@@ -1,15 +1,13 @@
 from flask import Blueprint, render_template, redirect, url_for, session, request, flash, g, current_app
 from flask_dance.contrib.google import google
 from werkzeug.security import generate_password_hash, check_password_hash
-import sqlite3
+from models import db, User
 
 auth_bp = Blueprint('auth', __name__)
 
-def get_db():
-    if 'db' not in g:
-        g.db = sqlite3.connect('users.db')
-        g.db.row_factory = sqlite3.Row
-    return g.db
+@auth_bp.route('/test')
+def test():
+    return "Auth blueprint is working!"
 
 @auth_bp.route('/signin')
 def signin():
@@ -34,13 +32,10 @@ def signin_email():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
-        user = cursor.fetchone()
-        if user and user['password'] and check_password_hash(user['password'], password):
-            session['user_id'] = user['id']
-            if not user['role']:
+        user = User.query.filter_by(email=email).first()
+        if user and user.password and check_password_hash(user.password, password):
+            session['user_id'] = user.id
+            if not user.role:
                 return redirect(url_for('auth.role_selection'))
             return redirect(url_for('main.dashboard'))
         else:
@@ -52,28 +47,25 @@ def signin_email():
 def join_form():
     email = request.form.get('email')
     password = request.form.get('password')
+    username = email.split('@')[0] # Simple username generation
 
     if not password or len(password) < 6:
         flash("Password must be at least 6 characters long.", "danger")
         return redirect(url_for('auth.join'))
 
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-    try:
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, hashed_password))
-        db.commit()
-        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
-        user_id = cursor.fetchone()['id']
-        session['user_id'] = user_id
-        return redirect(url_for('auth.role_selection'))
-    except sqlite3.IntegrityError:
+    
+    # Check if user already exists
+    if User.query.filter_by(email=email).first():
         flash("An account with this email already exists.", "danger")
         return redirect(url_for('auth.join'))
-    except Exception as e:
-        current_app.logger.error(f"An unexpected error occurred during registration: {e}")
-        flash("An unexpected error occurred. Please try again.", "danger")
-        return redirect(url_for('auth.join'))
+
+    new_user = User(email=email, username=username, password=hashed_password)
+    db.session.add(new_user)
+    db.session.commit()
+    
+    session['user_id'] = new_user.id
+    return redirect(url_for('auth.role_selection'))
 
 @auth_bp.route('/save_role', methods=['POST'])
 def save_role():
@@ -82,10 +74,9 @@ def save_role():
     user_id = session['user_id']
     role = request.form.get('role')
     if role in ['Seeker', 'Provider']:
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("UPDATE users SET role = ? WHERE id = ?", (role, user_id))
-        db.commit()
+        user = User.query.get(user_id)
+        user.role = role.lower()
+        db.session.commit()
         return redirect(url_for('main.dashboard'))
     else:
         flash("Invalid role selected.", "warning")
@@ -99,6 +90,10 @@ def logout():
 
 @auth_bp.route("/google-login-callback")
 def google_login_callback():
+    current_app.logger.info(f"Request args: {request.args}")
+    code = request.args.get('code')
+    current_app.logger.info(f"Code: {code}")
+
     if not google.authorized:
         flash("Login with Google failed.", "danger")
         return redirect(url_for("main.index"))
@@ -110,23 +105,25 @@ def google_login_callback():
         google_id = user_info['id']
         email = user_info['email']
 
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM users WHERE google_id = ?", (google_id,))
-        user = cursor.fetchone()
+        user = User.query.filter_by(google_id=google_id).first()
 
         if not user:
-            cursor.execute("INSERT INTO users (email, google_id) VALUES (?, ?)", (email, google_id))
-            db.commit()
-            cursor.execute("SELECT id FROM users WHERE google_id = ?", (google_id,))
-            user_id = cursor.fetchone()['id']
-            session['user_id'] = user_id
+            # Check if an account with that email already exists
+            user = User.query.filter_by(email=email).first()
+            if user:
+                # Link Google ID to existing account
+                user.google_id = google_id
+            else:
+                # Create new user
+                username = email.split('@')[0]
+                user = User(email=email, google_id=google_id, username=username)
+                db.session.add(user)
+            db.session.commit()
+
+        session['user_id'] = user.id
+        if not user.role:
             return redirect(url_for('auth.role_selection'))
-        else:
-            session['user_id'] = user['id']
-            if not user['role']:
-                return redirect(url_for('auth.role_selection'))
-            return redirect(url_for('main.dashboard'))
+        return redirect(url_for('main.dashboard'))
 
     except (AssertionError, Exception) as e:
         current_app.logger.error(f"An error occurred during Google login: {e}")
