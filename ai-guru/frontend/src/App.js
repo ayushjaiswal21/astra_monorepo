@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { marked } from "marked";
 import Sidebar from "./Sidebar";
 import WelcomeScreen from "./WelcomeScreen";
 import ChatMessages from "./ChatMessages";
@@ -26,7 +25,6 @@ function App() {
   const [feedbackLoading, setFeedbackLoading] = useState(new Set());
 
   const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const activeRequestsRef = useRef(new Map());
@@ -503,84 +501,56 @@ function App() {
   };
 
   return (
-    <>
-      <div
-        style={{
-          display: "flex",
-          height: "100vh",
-          fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
-          background:
-            "linear-gradient(135deg, #ECDFCC 0%, #697565 50%, #3C3D37 100%)",
-          overflow: "hidden",
-        }}
-      >
-        <Sidebar
-          sidebarCollapsed={sidebarCollapsed}
-          setSidebarCollapsed={setSidebarCollapsed}
-          startNewChat={startNewChat}
-          chatSessions={chatSessions}
-          selectedSession={selectedSession}
-          setSelectedSession={setSelectedSession}
-          setCurrentSessionId={setCurrentSessionId}
-          setMessages={setMessages}
-          deleteAllChatHistory={deleteAllChatHistory}
-          deleteSession={deleteSession}
-        />
+    <div className="flex h-screen bg-gray-100 text-gray-800 font-sans">
+      <Sidebar
+        sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
+        startNewChat={startNewChat}
+        chatSessions={chatSessions}
+        selectedSession={selectedSession}
+        setSelectedSession={setSelectedSession}
+        setCurrentSessionId={setCurrentSessionId}
+        setMessages={setMessages}
+        deleteAllChatHistory={deleteAllChatHistory}
+        deleteSession={deleteSession}
+      />
 
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            background: "linear-gradient(180deg, #ECDFCC 0%, #F5F0E8 100%)",
-            borderRadius: "20px 0 0 0",
-            boxShadow: "inset 0 1px 0 rgba(105, 117, 101, 0.1)",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              flex: 1,
-              overflowY: "auto",
-              padding: "0",
-            }}
-          >
-            {!selectedSession && messages.length === 0 ? (
-              <WelcomeScreen
-                isLoading={isLoading}
-                setCurrentInput={setCurrentInput}
-                fileInputRef={fileInputRef}
-              />
-            ) : (
-              <ChatMessages
-                messages={messages}
-                messagesEndRef={messagesEndRef}
-                submitFeedback={submitFeedback}
-                feedbackLoading={feedbackLoading}
-              />
-            )}
-          </div>
-
-          <MessageInput
-            handleSubmit={handleSubmit}
-            currentInput={currentInput}
-            setCurrentInput={setCurrentInput}
-            isConverting={isConverting}
-            isListening={isListening}
-            speechSupported={speechSupported}
-            speechInterimResult={speechInterimResult}
-            isLoading={isLoading}
-            clearTranscription={clearTranscription}
-            handleVoiceInput={handleVoiceInput}
-            fileInputRef={fileInputRef}
-            handleImageUpload={handleImageUpload}
-            speechError={speechError}
-            setSpeechError={setSpeechError}
-          />
+      <div className="flex-1 flex flex-col bg-white">
+        <div className="flex-1 overflow-y-auto p-6">
+          {!selectedSession && messages.length === 0 ? (
+            <WelcomeScreen
+              isLoading={isLoading}
+              setCurrentInput={setCurrentInput}
+              fileInputRef={fileInputRef}
+            />
+          ) : (
+            <ChatMessages
+              messages={messages}
+              messagesEndRef={messagesEndRef}
+              submitFeedback={submitFeedback}
+              feedbackLoading={feedbackLoading}
+            />
+          )}
         </div>
+
+        <MessageInput
+          handleSubmit={handleSubmit}
+          currentInput={currentInput}
+          setCurrentInput={setCurrentInput}
+          isConverting={isConverting}
+          isListening={isListening}
+          speechSupported={speechSupported}
+          speechInterimResult={speechInterimResult}
+          isLoading={isLoading}
+          clearTranscription={clearTranscription}
+          handleVoiceInput={handleVoiceInput}
+          fileInputRef={fileInputRef}
+          handleImageUpload={handleImageUpload}
+          speechError={speechError}
+          setSpeechError={setSpeechError}
+        />
       </div>
-    </>
+    </div>
   );
 }
 
