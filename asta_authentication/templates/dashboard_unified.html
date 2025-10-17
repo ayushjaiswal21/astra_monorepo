@@ -40,11 +40,11 @@
                         <i class="fas fa-user-friends text-xl mb-1"></i>
                         <span class="text-xs font-medium">People</span>
                     </a>
-                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                    <a href="{{ url_for('main.internships') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
                         <i class="fas fa-briefcase text-xl mb-1"></i>
                         <span class="text-xs font-medium">Internships</span>
                     </a>
-                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                    <a href="{{ url_for('main.messages') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
                         <i class="fas fa-comment-dots text-xl mb-1"></i>
                         <span class="text-xs font-medium">Messages</span>
                     </a>
@@ -88,12 +88,12 @@
                         {% if current_user.role == 'provider' %}
                         <a href="http://localhost:8000/create/" target="_blank" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-blue-600 font-semibold">Create New Course</a>
                         {% else %}
-                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">My Enrollments</a>
+                        <a href="{{ url_for('main.enrollments') }}" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">My Enrollments</a>
                         {% endif %}
-                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Groups</a>
-                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Events</a>
-                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Workshops</a>
-                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Internships</a>
+                        <a href="{{ url_for('main.groups') }}" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Groups</a>
+                        <a href="{{ url_for('main.events') }}" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Events</a>
+                        <a href="{{ url_for('main.workshops') }}" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Workshops</a>
+                        <a href="{{ url_for('main.internships') }}" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Internships</a>
                         <a href="http://localhost:3000" target="_blank" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-blue-600 font-semibold">**AiGuru</a>
                     </div>
                 </div>
