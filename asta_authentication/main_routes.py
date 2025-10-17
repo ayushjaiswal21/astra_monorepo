@@ -43,3 +43,45 @@ def create_post():
         db.session.commit()
     
     return redirect(url_for('main.dashboard'))
+
+@main_bp.route('/internships')
+def internships():
+    """Renders the internships page."""
+    if not g.user:
+        return redirect(url_for('auth.signin'))
+    return render_template('internships.html', current_user=g.user)
+
+@main_bp.route('/events')
+def events():
+    """Renders the events page."""
+    if not g.user:
+        return redirect(url_for('auth.signin'))
+    return render_template('events.html', current_user=g.user)
+
+@main_bp.route('/messages')
+def messages():
+    """Renders the messages page."""
+    if not g.user:
+        return redirect(url_for('auth.signin'))
+    return render_template('messages.html', current_user=g.user)
+
+@main_bp.route('/enrollments')
+def enrollments():
+    """Renders the enrollments page."""
+    if not g.user:
+        return redirect(url_for('auth.signin'))
+    return render_template('enrollments.html', current_user=g.user)
+
+@main_bp.route('/groups')
+def groups():
+    """Renders the groups page."""
+    if not g.user:
+        return redirect(url_for('auth.signin'))
+    return render_template('groups.html', current_user=g.user)
+
+@main_bp.route('/workshops')
+def workshops():
+    """Renders the workshops page."""
+    if not g.user:
+        return redirect(url_for('auth.signin'))
+    return render_template('workshops.html', current_user=g.user)

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internships & Jobs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f3f2ef; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; }
+        .nav-icon:hover { color: #0a66c2; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-14">
+                <div class="flex items-center space-x-2">
+                    <div class="flex items-center">
+                        <div class="w-9 h-9 bg-blue-600 rounded flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-white text-lg"></i>
+                        </div>
+                        <span class="ml-2 text-xl font-bold text-blue-600">AstraLearn</span>
+                    </div>
+                </div>
+                <nav class="flex items-center space-x-6">
+                    <a href="{{ url_for('main.dashboard') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-home text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Home</span>
+                    </a>
+                    <a href="{{ url_for('main.network') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-user-friends text-xl mb-1"></i>
+                        <span class="text-xs font-medium">People</span>
+                    </a>
+                    <a href="{{ url_for('main.internships') }}" class="nav-icon flex flex-col items-center text-blue-600">
+                        <i class="fas fa-briefcase text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Internships</span>
+                    </a>
+                    <a href="{{ url_for('main.messages') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-comment-dots text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Messages</span>
+                    </a>
+                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-bell text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Notifications</span>
+                    </a>
+                    <a href="{{ url_for('profile.view_profile', username=current_user.username) }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <div class="w-6 h-6 rounded-full overflow-hidden">
+                           <img src="{{ current_user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
+                        </div>
+                        <span class="text-xs font-medium">Me</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-6">Internships & Jobs</h1>
+
+        <!-- Search and Filters -->
+        <div class="card p-4 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input type="text" placeholder="Keywords (e.g., Software Engineer)" class="md:col-span-2 bg-gray-100 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" placeholder="Location (e.g., New York)" class="bg-gray-100 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select class="bg-gray-100 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option>Job Type</option>
+                    <option>Full-time</option>
+                    <option>Part-time</option>
+                    <option>Internship</option>
+                    <option>Contract</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Job Listings -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Job Card 1 -->
+            <div class="card p-6">
+                <h2 class="text-xl font-bold text-gray-900">Software Engineering Intern</h2>
+                <p class="text-blue-600 mb-2">Innovate Corp.</p>
+                <p class="text-gray-600 mb-4">San Francisco, CA</p>
+                <p class="text-gray-700 mb-4">Assist in developing and maintaining web applications. Work with a team of experienced engineers on real-world projects.</p>
+                <a href="#" class="w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg inline-block">View Details</a>
+            </div>
+            <!-- Job Card 2 -->
+            <div class="card p-6">
+                <h2 class="text-xl font-bold text-gray-900">Data Analyst</h2>
+                <p class="text-blue-600 mb-2">Data Insights Inc.</p>
+                <p class="text-gray-600 mb-4">New York, NY</p>
+                <p class="text-gray-700 mb-4">Analyze large datasets to extract meaningful insights. Create visualizations and reports for stakeholders.</p>
+                <a href="#" class="w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg inline-block">View Details</a>
+            </div>
+            <!-- Job Card 3 -->
+            <div class="card p-6">
+                <h2 class="text-xl font-bold text-gray-900">UX/UI Design Intern</h2>
+                <p class="text-blue-600 mb-2">Creative Solutions</p>
+                <p class="text-gray-600 mb-4">Remote</p>
+                <p class="text-gray-700 mb-4">Help design intuitive and beautiful user interfaces for our mobile and web products. Collaborate with product managers.</p>
+                <a href="#" class="w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg inline-block">View Details</a>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
