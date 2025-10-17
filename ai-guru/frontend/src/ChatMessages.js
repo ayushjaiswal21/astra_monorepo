@@ -3,7 +3,7 @@ import Message from './Message';
 
 const ChatMessages = ({ messages, messagesEndRef, submitFeedback, feedbackLoading }) => {
   return (
-    <div style={{ padding: "20px" }}>
+    <div className="p-6">
       {messages.map((msg, index) => (
         <Message 
           key={msg.id || index} 
