@@ -1,6 +1,7 @@
 import os
-from flask import Flask, session, g
-from flask_wtf.csrf import CSRFProtect
+from flask import Flask
+# from flask_wtf.csrf import CSRFProtect
+from flask_login import LoginManager
 from models import db, User, Post, Education, Experience, Skill, Certification
 from blueprints import google_bp
 from auth_routes import auth_bp
@@ -20,30 +21,28 @@ app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY") or "dev-secret-key-chang
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'asta_authentication/static/uploads'
-DEBUG_MODE = os.environ.get("FLASK_DEBUG", "True").lower() in ["true", "1", "t"]
+DEBUG_MODE = os.environ.get("FLASK_DEBUG", "True").lower() in ["true", "1T"]
 
 # Allow insecure transport for OAuth only in debug mode
 if DEBUG_MODE:
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-# --- Database and CSRF Initialization ---
+# --- Database, CSRF, and Login Manager Initialization ---
 db.init_app(app)
-csrf = CSRFProtect(app)
+# csrf = CSRFProtect(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'auth.signin'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 # --- Blueprints Registration ---
 app.register_blueprint(google_bp, url_prefix="/login")
 app.register_blueprint(auth_bp, url_prefix="/auth")
 app.register_blueprint(main_bp)
 app.register_blueprint(profile_bp)
-
-# --- Request Hooks ---
-@app.before_request
-def load_logged_in_user():
-    user_id = session.get('user_id')
-    if user_id is None:
-        g.user = None
-    else:
-        g.user = User.query.get(user_id)
 
 # --- Database Creation ---
 with app.app_context():

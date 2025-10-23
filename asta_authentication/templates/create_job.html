@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mx-auto p-4 md:w-2/3 lg:w-1/2">
+  <div class="bg-white rounded-lg shadow-xl p-6">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">Post a New Job</h2>
+    <form method="POST">
+      <div class="mb-4">
+        <label for="title" class="block text-gray-700 font-bold mb-2">Title *</label>
+        <input type="text" name="title" id="title" class="w-full px-3 py-2 border rounded-lg" required>
+      </div>
+      <div class="mb-4">
+        <label for="company_name" class="block text-gray-700 font-bold mb-2">Company Name</label>
+        <input type="text" name="company_name" id="company_name" class="w-full px-3 py-2 border rounded-lg">
+      </div>
+      <div class="mb-4">
+        <label for="location" class="block text-gray-700 font-bold mb-2">Location</label>
+        <input type="text" name="location" id="location" class="w-full px-3 py-2 border rounded-lg">
+      </div>
+      <div class="mb-4">
+        <label for="description" class="block text-gray-700 font-bold mb-2">Description *</label>
+        <textarea name="description" id="description" rows="5" class="w-full px-3 py-2 border rounded-lg" required></textarea>
+      </div>
+      <div class="mb-4">
+        <label for="apply_link" class="block text-gray-700 font-bold mb-2">Application Link (URL)</label>
+        <input type="url" name="apply_link" id="apply_link" class="w-full px-3 py-2 border rounded-lg">
+      </div>
+      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+        Post Job
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock content %}

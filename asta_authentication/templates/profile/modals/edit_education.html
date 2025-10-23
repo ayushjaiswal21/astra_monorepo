@@ -7,7 +7,6 @@
             </div>
             <form action="{{ url_for('profile.edit_education', edu_id=edu.id) }}" method="POST">
                 <div class="modal-body">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="mb-3"><label class="form-label">School*</label><input type="text" class="form-control" name="school" value="{{ edu.school }}" required></div>
                     <div class="mb-3"><label class="form-label">Degree</label><input type="text" class="form-control" name="degree" value="{{ edu.degree }}"></div>
                     <div class="mb-3"><label class="form-label">Dates</label><input type="text" class="form-control" name="dates" value="{{ edu.dates }}"></div>

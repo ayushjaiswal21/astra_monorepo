@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, session, reques
 from flask_dance.contrib.google import google
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User
+from flask_login import login_user, logout_user, current_user
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -23,7 +24,7 @@ def forgot_password():
 
 @auth_bp.route('/role_selection')
 def role_selection():
-    if 'user_id' not in session:
+    if not current_user.is_authenticated:
         return redirect(url_for('auth.signin'))
     return render_template('role_selection.html')
 
@@ -34,7 +35,7 @@ def signin_email():
         password = request.form.get('password')
         user = User.query.filter_by(email=email).first()
         if user and user.password and check_password_hash(user.password, password):
-            session['user_id'] = user.id
+            login_user(user)
             if not user.role:
                 return redirect(url_for('auth.role_selection'))
             return redirect(url_for('main.dashboard'))
@@ -55,7 +56,6 @@ def join_form():
 
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
     
-    # Check if user already exists
     if User.query.filter_by(email=email).first():
         flash("An account with this email already exists.", "danger")
         return redirect(url_for('auth.join'))
@@ -64,14 +64,14 @@ def join_form():
     db.session.add(new_user)
     db.session.commit()
     
-    session['user_id'] = new_user.id
+    login_user(new_user)
     return redirect(url_for('auth.role_selection'))
 
 @auth_bp.route('/save_role', methods=['POST'])
 def save_role():
-    if 'user_id' not in session:
+    if not current_user.is_authenticated:
         return redirect(url_for('auth.signin'))
-    user_id = session['user_id']
+    user_id = current_user.id
     role = request.form.get('role')
     if role in ['Seeker', 'Provider']:
         user = User.query.get(user_id)
@@ -84,7 +84,7 @@ def save_role():
 
 @auth_bp.route('/logout')
 def logout():
-    session.clear()
+    logout_user()
     flash("You have been successfully logged out.", "success")
     return redirect(url_for('main.index'))
 
@@ -108,19 +108,16 @@ def google_login_callback():
         user = User.query.filter_by(google_id=google_id).first()
 
         if not user:
-            # Check if an account with that email already exists
             user = User.query.filter_by(email=email).first()
             if user:
-                # Link Google ID to existing account
                 user.google_id = google_id
             else:
-                # Create new user
                 username = email.split('@')[0]
                 user = User(email=email, google_id=google_id, username=username)
                 db.session.add(user)
             db.session.commit()
 
-        session['user_id'] = user.id
+        login_user(user)
         if not user.role:
             return redirect(url_for('auth.role_selection'))
         return redirect(url_for('main.dashboard'))
