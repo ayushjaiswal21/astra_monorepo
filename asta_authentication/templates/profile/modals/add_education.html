@@ -4,7 +4,6 @@
             <div class="modal-header"><h5 class="modal-title">Add Education</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <form action="{{ url_for('profile.add_education') }}" method="POST">
                 <div class="modal-body">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="mb-3"><label class="form-label">School*</label><input type="text" class="form-control" name="school" required></div>
                     <div class="mb-3"><label class="form-label">Degree</label><input type="text" class="form-control" name="degree"></div>
                 </div>

@@ -8,7 +8,6 @@
             </div>
             <div class="modal-body">
                 <form action="{{ url_for('profile.add_certification') }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="mb-3">
                         <label for="certName" class="form-label">Name</label>
                         <input type="text" class="form-control" id="certName" name="name" placeholder="Ex: Microsoft Certified: Azure Fundamentals">
