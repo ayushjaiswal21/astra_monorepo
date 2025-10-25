@@ -6,6 +6,7 @@
     <title>AstraLearn Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #f3f2ef; }
@@ -16,275 +17,421 @@
         .btn-action { transition: all 0.2s; border-radius: 4px; padding: 8px 16px; }
         .btn-action:hover { background: rgba(0,0,0,0.05); }
         .post-img { border-radius: 4px; overflow: hidden; }
-    </style>
-</head>
-<body>
-    <!-- Header -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="flex items-center justify-between h-14">
-                <div class="flex items-center space-x-2">
-                    <div class="flex items-center">
-                        <div class="w-9 h-9 bg-blue-600 rounded flex items-center justify-center">
-                            <i class="fas fa-graduation-cap text-white text-lg"></i>
-                        </div>
-                        <span class="ml-2 text-xl font-bold text-blue-600">AstraLearn</span>
-                    </div>
-                    <input type="text" placeholder="Search" class="hidden md:block ml-2 w-64 px-3 py-1.5 bg-gray-100 rounded text-sm focus:outline-none focus:bg-white focus:border focus:border-gray-300">
-                </div>
-                <nav class="flex items-center space-x-6">
-                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-home text-xl mb-1"></i>
-                        <span class="text-xs font-medium">Home</span>
-                    </a>
-                    <a href="{{ url_for('profile.network') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-user-friends text-xl mb-1"></i>
-                        <span class="text-xs font-medium">People</span>
-                    </a>
-                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-briefcase text-xl mb-1"></i>
-                        <span class="text-xs font-medium">Internships</span>
-                    </a>
-                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-comment-dots text-xl mb-1"></i>
-                        <span class="text-xs font-medium">Messages</span>
-                    </a>
-                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-bell text-xl mb-1"></i>
-                        <span class="text-xs font-medium">Notifications</span>
-                    </a>
-                    <a href="{{ url_for('profile.view_profile', username=user.name) }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <div class="w-6 h-6 rounded-full overflow-hidden">
-                           <img src="{{ url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
-                        </div>
-                        <span class="text-xs font-medium">Me</span>
-                    </a>
-                </nav>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 py-6">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-            <!-- Left Sidebar -->
-            <aside class="md:col-span-3">
-                <!-- Profile Card -->
-                <div class="card mb-4">
-                    <a href="{{ url_for('profile.view_profile', username=user.name) }}">
-                        <div class="h-14 bg-gradient-to-r from-blue-400 to-purple-500"></div>
-                        <div class="px-4 pb-4 text-center -mt-8">
-                            <div class="w-16 h-16 mx-auto rounded-full overflow-hidden border-4 border-white mb-2">
-                                <img src="{{ url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
-                            </div>
-                            <h3 class="font-semibold text-gray-900">{{ user.name }}</h3>
-                        </div>
-                    </a>
-                    <div class="px-4 pb-4 text-center -mt-10">
-                        <p class="text-xs text-gray-600 mb-3">{{ user.role }}</p>
-                        <div class="border-t border-gray-200 pt-3 text-xs">
-                            <a href="http://localhost:3000" target="_blank" class="flex justify-between py-1.5 hover:bg-gray-50 px-2 rounded cursor-pointer">
-                                <span class="text-gray-600">Skill Test</span>
-                                <span class="text-blue-600 font-semibold">AI Guru 🤖</span>
-                            </a>
-                            <a href="http://localhost:8000" target="_blank" class="flex justify-between py-1.5 hover:bg-gray-50 px-2 rounded cursor-pointer">
-                                <span class="text-gray-600">My Learning Path</span>
-                                <i class="fas fa-route text-gray-400"></i>
-                            </a>
-                            <div class="py-1.5 hover:bg-gray-50 px-2 rounded cursor-pointer text-gray-600">
-                                Saved Items
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Links -->
-                <div class="card p-3 text-sm">
-                    <div class="space-y-2">
-                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Groups</a>
-                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Events</a>
-                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Workshops</a>
-                        <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Internships</a>
-                        <a href="http://localhost:3000" target="_blank" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-blue-600 font-semibold">**AiGuru</a>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Center Feed -->
-            <main class="md:col-span-6">
-                <!-- Create Post -->
-                <div class="card p-4 mb-4">
-                    <div class="flex items-center space-x-3 mb-3">
-                        <div class="w-12 h-12 rounded-full overflow-hidden">
-                           <img src="{{ url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
-                        </div>
-                        <input type="text" placeholder="Start a post..." class="flex-1 px-4 py-2 border border-gray-300 rounded-full hover:bg-gray-50 cursor-pointer">
-                    </div>
-                    <div class="flex justify-around pt-2 border-t border-gray-200">
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="fas fa-image text-blue-500"></i>
-                            <span class="text-sm font-medium">Media</span>
-                        </button>
-                        <a href="http://localhost:8000/create/" target="_blank" class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="fas fa-lightbulb text-yellow-600"></i>
-                            <span class="text-sm font-medium">Create Course</span>
-                        </a>
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="fas fa-newspaper text-red-500"></i>
-                            <span class="text-sm font-medium">Write article</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Post 1 -->
-                <div class="card p-4 mb-4">
-                    <div class="flex items-start space-x-3 mb-3">
-                        <div class="w-12 h-12 bg-gray-300 rounded-full overflow-hidden">
-                            <img src="https://via.placeholder.com/48" alt="DC Palter" class="w-full h-full object-cover">
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <h3 class="font-semibold text-gray-900">DC Palter • <span class="text-sm font-normal text-gray-600">2nd</span></h3>
-                                    <p class="text-xs text-gray-600">Fractional business leader and climatech startup...</p>
-                                    <p class="text-xs text-gray-500">4d • Edited • 🌍</p>
+        #chat-container { position: fixed; bottom: 0; right: 20px; width: 350px; background: white; border-top-left-radius: 8px; border-top-right-radius: 8px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: none; z-index: 101;}
+        #chat-header { background: #0a66c2; color: white; padding: 10px; border-top-left-radius: 8px; border-top-right-radius: 8px; cursor: pointer; }
+        #chat-messages { height: 300px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; }
+        #chat-input { display: flex; padding: 10px; border-top: 1px solid #ddd; }
+        #chat-input input { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 8px 12px; }
+                #chat-input button { background: #0a66c2; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; margin-left: 10px; cursor: pointer; }
+                .notification-dropdown { position: relative; display: inline-block; }
+                .notification-menu { display: none; position: absolute; right: 0; background-color: white; min-width: 250px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1; border-radius: 8px; padding-top: 5px; padding-bottom: 5px; }
+                .notification-menu a { color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 0.875rem; }
+                .notification-menu a:hover { background-color: #f1f1f1; }
+                .show-notifications { display: block; }
+            </style>
+        </head>
+        <body>
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="flex items-center justify-between h-14">
+                        <div class="flex items-center space-x-2">
+                            <div class="flex items-center">
+                                <div class="w-9 h-9 bg-blue-600 rounded flex items-center justify-center">
+                                    <i class="fas fa-graduation-cap text-white text-lg"></i>
                                 </div>
-                                <button class="text-blue-600 font-semibold text-sm px-4 py-1 border border-blue-600 rounded-full hover:bg-blue-50">
-                                    + Follow
+                                <span class="ml-2 text-xl font-bold text-blue-600">AstraLearn</span>
+                            </div>
+                            <input type="text" placeholder="Search" class="hidden md:block ml-2 w-64 px-3 py-1.5 bg-gray-100 rounded text-sm focus:outline-none focus:bg-white focus:border focus:border-gray-300">
+                        </div>
+                        <nav class="flex items-center space-x-6">
+                            <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                                <i class="fas fa-home text-xl mb-1"></i>
+                                <span class="text-xs font-medium">Home</span>
+                            </a>
+                            <a href="{{ url_for('main.network') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                                <i class="fas fa-user-friends text-xl mb-1"></i>
+                                <span class="text-xs font-medium">People</span>
+                            </a>
+                            <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                                <i class="fas fa-briefcase text-xl mb-1"></i>
+                                <span class="text-xs font-medium">Internships</span>
+                            </a>
+                            <a href="#" onclick="document.getElementById('chat-container').style.display = 'block'" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                                <i class="fas fa-comment-dots text-xl mb-1"></i>
+                                <span class="text-xs font-medium">Messages</span>
+                            </a>
+                            
+                            <!-- Notification Dropdown -->
+                            <div class="notification-dropdown">
+                                <a href="#" onclick="toggleNotificationMenu()" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                                    <i class="fas fa-bell text-xl mb-1"></i>
+                                    <span class="text-xs font-medium">Notifications</span>
+                                </a>
+                                <div id="notification-menu" class="notification-menu">
+                                    <!-- Notifications will be injected here -->
+                                </div>
+                            </div>
+        
+                            <a href="{{ url_for('profile.view_profile', username=user.username) }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                                <div class="w-6 h-6 rounded-full overflow-hidden">
+                                   <img src="{{ url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
+                                </div>
+                                <span class="text-xs font-medium">Me</span>
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+        
+            <!-- Main Content -->
+            <div class="max-w-7xl mx-auto px-4 py-6">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <!-- Left Sidebar -->
+                    <aside class="md:col-span-3">
+                        <!-- Profile Card -->
+                        <div class="card mb-4">
+                            <a href="{{ url_for('profile.view_profile', username=user.username) }}">
+                                <div class="h-14 bg-gradient-to-r from-blue-400 to-purple-500"></div>
+                                <div class="px-4 pb-4 text-center -mt-8">
+                                    <div class="w-16 h-16 mx-auto rounded-full overflow-hidden border-4 border-white mb-2">
+                                        <img src="{{ url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
+                                    </div>
+                                    <h3 class="font-semibold text-gray-900">{{ user.name }}</h3>
+                                </div>
+                            </a>
+                            <div class="px-4 pb-4 text-center -mt-10">
+                                <p class="text-xs text-gray-600 mb-3">{{ user.role }}</p>
+                                <div class="border-t border-gray-200 pt-3 text-xs">
+                                    <a href="http://localhost:3000" target="_blank" class="flex justify-between py-1.5 hover:bg-gray-50 px-2 rounded cursor-pointer">
+                                        <span class="text-gray-600">Skill Test</span>
+                                        <span class="text-blue-600 font-semibold">AI Guru 🤖</span>
+                                    </a>
+                                    <a href="http://localhost:8000" target="_blank" class="flex justify-between py-1.5 hover:bg-gray-50 px-2 rounded cursor-pointer">
+                                        <span class="text-gray-600">My Learning Path</span>
+                                        <i class="fas fa-route text-gray-400"></i>
+                                    </a>
+                                    <div class="py-1.5 hover:bg-gray-50 px-2 rounded cursor-pointer text-gray-600">
+                                        Saved Items
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+        
+                        <!-- Quick Links -->
+                        <div class="card p-3 text-sm">
+                            <div class="space-y-2">
+                                <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Groups</a>
+                                <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Events</a>
+                                <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Workshops</a>
+                                <a href="#" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Internships</a>
+                                <a href="http://localhost:3000" target="_blank" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-blue-600 font-semibold">**AiGuru</a>
+                            </div>
+                        </div>
+                    </aside>
+        
+                    <!-- Center Feed -->
+                    <main class="md:col-span-6">
+                        <!-- Create Post -->
+                        <div class="card p-4 mb-4">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <div class="w-12 h-12 rounded-full overflow-hidden">
+                                   <img src="{{ url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
+                                </div>
+                                <input type="text" placeholder="Start a post..." class="flex-1 px-4 py-2 border border-gray-300 rounded-full hover:bg-gray-50 cursor-pointer">
+                            </div>
+                            <div class="flex justify-around pt-2 border-t border-gray-200">
+                                <button class="btn-action flex items-center space-x-2 text-gray-600">
+                                    <i class="fas fa-image text-blue-500"></i>
+                                    <span class="text-sm font-medium">Media</span>
+                                </button>
+                                <a href="http://localhost:8000/create/" target="_blank" class="btn-action flex items-center space-x-2 text-gray-600">
+                                    <i class="fas fa-lightbulb text-yellow-600"></i>
+                                    <span class="text-sm font-medium">Create Course</span>
+                                </a>
+                                <button class="btn-action flex items-center space-x-2 text-gray-600">
+                                    <i class="fas fa-newspaper text-red-500"></i>
+                                    <span class="text-sm font-medium">Write article</span>
                                 </button>
                             </div>
                         </div>
-                    </div>
-                    <p class="text-sm text-gray-900 mb-3 leading-relaxed">
-                        I realize this is a strange request coming from someone who has invested in 150 startups. But I meet too many earnest founders taking venture funding that will destroy their businesses and their lives. I've met too many founders who ...<a href="#" class="text-gray-600 hover:text-blue-600">more</a>
-                    </p>
-                    <div class="post-img mb-3">
-                        <img src="https://via.placeholder.com/600x300/87CEEB/ffffff?text=Please+Don't+Take+Venture+Capital" alt="Article" class="w-full">
-                        <div class="bg-gray-50 p-3 border border-gray-200">
-                            <h4 class="font-semibold text-sm mb-1">Please Don't Take Venture Capital</h4>
-                            <p class="text-xs text-gray-600">ehandbook.com</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between text-xs text-gray-600 pb-2 border-b border-gray-200 mb-2">
-                        <div class="flex items-center space-x-1">
-                            <div class="flex -space-x-1">
-                                <div class="w-4 h-4 bg-blue-500 rounded-full border border-white"></div>
-                                <div class="w-4 h-4 bg-red-500 rounded-full border border-white"></div>
-                                <div class="w-4 h-4 bg-green-500 rounded-full border border-white"></div>
+        
+                        <!-- Post 1 -->
+                        <div class="card p-4 mb-4">
+                            <div class="flex items-start space-x-3 mb-3">
+                                <div class="w-12 h-12 bg-gray-300 rounded-full overflow-hidden">
+                                    <img src="https://via.placeholder.com/48" alt="DC Palter" class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-start justify-between">
+                                        <div>
+                                            <h3 class="font-semibold text-gray-900">DC Palter • <span class="text-sm font-normal text-gray-600">2nd</span></h3>
+                                            <p class="text-xs text-gray-600">Fractional business leader and climatech startup...</p>
+                                            <p class="text-xs text-gray-500">4d • Edited • 🌍</p>
+                                        </div>
+                                        <button class="text-blue-600 font-semibold text-sm px-4 py-1 border border-blue-600 rounded-full hover:bg-blue-50">
+                                            + Follow
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <span>Rakesh Bonjam and 1,907 others</span>
-                        </div>
-                        <div class="flex space-x-2">
-                            <span>244 comments</span>
-                            <span>•</span>
-                            <span>207 reposts</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-around">
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="far fa-thumbs-up text-lg"></i>
-                            <span class="text-sm font-medium">Like</span>
-                        </button>
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="far fa-comment text-lg"></i>
-                            <span class="text-sm font-medium">Comment</span>
-                        </button>
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="fas fa-retweet text-lg"></i>
-                            <span class="text-sm font-medium">Repost</span>
-                        </button>
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="far fa-paper-plane text-lg"></i>
-                            <span class="text-sm font-medium">Send</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Post 2 (Comment Thread) -->
-                <div class="card p-4 mb-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center space-x-2 text-sm text-gray-600">
-                            <div class="w-6 h-6 bg-gray-300 rounded-full"></div>
-                            <span class="font-medium">Simon Squibb</span>
-                            <span>commented on this</span>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button class="text-gray-600 hover:text-gray-900"><i class="fas fa-ellipsis-h"></i></button>
-                            <button class="text-gray-600 hover:text-gray-900"><i class="fas fa-times"></i></button>
-                        </div>
-                    </div>
-                    <div class="flex items-start space-x-3 mb-3">
-                        <div class="w-12 h-12 bg-gray-300 rounded-full"></div>
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-1 mb-1">
-                                <h3 class="font-semibold text-gray-900">Dan Murray-Serter</h3>
-                                <span class="text-red-500">❤️</span>
-                                <span class="text-sm text-gray-600">• Following</span>
+                            <p class="text-sm text-gray-900 mb-3 leading-relaxed">
+                                I realize this is a strange request coming from someone who has invested in 150 startups. But I meet too many earnest founders taking venture funding that will destroy their businesses and their lives. I've met too many founders who ...<a href="#" class="text-gray-600 hover:text-blue-600">more</a>
+                            </p>
+                            <div class="post-img mb-3">
+                                <img src="https://via.placeholder.com/600x300/87CEEB/ffffff?text=Please+Don't+Take+Venture+Capital" alt="Article" class="w-full">
+                                <div class="bg-gray-50 p-3 border border-gray-200">
+                                    <h4 class="font-semibold text-sm mb-1">Please Don't Take Venture Capital</h4>
+                                    <p class="text-xs text-gray-600">ehandbook.com</p>
+                                </div>
                             </div>
-                            <p class="text-xs text-gray-600 mb-1">Founder at Heights | Angel Investor in 86 Startups | Host at...</p>
-                            <p class="text-xs text-gray-500">1w • 🌍</p>
+                            <div class="flex items-center justify-between text-xs text-gray-600 pb-2 border-b border-gray-200 mb-2">
+                                <div class="flex items-center space-x-1">
+                                    <div class="flex -space-x-1">
+                                        <div class="w-4 h-4 bg-blue-500 rounded-full border border-white"></div>
+                                        <div class="w-4 h-4 bg-red-500 rounded-full border border-white"></div>
+                                        <div class="w-4 h-4 bg-green-500 rounded-full border border-white"></div>
+                                    </div>
+                                    <span>Rakesh Bonjam and 1,907 others</span>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <span>244 comments</span>
+                                    <span>•</span>
+                                    <span>207 reposts</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-around">
+                                <button class="btn-action flex items-center space-x-2 text-gray-600">
+                                    <i class="far fa-thumbs-up text-lg"></i>
+                                    <span class="text-sm font-medium">Like</span>
+                                </button>
+                                <button class="btn-action flex items-center space-x-2 text-gray-600">
+                                    <i class="far fa-comment text-lg"></i>
+                                    <span class="text-sm font-medium">Comment</span>
+                                </button>
+                                <button class="btn-action flex items-center space-x-2 text-gray-600">
+                                    <i class="fas fa-retweet text-lg"></i>
+                                    <span class="text-sm font-medium">Repost</span>
+                                </button>
+                                <button class="btn-action flex items-center space-x-2 text-gray-600">
+                                    <i class="far fa-paper-plane text-lg"></i>
+                                    <span class="text-sm font-medium">Send</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <p class="text-sm text-gray-900 mb-3">"The Power of 8: Why Your Success Depends on Your Inner Circle"</p>
-                    <div class="flex justify-around pt-2 border-t border-gray-200">
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="far fa-thumbs-up"></i>
-                            <span class="text-sm font-medium">Like</span>
-                        </button>
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="far fa-comment"></i>
-                            <span class="text-sm font-medium">Comment</span>
-                        </button>
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="fas fa-retweet"></i>
-                            <span class="text-sm font-medium">Repost</span>
-                        </button>
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="far fa-paper-plane"></i>
-                            <span class="text-sm font-medium">Send</span>
-                        </button>
-                    </div>
+        
+                        <!-- Post 2 (Comment Thread) -->
+                        <div class="card p-4 mb-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                    <div class="w-6 h-6 bg-gray-300 rounded-full"></div>
+                                    <span class="font-medium">Simon Squibb</span>
+                                    <span>commented on this</span>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="text-gray-600 hover:text-gray-900"><i class="fas fa-ellipsis-h"></i></button>
+                                    <button class="text-gray-600 hover:text-gray-900"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3 mb-3">
+                                <div class="w-12 h-12 bg-gray-300 rounded-full"></div>
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-1 mb-1">
+                                        <h3 class="font-semibold text-gray-900">Dan Murray-Serter</h3>
+                                        <span class="text-red-500">❤️</span>
+                                        <span class="text-sm text-gray-600">• Following</span>
+                                    </div>
+                                    <p class="text-xs text-gray-600 mb-1">Founder at Heights | Angel Investor in 86 Startups | Host at...</p>
+                                    <p class="text-xs text-gray-500">1w • 🌍</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-900 mb-3">"The Power of 8: Why Your Success Depends on Your Inner Circle"</p>
+                            <div class="flex justify-around pt-2 border-t border-gray-200">
+                                <button class="btn-action flex items-center space-x-2 text-gray-600">
+                                    <i class="far fa-thumbs-up"></i>
+                                    <span class="text-sm font-medium">Like</span>
+                                </button>
+                                <button class="btn-action flex items-center space-x-2 text-gray-600">
+                                    <i class="far fa-comment"></i>
+                                    <span class="text-sm font-medium">Comment</span>
+                                </button>
+                                <button class="btn-action flex items-center space-x-2 text-gray-600">
+                                    <i class="fas fa-retweet"></i>
+                                    <span class="text-sm font-medium">Repost</span>
+                                </button>
+                                <button class="btn-action flex items-center space-x-2 text-gray-600">
+                                    <i class="far fa-paper-plane"></i>
+                                    <span class="text-sm font-medium">Send</span>
+                                </button>
+                            </div>
+                        </div>
+                    </main>
+        
+                    <!-- Right Sidebar -->
+                    <aside class="md:col-span-3">
+                        <!-- Users Section -->
+                        <div class="card p-4 mb-4">
+                            <h3 class="font-semibold text-gray-900 mb-3">Users</h3>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                {% for u in all_users %}
+                                    {% if u.id != user.id %}
+                                        <li class="flex items-center justify-between hover:bg-gray-50 p-2 rounded cursor-pointer">
+                                            <span>{{ u.username }}</span>
+                                            <button onclick="startChat('{{ u.username }}')" class="text-xs bg-blue-500 text-white px-2 py-1 rounded">Chat</button>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+        
+                        <!-- News Section -->
+                        <div class="card p-4 mb-4">
+                            <h3 class="font-semibold text-gray-900 mb-3">AstraLearn News</h3>
+                            <p class="text-xs text-gray-600 mb-3">Top Stories</p>
+                            <ul class="space-y-3 text-sm">
+                                <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                                    <div class="font-medium text-gray-900 mb-0.5">• Story -1</div>
+                                </li>
+                                <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                                    <div class="font-medium text-gray-900 mb-0.5">• Story -2</div>
+                                </li>
+                                <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                                    <div class="font-medium text-gray-900 mb-0.5">• Story -3</div>
+                                </li>
+                                <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                                    <div class="font-medium text-gray-900 mb-0.5">• Story -4</div>
+                                </li>
+                                <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                                    <div class="font-medium text-gray-900 mb-0.5">• Story -5</div>
+                                </li>
+                            </ul>
+                            <a href="#" class="block mt-3 text-sm text-gray-600 hover:text-blue-600">See More</a>
+                        </div>
+        
+                        <!-- Games Section -->
+                        <div class="card p-4">
+                            <h3 class="font-semibold text-gray-900 mb-3">Games</h3>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">Quiz Games</li>
+                                <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">Puzzle Games</li>
+                                <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">Problem Solving Games</li>
+                                <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">Skills Improve Games</li>
+                            </ul>
+                        </div>
+                    </aside>
                 </div>
-            </main>
+            </div>
+        
+            <!-- Chat Container -->
+            <div id="chat-container">
+                <div id="chat-header" onclick="document.getElementById('chat-container').style.display = 'none'">
+                    Chat with <span id="chat-with">...</span>
+                </div>
+                <div id="chat-messages" class="flex flex-col space-y-2 p-3"></div>
+                <div id="chat-input">
+                    <input id="message-input" placeholder="Type a message..."/>
+                    <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        
+            <script>
+        const socket = io(); // Correct: Parameter-less call
 
-            <!-- Right Sidebar -->
-            <aside class="md:col-span-3">
-                <!-- News Section -->
-                <div class="card p-4 mb-4">
-                    <h3 class="font-semibold text-gray-900 mb-3">AstraLearn News</h3>
-                    <p class="text-xs text-gray-600 mb-3">Top Stories</p>
-                    <ul class="space-y-3 text-sm">
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
-                            <div class="font-medium text-gray-900 mb-0.5">• Story -1</div>
-                        </li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
-                            <div class="font-medium text-gray-900 mb-0.5">• Story -2</div>
-                        </li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
-                            <div class="font-medium text-gray-900 mb-0.5">• Story -3</div>
-                        </li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
-                            <div class="font-medium text-gray-900 mb-0.5">• Story -4</div>
-                        </li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
-                            <div class="font-medium text-gray-900 mb-0.5">• Story -5</div>
-                        </li>
-                    </ul>
-                    <a href="#" class="block mt-3 text-sm text-gray-600 hover:text-blue-600">See More</a>
-                </div>
+        // Heartbeat listener
+        socket.on('connect', () => {
+            console.log('--- [HEARTBEAT] Connected to Server Successfully ---');
+        });
 
-                <!-- Games Section -->
-                <div class="card p-4">
-                    <h3 class="font-semibold text-gray-900 mb-3">Games</h3>
-                    <ul class="space-y-2 text-sm text-gray-700">
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">Quiz Games</li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">Puzzle Games</li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">Problem Solving Games</li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">Skills Improve Games</li>
-                    </ul>
-                </div>
-            </aside>
-        </div>
-    </div>
-</body>
-</html>
+        let currentRecipient = null;
+        const currentUserUsername = "{{ user.username }}";
+
+        function startChat(username) {
+            currentRecipient = username;
+            document.getElementById('chat-with').innerText = username;
+            document.getElementById('chat-container').style.display = 'block';
+            const messagesDiv = document.getElementById('chat-messages');
+            messagesDiv.innerHTML = '';
+
+            const notification = document.getElementById(`notification-header-${username}`);
+            if (notification) {
+                notification.remove();
+            }
+
+            socket.emit('join_chat', { username: username });
+
+            fetch(`/api/messages/${username}`)
+                .then(response => response.json())
+                .then(messages => {
+                    messages.forEach(msg => {
+                        displayMessage(msg);
+                    });
+                });
+        }
+
+        function sendMessage() {
+            const content = document.getElementById('message-input').value;
+            if (content && currentRecipient) {
+                const message = {
+                    sender: currentUserUsername, 
+                    recipient: currentRecipient, 
+                    content: content,
+                    timestamp: new Date().toISOString()
+                };
+                socket.emit('send_message', message);
+                displayMessage(message); // Optimistic UI update
+                document.getElementById('message-input').value = '';
+            }
+        }
+
+        socket.on('receive_message', function(data) {
+            if (data.sender === currentRecipient) {
+                displayMessage(data);
+            } else {
+                showNotificationInHeader(data.sender);
+            }
+        });
+
+        function toggleNotificationMenu() {
+            document.getElementById('notification-menu').classList.toggle('show-notifications');
+        }
+
+        function showNotificationInHeader(sender) {
+            const menu = document.getElementById('notification-menu');
+            if (document.getElementById(`notification-header-${sender}`)) {
+                return;
+            }
+            const notificationItem = document.createElement('a');
+            notificationItem.id = `notification-header-${sender}`;
+            notificationItem.href = "#";
+            notificationItem.innerText = `New message from ${sender}`;
+            notificationItem.onclick = (e) => {
+                e.preventDefault();
+                startChat(sender);
+            };
+            menu.appendChild(notificationItem);
+        }
+
+        function displayMessage(message) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageElement = document.createElement('div');
+            const isSent = message.sender === currentUserUsername;
+            messageElement.className = isSent ? 'sent' : 'received';
+            messageElement.innerHTML = `<div>${message.content}</div>`;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.fa-bell')) {
+                var dropdowns = document.getElementsByClassName("notification-menu");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show-notifications')) {
+                        openDropdown.classList.remove('show-notifications');
+                    }
+                }
+            }
+        }
+    </script>
+        </body>
+        </html>
