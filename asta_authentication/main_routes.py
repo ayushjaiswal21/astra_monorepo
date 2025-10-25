@@ -1,7 +1,9 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
-from flask_login import login_required, current_user
-from models import db, User, Post, Internship, JobPost, Workshop, Event
-from datetime import datetime
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask_login import current_user, login_required
+from models import db, User, Post, Internship, JobPost, Workshop, Event, Message
+from werkzeug.utils import secure_filename
+import os
+from sqlalchemy import or_
 
 main_bp = Blueprint('main', __name__)
 
@@ -14,8 +16,25 @@ def index():
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    posts = Post.query.order_by(Post.timestamp.desc()).all()
-    return render_template('dashboard_unified.html', current_user=current_user, posts=posts)
+    all_users = User.query.all()
+    return render_template('dashboard.html', user=current_user, all_users=all_users)
+
+@main_bp.route('/api/messages/<username>')
+@login_required
+def get_messages(username):
+    other_user = User.query.filter_by(username=username).first_or_404()
+    messages = Message.query.filter(
+        or_(
+            (Message.sender_id == current_user.id) & (Message.recipient_id == other_user.id),
+            (Message.sender_id == other_user.id) & (Message.recipient_id == current_user.id)
+        )
+    ).order_by(Message.timestamp.asc()).all()
+
+    return jsonify([{
+        'sender': msg.sender.username,
+        'content': msg.content,
+        'timestamp': msg.timestamp.isoformat()
+    } for msg in messages])
 
 @main_bp.route('/network')
 @login_required
