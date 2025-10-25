@@ -1,8 +1,9 @@
 import os
-from flask import Flask
+from flask import Flask, jsonify
 from flask_socketio import SocketIO
-from flask_login import LoginManager
-from models import db, User, Post, Education, Experience, Skill, Certification
+from flask_login import LoginManager, login_required, current_user
+from sqlalchemy import or_
+from models import db, User, Post, Education, Experience, Skill, Certification, Message
 from blueprints import google_bp
 from auth_routes import auth_bp
 from main_routes import main_bp
@@ -38,6 +39,26 @@ socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+@app.route('/api/messages/<username>')
+@login_required
+def get_messages(username):
+    recipient = User.query.filter_by(username=username).first()
+    if not recipient:
+        return jsonify({"error": "User not found"}), 404
+
+    messages = Message.query.filter(
+        or_(
+            (Message.sender_id == current_user.id) & (Message.recipient_id == recipient.id),
+            (Message.sender_id == recipient.id) & (Message.recipient_id == current_user.id)
+        )
+    ).order_by(Message.timestamp.asc()).all()
+
+    return jsonify([{
+        'sender': msg.sender.username,
+        'content': msg.content,
+        'timestamp': msg.timestamp.isoformat()
+    } for msg in messages])
 
 # --- Blueprints Registration ---
 app.register_blueprint(google_bp, url_prefix="/login")
