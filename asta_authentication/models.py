@@ -30,6 +30,9 @@ class User(db.Model, UserMixin):
     workshops = db.relationship('Workshop', backref='provider', lazy=True)
     events = db.relationship('Event', backref='provider', lazy=True)
 
+    sent_messages = db.relationship('Message', foreign_keys='Message.sender_id', back_populates='sender')
+    received_messages = db.relationship('Message', foreign_keys='Message.recipient_id', back_populates='recipient')
+
 class Education(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school = db.Column(db.String(120), nullable=False)
@@ -117,5 +120,5 @@ class Message(db.Model):
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
-    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
-    recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_messages')
+    sender = db.relationship('User', foreign_keys=[sender_id], back_populates='sent_messages')
+    recipient = db.relationship('User', foreign_keys=[recipient_id], back_populates='received_messages')
