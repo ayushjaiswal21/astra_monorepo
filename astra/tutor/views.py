@@ -11,7 +11,7 @@ from django.conf import settings
 from django.utils import timezone
 import google.generativeai as genai
 
-from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress, UserQuizAttempt, ModuleProgress
+from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress, UserQuizAttempt, ModuleProgress, CourseTestSession, CourseTestQuestion, CourseTestAttempt
 
 from .tasks import generate_course_content
 
@@ -57,7 +57,6 @@ def course_list(request):
 def create_course_page(request):
     return render(request, 'tutor/create_course.html')
 
-@csrf_exempt
 @require_http_methods(["POST"])
 def create_course(request):
     """
@@ -183,7 +182,6 @@ def quiz_detail(request, quiz_id):
         'lesson': quiz.lesson
     })
 
-@csrf_exempt
 @require_http_methods(["POST"])
 def submit_quiz(request, quiz_id):
     try:
@@ -232,7 +230,6 @@ def submit_quiz(request, quiz_id):
             'error': str(e)
         }, status=400)
 
-@csrf_exempt
 @require_http_methods(["POST"])
 def ai_assistant(request):
     try:
@@ -412,5 +409,194 @@ def generate_example(request, lesson_id):
         lesson.save()
         
         return JsonResponse({'content': example_text})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+# --- Comprehensive Test Views ---
+
+def start_course_test_view(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    return render(request, 'tutor/course_test_detail.html', {'course': course})
+
+@require_http_methods(["POST"])
+def generate_course_test_api(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    if not course.title:
+        return JsonResponse({'success': False, 'error': 'Course title cannot be empty.'}, status=400)
+    if not request.session.session_key:
+        request.session.create()
+    session_key = request.session.session_key
+
+    try:
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-pro')
+
+        prompt = f"""
+        You are a helpful quiz generation assistant.
+        Generate a comprehensive test for the course titled '{course.title}'.
+        The test should contain a mix of 5 multiple-choice questions and 2 coding problems.
+        The difficulty level should be medium.
+        You MUST respond with ONLY a valid JSON object.
+        The JSON object must follow this exact format:
+        {{
+          "questions": [
+            {{
+              "question_type": "mcq",
+              "question_text": "What is the capital of France?",
+              "options": [
+                "A) London",
+                "B) Berlin",
+                "C) Paris",
+                "D) Madrid"
+              ],
+              "correct_answer": "C"
+            }},
+            {{
+              "question_type": "coding",
+              "question_text": "### Sum Calculator\\n\\n**Scenario:** You are given two integers, a and b. **Task:** Write a function that returns their sum.\\n\\n**Input Format:** Two integers, a and b.\\n\\n**Output Format:** A single integer representing the sum.\\n\\n**Example:**\\n\\n- **Input:** a = 2, b = 3\\n- **Output:** 5",
+              "starter_code": "def solve(a, b):\\n  # Your code here\\n  return 0",
+              "test_cases": [
+                {{"input": "2 3", "expected_output": "5"}},
+                {{"input": "-1 5", "expected_output": "4"}}
+              ]
+            }}
+          ]
+        }}
+        """
+
+        response = model.generate_content(prompt)
+        quiz_data = json.loads(response.text)
+
+        test_session = CourseTestSession.objects.create(course=course, session_key=session_key)
+
+        for q_data in quiz_data['questions']:
+            CourseTestQuestion.objects.create(
+                test_session=test_session,
+                question_text=q_data['question_text'],
+                options=q_data.get('options'),
+                correct_answer_key=q_data.get('correct_answer'),
+                question_type=q_data['question_type'],
+                starter_code=q_data.get('starter_code'),
+                test_cases=q_data.get('test_cases')
+            )
+
+        questions = CourseTestQuestion.objects.filter(test_session=test_session)
+        sanitized_questions = []
+        for q in questions:
+            sanitized_questions.append({
+                'id': q.id,
+                'question_text': q.question_text,
+                'options': q.options,
+                'question_type': q.question_type,
+                'starter_code': q.starter_code,
+            })
+
+        return JsonResponse({'test_session_id': test_session.id, 'questions': sanitized_questions})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Failed to generate test: {str(e)}'}, status=500)
+
+@require_http_methods(["POST"])
+def submit_course_test_api(request, test_session_id):
+    try:
+        data = json.loads(request.body)
+        answers = data.get('answers', {})
+        test_session = get_object_or_404(CourseTestSession, id=test_session_id)
+        if test_session.session_key != request.session.session_key:
+            return JsonResponse({'error': 'Unauthorized'}, status=401)
+        
+        # No N+1 query problem here, as we are fetching all questions in a single query.
+        questions = test_session.questions.all()
+
+        correct_answers = 0
+        wrong_questions = []
+
+        for question in questions:
+            if str(question.id) in answers:
+                if question.question_type == 'mcq':
+                    if answers[str(question.id)] == question.correct_answer_key:
+                        correct_answers += 1
+                    else:
+                        wrong_questions.append(question.question_text)
+            # For coding questions, we assume they are manually graded for now
+
+        total_questions = questions.count()
+        score = (correct_answers / total_questions) * 100 if total_questions > 0 else 0
+
+        # Generate recommendations
+        recommendations = ""
+        if wrong_questions:
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            model = genai.GenerativeModel('gemini-pro')
+            prompt = f"""
+            A user got the following questions wrong in a test on the course '{test_session.course.title}':
+            {wrong_questions}
+            Please provide some recommendations for what the user should study to improve.
+            """
+            response = model.generate_content(prompt)
+            recommendations = response.text
+
+        CourseTestAttempt.objects.create(
+            test_session=test_session,
+            session_key=request.session.session_key,
+            submitted_answers=answers,
+            score=score,
+            percentage=score,
+            recommendations=recommendations
+        )
+
+        return JsonResponse({
+            'score': score,
+            'recommendations': recommendations
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@require_http_methods(["POST"])
+def run_code_api(request):
+    try:
+        data = json.loads(request.body)
+        code = data.get('code')
+        question_id = data.get('question_id')
+
+        question = get_object_or_404(CourseTestQuestion, id=question_id)
+        test_cases = question.test_cases
+
+        if not test_cases:
+            return JsonResponse({'error': 'No test cases found for this question.'}, status=400)
+
+        # For simplicity, we'll just run the first test case for now
+        test_case = test_cases[0]
+        source_code = code
+        language_id = 71 # Python
+
+        headers = {
+            "X-RapidAPI-Key": settings.JUDGE0_API_KEY,
+            "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "source_code": source_code,
+            "language_id": language_id,
+            "stdin": test_case['input']
+        }
+
+        try:
+            # Create submission
+            response = httpx.post("https://judge0-ce.p.rapidapi.com/submissions", headers=headers, json=payload)
+            response.raise_for_status()
+            token = response.json()['token']
+
+            # Get submission result
+            response = httpx.get(f"https://judge0-ce.p.rapidapi.com/submissions/{token}", headers=headers)
+            response.raise_for_status()
+            result = response.json()
+
+            return JsonResponse(result)
+        except httpx.HTTPStatusError as e:
+            return JsonResponse({'error': f'Judge0 API error: {e.response.text}'}, status=500)
+
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

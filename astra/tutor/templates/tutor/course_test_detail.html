@@ -1,0 +1,238 @@
+{% extends 'tutor/base.html' %}
+
+{% block title %}Comprehensive Test - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="p-10">
+    <h1 class="text-3xl font-bold text-gray-800">Comprehensive Test: {{ course.title }}</h1>
+
+    <div id="loading-spinner" class="mt-8 text-center">
+        <i class="fas fa-spinner fa-spin text-4xl text-blue-600"></i>
+        <p class="mt-2 text-gray-600">Generating your personalized test...</p>
+    </div>
+
+
+
+</div>
+
+<div id="quiz-container" class="hidden mt-8">
+        <form id="quiz-form">
+            <div id="questions-area" class="space-y-6"></div>
+            <button type="submit" id="submit-btn" class="mt-6 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200">
+                Submit Test
+            </button>
+        </form>
+    </div>
+
+    <div id="results-container" class="hidden mt-8 p-6 border rounded-lg bg-white">
+        <h2 class="text-2xl font-bold">Test Results</h2>
+        <p class="mt-4">Your score: <span id="score-display"></span></p>
+        <p class="mt-2"><span id="percentage-display"></span></p>
+        <div class="mt-4">
+            <h3 class="font-semibold">Recommendations:</h3>
+            <ul id="recommendations-list" class="list-disc list-inside mt-2"></ul>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const courseId = "{{ course.id }}";
+        const quizContainer = document.getElementById('quiz-container');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const resultsContainer = document.getElementById('results-container');
+        const quizForm = document.getElementById('quiz-form');
+        const questionsArea = document.getElementById('questions-area');
+
+        let currentTestSessionId = null;
+
+        async function generateTest() {
+            try {
+                const response = await fetch(`/api/testing/generate/${courseId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                currentTestSessionId = data.test_session_id;
+                displayQuestions(data.questions);
+                loadingSpinner.classList.add('hidden');
+                quizContainer.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('AI test generation failed, loading placeholder:', error);
+                loadingSpinner.innerHTML = `<p class="text-sm text-yellow-600 font-medium">Using placeholder questions.</p>`;
+
+                displayPlaceholderTest();
+                quizContainer.classList.remove('hidden');
+            }
+        }
+
+        function displayQuestions(questions) {
+            questions.forEach((q, index) => {
+                let questionHtml = '';
+                if (q.question_type === 'mcq') {
+                    questionHtml = `
+                        <div class="p-5 border rounded-lg bg-white question-block" data-question-id-str="${q.id}">
+                            <p class="font-semibold text-gray-800 mb-4">${index + 1}. ${q.question_text}</p>
+                            <div class="space-y-3 options-list">
+                                ${q.options.map(option => `
+                                    <label class="flex items-center space-x-3 p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
+                                        <input type="radio" name="question-${q.id}" value="${option}" class="form-radio text-blue-600">
+                                        <span class="text-gray-700">${option}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else if (q.question_type === 'coding') {
+                    questionHtml = `
+                        <div class="p-5 border rounded-lg bg-white question-block" data-question-db-id="${q.id}">
+                            <p class="font-semibold text-gray-800 mb-4">${index + 1}. ${q.question_text}</p>
+                            <div class="bg-gray-900 text-white p-4 rounded-md font-mono text-sm">
+                                <textarea class="w-full h-32 bg-transparent text-white border-0 p-0 focus:ring-0 resize-y" name="question-${q.id}" placeholder="# Your code here">${q.starter_code}</textarea>
+                            </div>
+                            <div class="mt-4">
+                                <button type="button" onclick="runCode(${q.id})" class="run-code-btn bg-green-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-green-700">
+                                    <i class="fas fa-play mr-1"></i> Run Code
+                                </button>
+                            </div>
+                            <pre class="run-code-output mt-4 p-4 bg-gray-100 rounded text-sm text-gray-700 hidden"></pre>
+                        </div>
+                    `;
+                }
+                questionsArea.innerHTML += questionHtml;
+            });
+        }
+
+        function displayPlaceholderTest() {
+            questionsArea.innerHTML = `
+                <div class="p-5 border rounded-lg bg-white question-block" data-question-id-str="mcq_mock_1">
+                    <p class="font-semibold text-gray-800 mb-4">1. (Placeholder) What is the main purpose of a 'for' loop?</p>
+                    <div class="space-y-3 options-list">
+                        <label class="flex items-center space-x-3 p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
+                            <input type="radio" name="q_mcq_mock_1" value="A" class="form-radio text-blue-600">
+                            <span class="text-gray-700">A) To store data</span>
+                        </label>
+                        <label class="flex items-center space-x-3 p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
+                            <input type="radio" name="q_mcq_mock_1" value="B" class="form-radio text-blue-600">
+                            <span class="text-gray-700">B) To iterate over a sequence of items</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="p-5 border rounded-lg bg-white question-block" data-question-id-str="code_mock_1" data-question-db-id="mock_id_1">
+                    <p class="font-semibold text-gray-800 mb-4">2. (Placeholder) Write a function 'greet(name)' that returns 'Hello, [name]!'.</p>
+                    <div class="bg-gray-900 text-white p-4 rounded-md font-mono text-sm">
+                        <textarea class="w-full h-32 bg-transparent text-white border-0 p-0 focus:ring-0 resize-y" name="q_code_mock_1" placeholder="def greet(name):\n    # Your code here"></textarea>
+                    </div>
+                    <div class="mt-4">
+                        <button type="button" class="run-code-btn-mock bg-green-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-green-700">
+                            <i class="fas fa-play mr-1"></i> Run Code
+                        </button>
+                    </div>
+                    <pre class="run-code-output mt-4 p-4 bg-gray-100 rounded text-sm text-gray-700 hidden"></pre>
+                </div>
+            `;
+            addMockButtonListeners();
+        }
+
+        function addMockButtonListeners() {
+            questionsArea.querySelectorAll('.run-code-btn-mock').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const questionBlock = e.target.closest('.question-block');
+                    const outputEl = questionBlock.querySelector('.run-code-output');
+
+                    outputEl.classList.remove('hidden');
+                    outputEl.textContent = 'Running code...';
+                    btn.disabled = true;
+                    btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> Running...`;
+
+                    setTimeout(() => {
+                        outputEl.textContent = 'Mock Result: ✅ Test case passed!';
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-play mr-1"></i> Run Code';
+                    }, 1200);
+                });
+            });
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+
+            if (currentTestSessionId === null) {
+                handleMockSubmit();
+            } else {
+                await handleRealSubmit();
+            }
+        }
+
+        async function handleRealSubmit() {
+            const formData = new FormData(quizForm);
+            const answers = {};
+            for (let [name, value] of formData.entries()) {
+                const questionId = name.split('-')[1];
+                answers[questionId] = value;
+            }
+
+            try {
+                const response = await fetch(`/api/testing/submit/${currentTestSessionId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ answers: answers })
+                });
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                quizContainer.classList.add('hidden');
+                loadingSpinner.classList.add('hidden');
+                resultsContainer.classList.remove('hidden');
+
+                document.getElementById('score-display').textContent = `${data.score.toFixed(1)}%`;
+                document.getElementById('percentage-display').textContent = ``;
+                const recommendationsList = document.getElementById('recommendations-list');
+                recommendationsList.innerHTML = `<li>${data.recommendations}</li>`;
+
+            } catch (error) {
+                console.error('Error submitting test:', error);
+                alert('An error occurred while submitting your test. Please try again.');
+            }
+        }
+
+        function handleMockSubmit() {
+            console.log("Handling MOCK submission...");
+            quizContainer.classList.add('hidden');
+            loadingSpinner.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+
+            document.getElementById('score-display').textContent = `1 / 2`;
+            document.getElementById('percentage-display').textContent = `50.0% (Placeholder)`;
+            document.getElementById('recommendations-list').innerHTML = `
+                <li class="text-gray-700">(Placeholder) Great job! Review how 'for' loops work.</li>
+                <li class="text-gray-700">(Placeholder) Practice basic function syntax and return statements.</li>
+            `;
+        }
+
+        quizForm.addEventListener('submit', handleSubmit);
+
+        generateTest();
+    });
+</script>
+{% endblock %}
