@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstraLearn Analytics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #f3f2ef; }
+        .nav-icon { transition: all 0.2s; }
+        .nav-icon:hover { color: #0a66c2; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.1); transition: box-shadow 0.2s; }
+        .card:hover { box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.1); }
+        .metric-card { padding: 1.5rem; text-align: center; }
+        .metric-value { font-size: 2rem; font-weight: bold; color: #0a66c2; }
+        .metric-label { font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem; }
+        .chart-placeholder { background: #f9fafb; border: 2px dashed #d1d5db; border-radius: 8px; display: flex; align-items: center; justify-content: center; min-height: 200px; color: #9ca3af; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-14">
+                <div class="flex items-center space-x-2">
+                    <div class="flex items-center">
+                        <div class="w-9 h-9 bg-blue-600 rounded flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-white text-lg"></i>
+                        </div>
+                        <span class="ml-2 text-xl font-bold text-blue-600">AstraLearn</span>
+                    </div>
+                    <input type="text" placeholder="Search" class="hidden md:block ml-2 w-64 px-3 py-1.5 bg-gray-100 rounded text-sm focus:outline-none focus:bg-white focus:border focus:border-gray-300">
+                </div>
+                <nav class="flex items-center space-x-6">
+                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-home text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Home</span>
+                    </a>
+                    <a href="{{ url_for('main.network') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-user-friends text-xl mb-1"></i>
+                        <span class="text-xs font-medium">People</span>
+                    </a>
+                    <a href="{{ url_for('main.internships') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-briefcase text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Internships</span>
+                    </a>
+                    <a href="{{ url_for('main.messages') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-comment-dots text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Messages</span>
+                    </a>
+                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-bell text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Notifications</span>
+                    </a>
+                    <a href="/analytics" class="nav-icon flex flex-col items-center text-blue-600">
+                        <i class="fas fa-chart-bar text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Analytics</span>
+                    </a>
+                    <a href="{{ url_for('profile.view_profile', username=current_user.username) }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <div class="w-6 h-6 rounded-full overflow-hidden">
+                           <img src="{{ current_user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
+                        </div>
+                        <span class="text-xs font-medium">Me</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
+            <p class="text-gray-600">Overview of platform metrics and insights</p>
+        </div>
+
+        <!-- Key Metrics Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.flask.total_users | default(0) }}</div>
+                <div class="metric-label">Total Users</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.flask.total_posts | default(0) }}</div>
+                <div class="metric-label">Posts</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.flask.total_internships | default(0) }}</div>
+                <div class="metric-label">Internships</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.flask.total_jobs | default(0) }}</div>
+                <div class="metric-label">Jobs</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.flask.total_workshops | default(0) }}</div>
+                <div class="metric-label">Workshops</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.flask.total_events | default(0) }}</div>
+                <div class="metric-label">Events</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.flask.total_messages | default(0) }}</div>
+                <div class="metric-label">Messages</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.flask.avg_profile_completeness | default(0) }}%</div>
+                <div class="metric-label">Avg Profile Completeness</div>
+            </div>
+        </div>
+
+        <!-- Charts and Visualizations Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- User Growth Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">User Growth Over Time</h3>
+                <canvas id="userGrowthChart"></canvas>
+            </div>
+
+            <!-- Post Activity Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Post Activity</h3>
+                <canvas id="postActivityChart"></canvas>
+            </div>
+
+            <!-- Engagement Metrics -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Engagement Metrics</h3>
+                <canvas id="engagementChart"></canvas>
+            </div>
+
+            <!-- AI Interactions -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">AI Interactions</h3>
+                <canvas id="aiInteractionsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Learning Progress Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+            <!-- Learning Metrics -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Learning Progress</h3>
+                <canvas id="learningProgressChart"></canvas>
+            </div>
+
+            <!-- Quiz Performance -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quiz Performance</h3>
+                <canvas id="quizPerformanceChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Additional Analytics Sections -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+            <!-- Recent Activity -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                <ul class="space-y-2 text-sm text-gray-700">
+                    <li class="flex justify-between">
+                        <span>Recent Posts (30d)</span>
+                        <span class="font-medium">{{ analytics_data.flask.recent_posts | default(0) }}</span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span>Recent Messages (30d)</span>
+                        <span class="font-medium">{{ analytics_data.flask.recent_messages | default(0) }}</span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span>AI Interactions (30d)</span>
+                        <span class="font-medium">{{ analytics_data.ai_guru.recent_interactions | default(0) if not analytics_data.ai_guru.error else 'N/A' }}</span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span>Learning Activity (30d)</span>
+                        <span class="font-medium">{{ analytics_data.astra.recent_activity | default(0) if not analytics_data.astra.error else 'N/A' }}</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Platform Health -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Platform Health</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Server Status</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-check-circle mr-1"></i> Online
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Database</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-check-circle mr-1"></i> Connected
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">AI Guru Status</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-green-100 text-green-800' if not analytics_data.ai_guru.error else 'bg-red-100 text-red-800' }}">
+                            <i class="fas fa-{{ 'check-circle' if not analytics_data.ai_guru.error else 'exclamation-triangle' }} mr-1"></i> {{ 'Online' if not analytics_data.ai_guru.error else 'Offline' }}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Astra Status</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-green-100 text-green-800' if not analytics_data.astra.error else 'bg-red-100 text-red-800' }}">
+                            <i class="fas fa-{{ 'check-circle' if not analytics_data.astra.error else 'exclamation-triangle' }} mr-1"></i> {{ 'Online' if not analytics_data.astra.error else 'Offline' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                <div class="space-y-2">
+                    <button class="w-full bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
+                        Export Data
+                    </button>
+                    <button class="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors">
+                        Generate Report
+                    </button>
+                    <button class="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors">
+                        View Logs
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // User Growth Chart
+        const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
+        new Chart(userGrowthCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Users',
+                    data: [10, 20, 30, 40, 50, {{ analytics_data.flask.total_users | default(0) }}],
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Post Activity Chart
+        const postActivityCtx = document.getElementById('postActivityChart').getContext('2d');
+        new Chart(postActivityCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Posts', 'Internships', 'Jobs', 'Workshops', 'Events'],
+                datasets: [{
+                    label: 'Count',
+                    data: [
+                        {{ analytics_data.flask.total_posts | default(0) }},
+                        {{ analytics_data.flask.total_internships | default(0) }},
+                        {{ analytics_data.flask.total_jobs | default(0) }},
+                        {{ analytics_data.flask.total_workshops | default(0) }},
+                        {{ analytics_data.flask.total_events | default(0) }}
+                    ],
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Engagement Metrics
+        const engagementCtx = document.getElementById('engagementChart').getContext('2d');
+        new Chart(engagementCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Messages', 'Posts', 'Events'],
+                datasets: [{
+                    data: [
+                        {{ analytics_data.flask.total_messages | default(0) }},
+                        {{ analytics_data.flask.total_posts | default(0) }},
+                        {{ analytics_data.flask.total_events | default(0) }}
+                    ],
+                    backgroundColor: ['rgba(255, 99, 132, 0.8)', 'rgba(54, 162, 235, 0.8)', 'rgba(255, 205, 86, 0.8)']
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        // AI Interactions Chart
+        const aiInteractionsCtx = document.getElementById('aiInteractionsChart').getContext('2d');
+        new Chart(aiInteractionsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Total Interactions', 'Unique Sessions', 'Feedback'],
+                datasets: [{
+                    data: [
+                        {{ analytics_data.ai_guru.total_interactions | default(0) if not analytics_data.ai_guru.error else 0 }},
+                        {{ analytics_data.ai_guru.unique_sessions | default(0) if not analytics_data.ai_guru.error else 0 }},
+                        {{ analytics_data.ai_guru.total_feedback | default(0) if not analytics_data.ai_guru.error else 0 }}
+                    ],
+                    backgroundColor: ['rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 159, 64, 0.8)']
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        // Learning Progress Chart
+        const learningProgressCtx = document.getElementById('learningProgressChart').getContext('2d');
+        new Chart(learningProgressCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Courses', 'Modules', 'Lessons', 'Completed Lessons'],
+                datasets: [{
+                    label: 'Count',
+                    data: [
+                        {{ analytics_data.astra.total_courses | default(0) if not analytics_data.astra.error else 0 }},
+                        {{ analytics_data.astra.total_modules | default(0) if not analytics_data.astra.error else 0 }},
+                        {{ analytics_data.astra.total_lessons | default(0) if not analytics_data.astra.error else 0 }},
+                        {{ analytics_data.astra.total_completed_lessons | default(0) if not analytics_data.astra.error else 0 }}
+                    ],
+                    backgroundColor: 'rgba(75, 192, 192, 0.8)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Quiz Performance Chart
+        const quizPerformanceCtx = document.getElementById('quizPerformanceChart').getContext('2d');
+        new Chart(quizPerformanceCtx, {
+            type: 'line',
+            data: {
+                labels: ['Attempts', 'Avg Score'],
+                datasets: [{
+                    label: 'Quiz Metrics',
+                    data: [
+                        {{ analytics_data.astra.total_quiz_attempts | default(0) if not analytics_data.astra.error else 0 }},
+                        {{ analytics_data.astra.avg_quiz_score | default(0) if not analytics_data.astra.error else 0 }}
+                    ],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
