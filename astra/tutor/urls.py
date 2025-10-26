@@ -29,4 +29,10 @@ urlpatterns = [
     path('api/lesson/<int:lesson_id>/example/', views.generate_example, name='generate_example'),
 
     path('api/lessons/<int:lesson_id>/complete/', views.mark_lesson_complete, name='mark_lesson_complete'),
+
+    # --- Comprehensive Test URLs ---
+    path('course/<int:course_id>/test/', views.start_course_test_view, name='start_course_test'),
+    path('api/testing/generate/<int:course_id>/', views.generate_course_test_api, name='generate_course_test_api'),
+    path('api/testing/submit/<int:test_session_id>/', views.submit_course_test_api, name='submit_course_test_api'),
+    path('api/testing/run_code/', views.run_code_api, name='run_code_api'),
 ]

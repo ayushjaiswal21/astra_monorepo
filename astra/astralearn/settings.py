@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'tutor',
     'django_celery_results',
+    'httpx',
 ]
 
 MIDDLEWARE = [
@@ -133,6 +134,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Gemini API Key (for production, use environment variables)
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY') or 'your-gemini-api-key-placeholder'
+JUDGE0_API_KEY = os.getenv('JUDGE0_API_KEY') or 'your-judge0-api-key-placeholder'
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434/api/generate')
 
 
