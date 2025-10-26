@@ -99,3 +99,35 @@ class ModuleProgress(models.Model):
     
     class Meta:
         unique_together = ('session_key', 'module')
+
+class CourseTestSession(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='test_sessions')
+    session_key = models.CharField(max_length=40, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Test Session for {self.course.title} by {self.session_key}"
+
+class CourseTestQuestion(models.Model):
+    test_session = models.ForeignKey(CourseTestSession, on_delete=models.CASCADE, related_name='questions')
+    question_text = models.TextField()
+    options = models.JSONField()
+    correct_answer_key = models.CharField(max_length=10)
+    question_type = models.CharField(max_length=20, default='mcq') # 'mcq' or 'coding'
+    starter_code = models.TextField(blank=True, null=True)
+    test_cases = models.JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.question_text[:50] + "..."
+
+class CourseTestAttempt(models.Model):
+    test_session = models.ForeignKey(CourseTestSession, on_delete=models.CASCADE, related_name='attempts')
+    session_key = models.CharField(max_length=40, db_index=True)
+    submitted_answers = models.JSONField()
+    score = models.FloatField()
+    percentage = models.FloatField()
+    recommendations = models.TextField(blank=True, null=True)
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Attempt for {self.test_session.course.title} by {self.session_key}"
