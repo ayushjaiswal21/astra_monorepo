@@ -1,11 +1,14 @@
 import json
 import random
+from datetime import timedelta
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
+from django.db.models import Avg
 from django.conf import settings
+from django.utils import timezone
 import google.generativeai as genai
 
 from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress, UserQuizAttempt, ModuleProgress
@@ -264,6 +267,40 @@ def ai_assistant(request):
         
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+# Analytics endpoint for aggregated learning data
+@require_http_methods(["GET"])
+def analytics(request):
+    """Get aggregated analytics data for learning progress"""
+    try:
+        total_courses = Course.objects.count()
+        total_modules = Module.objects.count()
+        total_lessons = Lesson.objects.count()
+        total_quizzes = Quiz.objects.count()
+        total_user_progress = UserProgress.objects.filter(completed=True).count()
+        total_quiz_attempts = UserQuizAttempt.objects.count()
+        avg_quiz_score = UserQuizAttempt.objects.aggregate(avg_score=Avg('score'))['avg_score'] or 0
+
+        # Recent activity (last 30 days)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        recent_progress = UserProgress.objects.filter(last_reviewed__gte=thirty_days_ago).count()
+
+        # Unique sessions (based on session_key)
+        unique_sessions = UserProgress.objects.values('session_key').distinct().count()
+
+        return JsonResponse({
+            'total_courses': total_courses,
+            'total_modules': total_modules,
+            'total_lessons': total_lessons,
+            'total_quizzes': total_quizzes,
+            'total_completed_lessons': total_user_progress,
+            'total_quiz_attempts': total_quiz_attempts,
+            'avg_quiz_score': round(avg_quiz_score, 2),
+            'recent_activity': recent_progress,
+            'unique_sessions': unique_sessions
+        })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 

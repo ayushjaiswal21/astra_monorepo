@@ -52,6 +52,10 @@
                         <i class="fas fa-bell text-xl mb-1"></i>
                         <span class="text-xs font-medium">Notifications</span>
                     </a>
+                    <a href="/analytics" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-chart-bar text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Analytics</span>
+                    </a>
                     <a href="{{ url_for('profile.view_profile', username=current_user.username) }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
                         <div class="w-6 h-6 rounded-full overflow-hidden">
                            <img src="{{ current_user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">

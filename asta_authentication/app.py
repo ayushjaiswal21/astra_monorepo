@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from flask import Flask, jsonify
 from flask_socketio import SocketIO
 from flask_login import LoginManager, login_required, current_user
@@ -9,6 +10,9 @@ from auth_routes import auth_bp
 from main_routes import main_bp
 from profile_routes import profile_bp
 import logging
+
+# Load environment variables
+load_dotenv()
 
 # --- App Initialization ---
 app = Flask(__name__)
@@ -77,4 +81,5 @@ with app.app_context():
 
 # --- Main Execution ---
 if __name__ == '__main__':
-    socketio.run(app, debug=DEBUG_MODE, host='127.0.0.1', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, debug=DEBUG_MODE, host='127.0.0.1', port=port)

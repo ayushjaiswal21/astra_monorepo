@@ -29,4 +29,5 @@ urlpatterns = [
     path('api/lesson/<int:lesson_id>/example/', views.generate_example, name='generate_example'),
 
     path('api/lessons/<int:lesson_id>/complete/', views.mark_lesson_complete, name='mark_lesson_complete'),
+    path('api/analytics/', views.analytics, name='analytics'),
 ]
