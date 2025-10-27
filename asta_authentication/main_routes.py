@@ -1,11 +1,54 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import current_user, login_required
-from models import db, User, Post, Internship, JobPost, Workshop, Event, Message
+from models import db, User, Post, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification
 from werkzeug.utils import secure_filename
 import os
-from sqlalchemy import or_
+from sqlalchemy import or_, func
+from datetime import datetime, timedelta
+import requests
 
 main_bp = Blueprint('main', __name__)
+
+def fetch_ai_guru_analytics():
+    """Fetch analytics data from ai-guru backend"""
+    try:
+        response = requests.get('http://localhost:8001/analytics', timeout=5)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": "Failed to fetch ai-guru data"}
+    except requests.RequestException:
+        return {"error": "ai-guru service unavailable"}
+
+def fetch_astra_analytics():
+    """Fetch analytics data from astra Django app"""
+    try:
+        response = requests.get('http://localhost:8000/api/analytics/', timeout=5)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": "Failed to fetch astra data"}
+    except requests.RequestException:
+        return {"error": "astra service unavailable"}
+
+def calculate_profile_completeness(user):
+    """Calculate profile completeness percentage"""
+    fields = [user.name, user.headline, user.location, user.university, user.about]
+    filled_fields = sum(1 for field in fields if field)
+    education_count = Education.query.filter_by(user_id=user.id).count()
+    experience_count = Experience.query.filter_by(user_id=user.id).count()
+    skills_count = Skill.query.filter_by(user_id=user.id).count()
+    certifications_count = Certification.query.filter_by(user_id=user.id).count()
+    total_items = len(fields) + 4  # 4 for counts
+    filled_items = filled_fields + (1 if education_count > 0 else 0) + (1 if experience_count > 0 else 0) + (1 if skills_count > 0 else 0) + (1 if certifications_count > 0 else 0)
+    return round((filled_items / total_items) * 100, 1) if total_items > 0 else 0
+
+def get_activity_trends():
+    """Get activity trends like recent posts"""
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    recent_posts = Post.query.filter(Post.timestamp >= thirty_days_ago).count()
+    recent_messages = Message.query.filter(Message.timestamp >= thirty_days_ago).count()
+    return {"recent_posts": recent_posts, "recent_messages": recent_messages}
 
 @main_bp.route('/')
 def index():
@@ -18,6 +61,53 @@ def index():
 def dashboard():
     all_users = User.query.all()
     return render_template('dashboard.html', user=current_user, all_users=all_users)
+
+@main_bp.route('/analytics')
+@login_required
+def analytics():
+    # Flask data
+    total_users = User.query.count()
+    total_posts = Post.query.count()
+    total_internships = Internship.query.count()
+    total_jobs = JobPost.query.count()
+    total_workshops = Workshop.query.count()
+    total_events = Event.query.count()
+    total_messages = Message.query.count()
+
+    # Profile completeness
+    avg_profile_completeness = 0
+    if total_users > 0:
+        completeness_scores = [calculate_profile_completeness(user) for user in User.query.all()]
+        avg_profile_completeness = round(sum(completeness_scores) / total_users, 1)
+
+    # Activity trends
+    activity_trends = get_activity_trends()
+
+    # Fetch from ai-guru
+    ai_guru_data = fetch_ai_guru_analytics()
+
+    # Fetch from astra
+    astra_data = fetch_astra_analytics()
+
+    # Aggregate data
+    analytics_data = {
+        "flask": {
+            "total_users": total_users,
+            "total_posts": total_posts,
+            "total_internships": total_internships,
+            "total_jobs": total_jobs,
+            "total_workshops": total_workshops,
+            "total_events": total_events,
+            "total_messages": total_messages,
+            "avg_profile_completeness": avg_profile_completeness,
+            "recent_posts": activity_trends["recent_posts"],
+            "recent_messages": activity_trends["recent_messages"]
+        },
+        "ai_guru": ai_guru_data,
+        "astra": astra_data
+    }
+
+    return render_template('analytics.html', current_user=current_user, analytics_data=analytics_data)
 
 @main_bp.route('/api/messages/<username>')
 @login_required

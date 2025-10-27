@@ -18,7 +18,6 @@ echo.
 echo This script will open a new window for each service.
 echo Please keep them running.
 echo.
-pause
 
 echo Starting services...
 echo.
@@ -27,13 +26,13 @@ echo [1/5] Starting Astra Authentication (Flask on port 5000)...
 start "Astra Auth" cmd /k "cd asta_authentication && python app.py"
 
 echo [2/5] Starting AI Guru Backend (FastAPI on port 8001)...
-start "AI Guru Backend" cmd /k "cd ai-guru && uvicorn backend.main:app --port 8001"
+start "AI Guru Backend" cmd /k "cd ai-guru && python -m uvicorn backend.main:app --port 8001"
 
 echo [3/5] Starting AI Guru Frontend (React on port 3000)...
-start "AI Guru Frontend" cmd /k "cd ai-guru\frontend && npm start"
+start "AI Guru Frontend" cmd /k "cd ai-guru\frontend && npm install && npm start"
 
 echo [4/5] Starting Astra Platform (Django on port 8000)...
-start "Astra Platform" cmd /k "cd astra && python manage.py runserver"
+start "Astra Platform" cmd /k "cd astra && python manage.py migrate && python manage.py runserver"
 
 echo [5/5] Starting Astra Celery Worker...
 start "Astra Celery Worker" cmd /k "cd astra && celery -A astralearn worker -l info"
