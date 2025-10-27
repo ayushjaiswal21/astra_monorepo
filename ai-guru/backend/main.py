@@ -983,6 +983,61 @@ def calculate_learning_effectiveness():
     except Exception as e:
         return f"Error calculating effectiveness: {str(e)}"
 
+# Analytics endpoint for aggregated data
+@app.get("/analytics")
+def get_analytics():
+    """Get aggregated analytics data for chat interactions"""
+    if not database.is_db_available():
+        return {"error": "Database unavailable"}
+    try:
+        chat_collection = database.get_chat_collection()
+        
+        # Total interactions
+        total_interactions = chat_collection.count_documents({})
+        
+        # Unique sessions
+        unique_sessions = len(chat_collection.distinct("session_id"))
+        
+        # Total feedback
+        feedback_collection = database.get_feedback_collection()
+        total_feedback = feedback_collection.count_documents({}) if feedback_collection else 0
+        
+        # Interactions over time (last 30 days)
+        from datetime import datetime, timedelta
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        recent_interactions = chat_collection.count_documents({"timestamp": {"$gte": thirty_days_ago}})
+        
+        # Average response length
+        avg_response_length = 0
+        if total_interactions > 0:
+            pipeline = [
+                {"$group": {"_id": None, "avg_length": {"$avg": {"$strLenCP": "$bot_response"}}}}
+            ]
+            result = list(chat_collection.aggregate(pipeline))
+            if result:
+                avg_response_length = round(result[0].get("avg_length", 0), 2)
+        
+        # Feedback breakdown
+        feedback_breakdown = {}
+        if feedback_collection:
+            pipeline = [
+                {"$group": {"_id": "$feedback_type", "count": {"$sum": 1}}}
+            ]
+            feedback_results = list(feedback_collection.aggregate(pipeline))
+            feedback_breakdown = {item["_id"]: item["count"] for item in feedback_results}
+        
+        return {
+            "total_interactions": total_interactions,
+            "unique_sessions": unique_sessions,
+            "total_feedback": total_feedback,
+            "recent_interactions": recent_interactions,
+            "avg_response_length": avg_response_length,
+            "feedback_breakdown": feedback_breakdown
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+
 if __name__ == "__main__":
     import uvicorn
     print("🚀 Starting AI Guru Multibot Backend...")
