@@ -14,9 +14,9 @@
         <div class="flex justify-between items-center">
           <span class="text-sm text-gray-500">Posted by: {{ item.provider.username }} on {{ item.date_posted.strftime('%b %d, %Y') }}</span>
           {% if item.register_link %}
-            <a href="{{ item.register_link }}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm">
+            <button onclick="registerForWorkshop({{ item.id }}, '{{ item.register_link }}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm">
               Register
-            </a>
+            </button>
           {% endif %}
         </div>
       </div>
@@ -27,4 +27,27 @@
     {% endfor %}
   </div>
 </div>
+
+<script>
+    function registerForWorkshop(workshopId, registerLink) {
+        fetch(`/api/workshop/${workshopId}/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log(`Registration for workshop ${workshopId} logged.`);
+                window.open(registerLink, '_blank');
+            } else {
+                console.error(`Failed to log registration for workshop ${workshopId}:`, data.error);
+            }
+        })
+        .catch(error => {
+            console.error(`Error registering for workshop ${workshopId}:`, error);
+        });
+    }
+</script>
 {% endblock content %}

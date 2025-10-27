@@ -77,168 +77,169 @@
             <p class="text-gray-600">Overview of platform metrics and insights</p>
         </div>
 
-        <!-- Key Metrics Section -->
+        <!-- Common Core Metrics Section -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="card metric-card">
-                <div class="metric-value">{{ analytics_data.flask.total_users | default(0) }}</div>
-                <div class="metric-label">Total Users</div>
+                <div class="metric-value">{{ analytics_data.common.profile_views | default(0) }}</div>
+                <div class="metric-label">Profile Views</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-value">{{ analytics_data.flask.total_posts | default(0) }}</div>
-                <div class="metric-label">Posts</div>
+                <div class="metric-value">{{ analytics_data.common.total_connections | default(0) }}</div>
+                <div class="metric-label">Total Connections</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-value">{{ analytics_data.flask.total_internships | default(0) }}</div>
-                <div class="metric-label">Internships</div>
+                <div class="metric-value">{{ analytics_data.common.pending_connections | default(0) }}</div>
+                <div class="metric-label">Pending Connections</div>
             </div>
             <div class="card metric-card">
-                <div class="metric-value">{{ analytics_data.flask.total_jobs | default(0) }}</div>
-                <div class="metric-label">Jobs</div>
-            </div>
-            <div class="card metric-card">
-                <div class="metric-value">{{ analytics_data.flask.total_workshops | default(0) }}</div>
-                <div class="metric-label">Workshops</div>
-            </div>
-            <div class="card metric-card">
-                <div class="metric-value">{{ analytics_data.flask.total_events | default(0) }}</div>
-                <div class="metric-label">Events</div>
-            </div>
-            <div class="card metric-card">
-                <div class="metric-value">{{ analytics_data.flask.total_messages | default(0) }}</div>
-                <div class="metric-label">Messages</div>
-            </div>
-            <div class="card metric-card">
-                <div class="metric-value">{{ analytics_data.flask.avg_profile_completeness | default(0) }}%</div>
-                <div class="metric-label">Avg Profile Completeness</div>
+                <div class="metric-value">{{ analytics_data.common.login_frequency | default(0) }}</div>
+                <div class="metric-label">Login Count</div>
             </div>
         </div>
 
-        <!-- Charts and Visualizations Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- User Growth Chart -->
-            <div class="card p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">User Growth Over Time</h3>
-                <canvas id="userGrowthChart"></canvas>
-            </div>
-
-            <!-- Post Activity Chart -->
-            <div class="card p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Post Activity</h3>
-                <canvas id="postActivityChart"></canvas>
-            </div>
-
-            <!-- Engagement Metrics -->
-            <div class="card p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Engagement Metrics</h3>
-                <canvas id="engagementChart"></canvas>
-            </div>
-
-            <!-- AI Interactions -->
-            <div class="card p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">AI Interactions</h3>
-                <canvas id="aiInteractionsChart"></canvas>
-            </div>
+        <!-- Activity Feed -->
+        <div class="card p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+            <ul class="space-y-2 text-sm text-gray-700">
+                {% for activity in analytics_data.common.activity_feed %}
+                <li>{{ activity.timestamp.strftime('%Y-%m-%d %H:%M') }}: {{ activity.activity_type | replace('_', ' ') }} {{ activity.details }}</li>
+                {% else %}
+                <li>No recent activity.</li>
+                {% endfor %}
+            </ul>
         </div>
 
-        <!-- Learning Progress Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-            <!-- Learning Metrics -->
-            <div class="card p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Learning Progress</h3>
-                <canvas id="learningProgressChart"></canvas>
-            </div>
-
-            <!-- Quiz Performance -->
-            <div class="card p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quiz Performance</h3>
-                <canvas id="quizPerformanceChart"></canvas>
-            </div>
+        {% if current_user.role == 'seeker' %}
+        <!-- Seeker Dashboard -->
+        <div class="mb-6">
+            <h2 class="text-xl font-bold text-gray-900">Seeker Dashboard</h2>
+            <p class="text-gray-600">Your learning and career journey</p>
         </div>
 
-        <!-- Additional Analytics Sections -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-            <!-- Recent Activity -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.seeker.courses_enrolled | default(0) }}</div>
+                <div class="metric-label">Courses Enrolled</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.seeker.overall_progress | default(0) }}%</div>
+                <div class="metric-label">Overall Learning Progress</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.seeker.tests_completed | default(0) }}</div>
+                <div class="metric-label">Tests/Quizzes Completed</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.seeker.internships_viewed | default(0) }}</div>
+                <div class="metric-label">Internships Viewed</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.seeker.internships_applied | default(0) }}</div>
+                <div class="metric-label">Internships Applied</div>
+            </div>
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.seeker.workshops_registered | default(0) }}</div>
+                <div class="metric-label">Workshops Registered</div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if current_user.role == 'provider' %}
+        <!-- Provider Dashboard -->
+        <div class="mb-6">
+            <h2 class="text-xl font-bold text-gray-900">Provider Dashboard</h2>
+            <p class="text-gray-600">Your impact and community reach</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="card metric-card">
+                <div class="metric-value">{{ analytics_data.provider.seekers_connected | default(0) }}</div>
+                <div class="metric-label">Seekers Connected</div>
+            </div>
             <div class="card p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Announcement Performance</h3>
                 <ul class="space-y-2 text-sm text-gray-700">
-                    <li class="flex justify-between">
-                        <span>Recent Posts (30d)</span>
-                        <span class="font-medium">{{ analytics_data.flask.recent_posts | default(0) }}</span>
-                    </li>
-                    <li class="flex justify-between">
-                        <span>Recent Messages (30d)</span>
-                        <span class="font-medium">{{ analytics_data.flask.recent_messages | default(0) }}</span>
-                    </li>
-                    <li class="flex justify-between">
-                        <span>AI Interactions (30d)</span>
-                        <span class="font-medium">{{ analytics_data.ai_guru.recent_interactions | default(0) if not analytics_data.ai_guru.error else 'N/A' }}</span>
-                    </li>
-                    <li class="flex justify-between">
-                        <span>Learning Activity (30d)</span>
-                        <span class="font-medium">{{ analytics_data.astra.recent_activity | default(0) if not analytics_data.astra.error else 'N/A' }}</span>
-                    </li>
+                    {% for title, count in analytics_data.provider.announcement_performance.internships.items() %}
+                    <li>{{ title }}: {{ count }} applicants</li>
+                    {% endfor %}
+                    {% for title, count in analytics_data.provider.announcement_performance.jobs.items() %}
+                    <li>{{ title }}: {{ count }} applicants</li>
+                    {% endfor %}
+                    {% for title, count in analytics_data.provider.announcement_performance.workshops.items() %}
+                    <li>{{ title }}: {{ count }} registrations</li>
+                    {% endfor %}
                 </ul>
             </div>
-
-            <!-- Platform Health -->
-            <div class="card p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Platform Health</h3>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Server Status</span>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            <i class="fas fa-check-circle mr-1"></i> Online
-                        </span>
+            <!-- Seeker Progress Tracking -->
+            <div class="card p-6 col-span-2">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Connected Seeker Progress</h3>
+                {% if analytics_data.provider.seeker_progress %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for seeker in analytics_data.provider.seeker_progress %}
+                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-blue-600"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h4 class="font-semibold text-gray-900">{{ seeker.name }}</h4>
+                                <p class="text-xs text-gray-500">@{{ seeker.username }}</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Courses:</span>
+                                <span class="font-semibold text-gray-900">{{ seeker.courses_enrolled }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Tests Completed:</span>
+                                <span class="font-semibold text-gray-900">{{ seeker.tests_completed }}</span>
+                            </div>
+                            <div class="mt-2">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600">Progress:</span>
+                                    <span class="font-semibold text-blue-600">{{ seeker.overall_progress }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" style="width: {{ seeker.overall_progress }}%"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Database</span>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            <i class="fas fa-check-circle mr-1"></i> Connected
-                        </span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">AI Guru Status</span>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-green-100 text-green-800' if not analytics_data.ai_guru.error else 'bg-red-100 text-red-800' }}">
-                            <i class="fas fa-{{ 'check-circle' if not analytics_data.ai_guru.error else 'exclamation-triangle' }} mr-1"></i> {{ 'Online' if not analytics_data.ai_guru.error else 'Offline' }}
-                        </span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Astra Status</span>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-green-100 text-green-800' if not analytics_data.astra.error else 'bg-red-100 text-red-800' }}">
-                            <i class="fas fa-{{ 'check-circle' if not analytics_data.astra.error else 'exclamation-triangle' }} mr-1"></i> {{ 'Online' if not analytics_data.astra.error else 'Offline' }}
-                        </span>
-                    </div>
+                    {% endfor %}
                 </div>
+                {% else %}
+                <p class="text-sm text-gray-600">No connected seekers yet. Connect with seekers to track their progress.</p>
+                {% endif %}
             </div>
+        </div>
+        {% endif %}
 
-            <!-- Quick Actions -->
+        <!-- Charts and Visualizations Section (can be common or role-specific) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Example Chart: User Activity Over Time (can be adapted) -->
             <div class="card p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                <div class="space-y-2">
-                    <button class="w-full bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
-                        Export Data
-                    </button>
-                    <button class="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors">
-                        Generate Report
-                    </button>
-                    <button class="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors">
-                        View Logs
-                    </button>
-                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">User Activity Over Time</h3>
+                <canvas id="userActivityChart"></canvas>
+            </div>
+            <!-- Example Chart: Content Engagement (can be adapted) -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Content Engagement</h3>
+                <canvas id="contentEngagementChart"></canvas>
             </div>
         </div>
     </div>
 
     <script>
-        // User Growth Chart
-        const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
-        new Chart(userGrowthCtx, {
+        // Common Chart: User Activity Over Time
+        const userActivityCtx = document.getElementById('userActivityChart').getContext('2d');
+        new Chart(userActivityCtx, {
             type: 'line',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
                 datasets: [{
-                    label: 'Users',
-                    data: [10, 20, 30, 40, 50, {{ analytics_data.flask.total_users | default(0) }}],
+                    label: 'Logins',
+                    data: [0, 0, 0, 0, 0, 0, {{ analytics_data.common.login_frequency | default(0) }}],
                     borderColor: 'rgb(59, 130, 246)',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     tension: 0.1
@@ -254,88 +255,15 @@
             }
         });
 
-        // Post Activity Chart
-        const postActivityCtx = document.getElementById('postActivityChart').getContext('2d');
-        new Chart(postActivityCtx, {
+        // Common Chart: Content Engagement (Placeholder for now)
+        const contentEngagementCtx = document.getElementById('contentEngagementChart').getContext('2d');
+        new Chart(contentEngagementCtx, {
             type: 'bar',
             data: {
                 labels: ['Posts', 'Internships', 'Jobs', 'Workshops', 'Events'],
                 datasets: [{
-                    label: 'Count',
-                    data: [
-                        {{ analytics_data.flask.total_posts | default(0) }},
-                        {{ analytics_data.flask.total_internships | default(0) }},
-                        {{ analytics_data.flask.total_jobs | default(0) }},
-                        {{ analytics_data.flask.total_workshops | default(0) }},
-                        {{ analytics_data.flask.total_events | default(0) }}
-                    ],
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)'
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-
-        // Engagement Metrics
-        const engagementCtx = document.getElementById('engagementChart').getContext('2d');
-        new Chart(engagementCtx, {
-            type: 'pie',
-            data: {
-                labels: ['Messages', 'Posts', 'Events'],
-                datasets: [{
-                    data: [
-                        {{ analytics_data.flask.total_messages | default(0) }},
-                        {{ analytics_data.flask.total_posts | default(0) }},
-                        {{ analytics_data.flask.total_events | default(0) }}
-                    ],
-                    backgroundColor: ['rgba(255, 99, 132, 0.8)', 'rgba(54, 162, 235, 0.8)', 'rgba(255, 205, 86, 0.8)']
-                }]
-            },
-            options: {
-                responsive: true
-            }
-        });
-
-        // AI Interactions Chart
-        const aiInteractionsCtx = document.getElementById('aiInteractionsChart').getContext('2d');
-        new Chart(aiInteractionsCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Total Interactions', 'Unique Sessions', 'Feedback'],
-                datasets: [{
-                    data: [
-                        {{ analytics_data.ai_guru.total_interactions | default(0) if not analytics_data.ai_guru.error else 0 }},
-                        {{ analytics_data.ai_guru.unique_sessions | default(0) if not analytics_data.ai_guru.error else 0 }},
-                        {{ analytics_data.ai_guru.total_feedback | default(0) if not analytics_data.ai_guru.error else 0 }}
-                    ],
-                    backgroundColor: ['rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 159, 64, 0.8)']
-                }]
-            },
-            options: {
-                responsive: true
-            }
-        });
-
-        // Learning Progress Chart
-        const learningProgressCtx = document.getElementById('learningProgressChart').getContext('2d');
-        new Chart(learningProgressCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Courses', 'Modules', 'Lessons', 'Completed Lessons'],
-                datasets: [{
-                    label: 'Count',
-                    data: [
-                        {{ analytics_data.astra.total_courses | default(0) if not analytics_data.astra.error else 0 }},
-                        {{ analytics_data.astra.total_modules | default(0) if not analytics_data.astra.error else 0 }},
-                        {{ analytics_data.astra.total_lessons | default(0) if not analytics_data.astra.error else 0 }},
-                        {{ analytics_data.astra.total_completed_lessons | default(0) if not analytics_data.astra.error else 0 }}
-                    ],
+                    label: 'Views/Interactions',
+                    data: [10, 5, 8, 3, 7], // Placeholder data
                     backgroundColor: 'rgba(75, 192, 192, 0.8)'
                 }]
             },
@@ -349,32 +277,91 @@
             }
         });
 
-        // Quiz Performance Chart
-        const quizPerformanceCtx = document.getElementById('quizPerformanceChart').getContext('2d');
-        new Chart(quizPerformanceCtx, {
-            type: 'line',
-            data: {
-                labels: ['Attempts', 'Avg Score'],
-                datasets: [{
-                    label: 'Quiz Metrics',
-                    data: [
-                        {{ analytics_data.astra.total_quiz_attempts | default(0) if not analytics_data.astra.error else 0 }},
-                        {{ analytics_data.astra.avg_quiz_score | default(0) if not analytics_data.astra.error else 0 }}
-                    ],
-                    borderColor: 'rgb(255, 99, 132)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
+        {% if current_user.role == 'seeker' %}
+        // Seeker Specific Chart: Learning Progress
+        const learningProgressCtx = document.getElementById('learningProgressChart');
+        if (learningProgressCtx) {
+            new Chart(learningProgressCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Courses Enrolled', 'Overall Progress (%)', 'Tests Completed'],
+                    datasets: [{
+                        label: 'Your Learning',
+                        data: [
+                            {{ analytics_data.seeker.courses_enrolled | default(0) }},
+                            {{ analytics_data.seeker.overall_progress | default(0) }},
+                            {{ analytics_data.seeker.tests_completed | default(0) }}
+                        ],
+                        backgroundColor: ['rgba(255, 99, 132, 0.8)', 'rgba(54, 162, 235, 0.8)', 'rgba(255, 205, 86, 0.8)']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+
+        // Seeker Specific Chart: Career Opportunities
+        const careerOpportunitiesCtx = document.getElementById('careerOpportunitiesChart');
+        if (careerOpportunitiesCtx) {
+            new Chart(careerOpportunitiesCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Internships Applied', 'Jobs Applied', 'Workshops Registered'],
+                    datasets: [{
+                        data: [
+                            {{ analytics_data.seeker.internships_applied | default(0) }},
+                            {{ analytics_data.seeker.jobs_applied | default(0) }},
+                            {{ analytics_data.seeker.workshops_registered | default(0) }}
+                        ],
+                        backgroundColor: ['rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 159, 64, 0.8)']
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        }
+        {% endif %}
+
+        {% if current_user.role == 'provider' %}
+        // Provider Specific Chart: Announcement Performance
+        const announcementPerformanceCtx = document.getElementById('announcementPerformanceChart');
+        if (announcementPerformanceCtx) {
+            new Chart(announcementPerformanceCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: [
+                        {% for title in analytics_data.provider.announcement_performance.internships.keys() %}'{{ title }}',{% endfor %}
+                        {% for title in analytics_data.provider.announcement_performance.jobs.keys() %}'{{ title }}',{% endfor %}
+                        {% for title in analytics_data.provider.announcement_performance.workshops.keys() %}'{{ title }}',{% endfor %}
+                    ],
+                    datasets: [{
+                        label: 'Applications/Registrations',
+                        data: [
+                            {% for count in analytics_data.provider.announcement_performance.internships.values() %}{{ count }},{% endfor %}
+                            {% for count in analytics_data.provider.announcement_performance.jobs.values() %}{{ count }},{% endfor %}
+                            {% for count in analytics_data.provider.announcement_performance.workshops.values() %}{{ count }},{% endfor %}
+                        ],
+                        backgroundColor: 'rgba(255, 159, 64, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        {% endif %}
     </script>
 </body>
 </html>

@@ -269,34 +269,38 @@ def ai_assistant(request):
 
 # Analytics endpoint for aggregated learning data
 @require_http_methods(["GET"])
-def analytics(request):
-    """Get aggregated analytics data for learning progress"""
+def analytics(request, user_id):
+    """Get aggregated analytics data for learning progress for a specific user"""
     try:
-        total_courses = Course.objects.count()
-        total_modules = Module.objects.count()
-        total_lessons = Lesson.objects.count()
-        total_quizzes = Quiz.objects.count()
-        total_user_progress = UserProgress.objects.filter(completed=True).count()
-        total_quiz_attempts = UserQuizAttempt.objects.count()
-        avg_quiz_score = UserQuizAttempt.objects.aggregate(avg_score=Avg('score'))['avg_score'] or 0
+        # Filter courses, modules, lessons, quizzes by user's progress
+        user_courses = Course.objects.filter(module__lessons__userprogress__session_key=user_id).distinct()
+        total_courses = user_courses.count()
 
-        # Recent activity (last 30 days)
+        user_lessons = Lesson.objects.filter(userprogress__session_key=user_id).distinct()
+        total_lessons = user_lessons.count()
+
+        completed_lessons = UserProgress.objects.filter(
+            session_key=user_id,
+            completed=True
+        ).count()
+
+        overall_progress = (completed_lessons / total_lessons) * 100 if total_lessons > 0 else 0
+
+        total_quiz_attempts = UserQuizAttempt.objects.filter(session_key=user_id).count()
+        avg_quiz_score = UserQuizAttempt.objects.filter(session_key=user_id).aggregate(avg_score=Avg('score'))['avg_score'] or 0
+
+        # Recent activity (last 30 days) for this user
         thirty_days_ago = timezone.now() - timedelta(days=30)
-        recent_progress = UserProgress.objects.filter(last_reviewed__gte=thirty_days_ago).count()
-
-        # Unique sessions (based on session_key)
-        unique_sessions = UserProgress.objects.values('session_key').distinct().count()
+        recent_progress = UserProgress.objects.filter(session_key=user_id, last_reviewed__gte=thirty_days_ago).count()
 
         return JsonResponse({
             'total_courses': total_courses,
-            'total_modules': total_modules,
             'total_lessons': total_lessons,
-            'total_quizzes': total_quizzes,
-            'total_completed_lessons': total_user_progress,
+            'total_completed_lessons': completed_lessons,
+            'overall_progress': round(overall_progress, 2),
             'total_quiz_attempts': total_quiz_attempts,
             'avg_quiz_score': round(avg_quiz_score, 2),
             'recent_activity': recent_progress,
-            'unique_sessions': unique_sessions
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -453,8 +457,8 @@ def generate_course_test_api(request, course_id):
             }},
             {{
               "question_type": "coding",
-              "question_text": "### Sum Calculator\\n\\n**Scenario:** You are given two integers, a and b. **Task:** Write a function that returns their sum.\\n\\n**Input Format:** Two integers, a and b.\\n\\n**Output Format:** A single integer representing the sum.\\n\\n**Example:**\\n\\n- **Input:** a = 2, b = 3\\n- **Output:** 5",
-              "starter_code": "def solve(a, b):\\n  # Your code here\\n  return 0",
+              "question_text": "### Sum Calculator\n\n**Scenario:** You are given two integers, a and b. **Task:** Write a function that returns their sum.\n\n**Input Format:** Two integers, a and b.\n\n**Output Format:** A single integer representing the sum.\n\n**Example:**\n\n- **Input:** a = 2, b = 3\n- **Output:** 5",
+              "starter_code": "def solve(a, b):\n  # Your code here\n  return 0",
               "test_cases": [
                 {{"input": "2 3", "expected_output": "5"}},
                 {{"input": "-1 5", "expected_output": "4"}}

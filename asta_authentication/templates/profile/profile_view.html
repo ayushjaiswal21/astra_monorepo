@@ -11,16 +11,20 @@
     <div class="card profile-header-card">
         <div class="profile-banner-container">
             <img src="{{ user.banner_url or url_for('static', filename='images/bg.png') }}" alt="Banner Image" class="profile-banner">
+            {% if current_user.id == user.id %}
             <a class="edit-icon-overlay" style="top: 15px; right: 15px;" onclick="document.getElementById('bannerUpload').click();" title="Edit banner">
                 <i class="fas fa-camera"></i>
             </a>
+            {% endif %}
             <img src="{{ user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}" alt="Profile Picture" class="profile-picture">
         </div>
         
         <div class="profile-header-content">
+            {% if current_user.id == user.id %}
             <a class="edit-icon-overlay" style="top: auto; bottom: 15px; right: 15px;" onclick="document.getElementById('profilePicUpload').click();" title="Edit profile picture">
                 <i class="fas fa-camera"></i>
             </a>
+            {% endif %}
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <h2 class="mb-0 fw-bold">{{ user.name }}</h2>
@@ -31,13 +35,24 @@
                     <h5 class="fw-bold"><i class="fas fa-university me-2"></i>{{ user.university }}</h5>
                 </div>
             </div>
+            {% if current_user.id != user.id %}
+                <div class="mt-3">
+                    {% if not is_connected %}
+                        <button onclick="sendConnectionRequest({{ user.id }})" class="btn btn-primary">Connect</button>
+                    {% else %}
+                        <span class="text-success">Connected</span>
+                    {% endif %}
+                </div>
+            {% endif %}
         </div>
     </div>
 
     <div class="card mt-4">
         <div class="card-header">
             <h5 class="card-title fw-bold">About</h5>
+            {% if current_user.id == user.id %}
             <a href="#" data-bs-toggle="modal" data-bs-target="#editAboutModal" title="Edit about section"><i class="fas fa-pencil-alt"></i></a>
+            {% endif %}
         </div>
         <div class="card-body">
             <p>{{ user.about }}</p>
@@ -47,9 +62,11 @@
     <div class="card mt-4">
         <div class="card-header">
             <h5 class="card-title fw-bold">Experience</h5>
+            {% if current_user.id == user.id %}
             <a href="#" data-bs-toggle="modal" data-bs-target="#addExperienceModal" title="Add experience">
                 <i class="fas fa-plus"></i>
             </a>
+            {% endif %}
         </div>
         <div class="card-body">
             <ul class="list-unstyled mb-0">
@@ -71,7 +88,9 @@
                             <small class="text-muted d-block">{{ exp.dates }} · {{ exp.location }}</small>
                             <p class="mt-2 mb-0 text-sm">{{ exp.description }}</p>
                         </div>
+                        {% if current_user.id == user.id %}
                         <a href="#" data-bs-toggle="modal" data-bs-target="#editExperienceModal-{{ exp.id }}" title="Edit experience" class="text-secondary ms-3"><i class="fas fa-pencil-alt"></i></a>
+                        {% endif %}
                     </li>
                     {% endfor %}
                 {% else %}
@@ -84,9 +103,11 @@
     <div class="card mt-4">
         <div class="card-header">
             <h5 class="card-title fw-bold">Education</h5>
+            {% if current_user.id == user.id %}
             <a href="#" data-bs-toggle="modal" data-bs-target="#addEducationModal" title="Add education">
                 <i class="fas fa-plus"></i>
             </a>
+            {% endif %}
         </div>
         <div class="card-body">
             <ul class="list-unstyled mb-0">
@@ -107,7 +128,9 @@
                             <p class="mb-1 text-sm">{{ edu.degree }}</p>
                             <small class="text-muted d-block">{{ edu.dates }}</small>
                         </div>
+                        {% if current_user.id == user.id %}
                         <a href="#" data-bs-toggle="modal" data-bs-target="#editEducationModal-{{ edu.id }}" title="Edit education" class="text-secondary ms-3"><i class="fas fa-pencil-alt"></i></a>
+                        {% endif %}
                     </li>
                     {% endfor %}
                 {% else %}
@@ -120,9 +143,11 @@
     <div class="card mt-4">
         <div class="card-header">
             <h5 class="card-title fw-bold">Skills</h5>
+            {% if current_user.id == user.id %}
             <a href="#" data-bs-toggle="modal" data-bs-target="#addSkillModal" title="Add new skill">
                 <i class="fas fa-plus"></i>
             </a>
+            {% endif %}
         </div>
         <div class="card-body">
             {% if user.skills %}
@@ -158,9 +183,11 @@
     <div class="card mt-4">
         <div class="card-header">
             <h5 class="card-title fw-bold">Licenses & certifications</h5>
+            {% if current_user.id == user.id %}
             <a href="#" data-bs-toggle="modal" data-bs-target="#addCertificationModal" title="Add certification">
                 <i class="fas fa-plus"></i>
             </a>
+            {% endif %}
         </div>
         <div class="card-body">
             <ul class="list-unstyled mb-0">
@@ -182,7 +209,9 @@
                             <small class="text-muted d-block">{{ cert.issue_date }}</small>
                             <a href="{{ cert.credential_url }}" class="btn btn-sm btn-outline-secondary mt-2" target="_blank">Show credential <i class="fas fa-external-link-alt ms-1"></i></a>
                         </div>
+                        {% if current_user.id == user.id %}
                         <a href="#" data-bs-toggle="modal" data-bs-target="#editCertificationModal-{{ cert.id }}" title="Edit certification" class="text-secondary ms-3"><i class="fas fa-pencil-alt"></i></a>
+                        {% endif %}
                     </li>
                     {% endfor %}
                 {% else %}
@@ -217,4 +246,28 @@
         {% include 'profile/modals/edit_certification.html' %}
     {% endfor %}
     {% endif %}
+
+<script>
+    function sendConnectionRequest(userId) {
+        fetch(`/api/user/${userId}/connect`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Connection request sent!');
+                location.reload();
+            } else {
+                alert('Failed to send connection request: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error sending connection request:', error);
+            alert('Error sending connection request.');
+        });
+    }
+</script>
 {% endblock %}
