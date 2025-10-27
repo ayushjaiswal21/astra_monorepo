@@ -4,7 +4,7 @@
   <h2 class="text-3xl font-bold text-gray-800 mb-6">Jobs</h2>
   <div class="space-y-6">
     {% for item in jobs %}
-      <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-200">
+      <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-200" data-job-id="{{ item.id }}">
         <h3 class="text-2xl font-bold text-blue-600 mb-2">{{ item.title }}</h3>
         <div class="flex flex-wrap items-center text-gray-700 mb-2">
           <span class="font-semibold mr-2">{{ item.company_name }}</span>
@@ -14,9 +14,9 @@
         <div class="flex justify-between items-center">
           <span class="text-sm text-gray-500">Posted by: {{ item.provider.username }} on {{ item.date_posted.strftime('%b %d, %Y') }}</span>
           {% if item.apply_link %}
-            <a href="{{ item.apply_link }}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm">
+            <button onclick="applyForJob({{ item.id }}, '{{ item.apply_link }}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm">
               Apply Now
-            </a>
+            </button>
           {% endif %}
         </div>
       </div>
@@ -27,4 +27,54 @@
     {% endfor %}
   </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('[data-job-id]').forEach(function(element) {
+            const jobId = element.dataset.jobId;
+            logJobView(jobId);
+        });
+    });
+
+    function logJobView(jobId) {
+        fetch(`/api/job/${jobId}/view`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log(`Job ${jobId} view logged.`);
+            } else {
+                console.error(`Failed to log view for job ${jobId}:`, data.error);
+            }
+        })
+        .catch(error => {
+            console.error(`Error logging view for job ${jobId}:`, error);
+        });
+    }
+
+    function applyForJob(jobId, applyLink) {
+        fetch(`/api/job/${jobId}/apply`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log(`Application for job ${jobId} logged.`);
+                window.open(applyLink, '_blank');
+            } else {
+                console.error(`Failed to log application for job ${jobId}:`, data.error);
+            }
+        })
+        .catch(error => {
+            console.error(`Error applying for job ${jobId}:`, error);
+        });
+    }
+</script>
 {% endblock content %}
