@@ -65,13 +65,68 @@ def dashboard():
 @main_bp.route('/analytics')
 @login_required
 def analytics():
-    # Flask data
+    if current_user.role == 'seeker':
+        return redirect(url_for('main.seeker_analytics'))
+    elif current_user.role == 'provider':
+        return redirect(url_for('main.provider_analytics'))
+    else:
+        flash('Invalid role for analytics.', 'danger')
+        return redirect(url_for('main.dashboard'))
+
+@main_bp.route('/analytics/seeker')
+@login_required
+def seeker_analytics():
+    if current_user.role != 'seeker':
+        flash('Access denied. This dashboard is for seekers only.', 'danger')
+        return redirect(url_for('main.dashboard'))
+
+    # Flask data for seeker: focus on personal and general learning metrics
     total_users = User.query.count()
     total_posts = Post.query.count()
-    total_internships = Internship.query.count()
-    total_jobs = JobPost.query.count()
-    total_workshops = Workshop.query.count()
-    total_events = Event.query.count()
+    total_messages = Message.query.count()
+
+    # Personal profile completeness
+    personal_completeness = calculate_profile_completeness(current_user)
+
+    # Activity trends
+    activity_trends = get_activity_trends()
+
+    # Fetch from ai-guru
+    ai_guru_data = fetch_ai_guru_analytics()
+
+    # Fetch from astra
+    astra_data = fetch_astra_analytics()
+
+    # Aggregate data for seeker
+    analytics_data = {
+        "flask": {
+            "total_users": total_users,
+            "total_posts": total_posts,
+            "total_messages": total_messages,
+            "personal_completeness": personal_completeness,
+            "recent_posts": activity_trends["recent_posts"],
+            "recent_messages": activity_trends["recent_messages"]
+        },
+        "ai_guru": ai_guru_data,
+        "astra": astra_data
+    }
+
+    return render_template('seeker_analytics.html', current_user=current_user, analytics_data=analytics_data)
+
+@main_bp.route('/analytics/provider')
+@login_required
+def provider_analytics():
+    if current_user.role != 'provider':
+        flash('Access denied. This dashboard is for providers only.', 'danger')
+        return redirect(url_for('main.dashboard'))
+
+    # Flask data for provider: focus on content creation metrics
+    total_users = User.query.count()
+    total_posts = Post.query.count()
+    total_internships = Internship.query.filter_by(user_id=current_user.id).count()
+    total_jobs = JobPost.query.filter_by(user_id=current_user.id).count()
+    total_workshops = Workshop.query.filter_by(user_id=current_user.id).count()
+    total_events = Event.query.filter_by(user_id=current_user.id).count()
     total_messages = Message.query.count()
 
     # Profile completeness
@@ -89,7 +144,7 @@ def analytics():
     # Fetch from astra
     astra_data = fetch_astra_analytics()
 
-    # Aggregate data
+    # Aggregate data for provider
     analytics_data = {
         "flask": {
             "total_users": total_users,
@@ -107,7 +162,7 @@ def analytics():
         "astra": astra_data
     }
 
-    return render_template('analytics.html', current_user=current_user, analytics_data=analytics_data)
+    return render_template('provider_analytics.html', current_user=current_user, analytics_data=analytics_data)
 
 @main_bp.route('/api/messages/<username>')
 @login_required
