@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit News Article - AstraLearn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #f3f2ef; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen bg-gray-50">
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200">
+            <div class="max-w-4xl mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-2xl font-bold text-gray-900">Edit News Article</h1>
+                    <a href="{{ url_for('main.news') }}" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to News
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="max-w-4xl mx-auto px-4 py-8">
+            <div class="card p-6">
+                <form action="{{ url_for('main.edit_news', news_id=news.id) }}" method="POST" class="space-y-6">
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                        <input type="text" id="title" name="title" value="{{ news.title }}" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label for="summary" class="block text-sm font-medium text-gray-700 mb-2">Summary</label>
+                        <textarea id="summary" name="summary" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ news.summary or '' }}</textarea>
+                    </div>
+
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <select id="category" name="category"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="General" {% if news.category == 'General' %}selected{% endif %}>General</option>
+                            <option value="Education" {% if news.category == 'Education' %}selected{% endif %}>Education</option>
+                            <option value="Technology" {% if news.category == 'Technology' %}selected{% endif %}>Technology</option>
+                            <option value="Announcements" {% if news.category == 'Announcements' %}selected{% endif %}>Announcements</option>
+                            <option value="Events" {% if news.category == 'Events' %}selected{% endif %}>Events</option>
+                            <option value="Research" {% if news.category == 'Research' %}selected{% endif %}>Research</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="tags" class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                        <input type="text" id="tags" name="tags" value="{{ news.tags or '' }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="e.g., AI, Machine Learning, Tutorial (comma-separated)">
+                        <p class="text-xs text-gray-500 mt-1">Separate tags with commas</p>
+                    </div>
+
+                    <div>
+                        <label for="content" class="block text-sm font-medium text-gray-700 mb-2">Content *</label>
+                        <textarea id="content" name="content" rows="10" required
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ news.content }}</textarea>
+                    </div>
+
+                    <div>
+                        <label for="image_url" class="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+                        <input type="url" id="image_url" name="image_url" value="{{ news.image_url or '' }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label for="link_url" class="block text-sm font-medium text-gray-700 mb-2">External Link</label>
+                        <input type="url" id="link_url" name="link_url" value="{{ news.link_url or '' }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+
+                    <div class="flex items-center">
+                        <input type="checkbox" id="is_published" name="is_published" {% if news.is_published %}checked{% endif %}
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <label for="is_published" class="ml-2 block text-sm text-gray-900">
+                            Published
+                        </label>
+                    </div>
+
+                    <div class="flex justify-end space-x-4">
+                        <a href="{{ url_for('main.news') }}"
+                           class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                            Cancel
+                        </a>
+                        <button type="submit"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            Update Article
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
