@@ -122,3 +122,20 @@ class Message(db.Model):
 
     sender = db.relationship('User', foreign_keys=[sender_id], back_populates='sent_messages')
     recipient = db.relationship('User', foreign_keys=[recipient_id], back_populates='received_messages')
+
+class News(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    summary = db.Column(db.String(300))  # Short summary for display
+    category = db.Column(db.String(50), default='General')  # e.g., 'Education', 'Technology', 'Announcements'
+    tags = db.Column(db.String(500))  # Comma-separated tags for better organization
+    image_url = db.Column(db.String(200))
+    link_url = db.Column(db.String(200))  # Optional external link
+    source = db.Column(db.String(100), default='manual')  # 'manual' or 'api'
+    source_url = db.Column(db.String(500))  # Original source URL from API
+    is_published = db.Column(db.Boolean, default=True)
+    date_posted = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    author = db.relationship('User', backref='news_posts', lazy=True)

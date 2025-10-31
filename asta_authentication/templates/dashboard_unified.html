@@ -1,255 +1,476 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AstraLearn Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #f3f2ef; }
-        .nav-icon { transition: all 0.2s; }
-        .nav-icon:hover { color: #0a66c2; }
-        .card { background: white; border-radius: 8px; box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.1); transition: box-shadow 0.2s; }
-        .btn-action { transition: all 0.2s; border-radius: 4px; padding: 8px 16px; }
-        .btn-action:hover { background: rgba(0,0,0,0.05); }
-        #postModal { display: none; }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, sans-serif;
+        background: #f3f2ef;
+      }
+      .nav-icon {
+        transition: all 0.2s;
+      }
+      .nav-icon:hover {
+        color: #0a66c2;
+      }
+      .card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.2s;
+      }
+      .btn-action {
+        transition: all 0.2s;
+        border-radius: 4px;
+        padding: 8px 16px;
+      }
+      .btn-action:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
+      #postModal {
+        display: none;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <!-- Header -->
     <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="flex items-center justify-between h-14">
-                <div class="flex items-center space-x-2">
-                    <div class="flex items-center">
-                        <div class="w-9 h-9 bg-blue-600 rounded flex items-center justify-center">
-                            <i class="fas fa-graduation-cap text-white text-lg"></i>
-                        </div>
-                        <span class="ml-2 text-xl font-bold text-blue-600">AstraLearn</span>
-                    </div>
-                    <input type="text" placeholder="Search" class="hidden md:block ml-2 w-64 px-3 py-1.5 bg-gray-100 rounded text-sm focus:outline-none focus:bg-white focus:border focus:border-gray-300">
-                </div>
-                <nav class="flex items-center space-x-6">
-                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-home text-xl mb-1"></i>
-                        <span class="text-xs font-medium">Home</span>
-                    </a>
-                    <a href="{{ url_for('main.network') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-user-friends text-xl mb-1"></i>
-                        <span class="text-xs font-medium">People</span>
-                    </a>
-                    <a href="{{ url_for('main.internships') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-briefcase text-xl mb-1"></i>
-                        <span class="text-xs font-medium">Internships</span>
-                    </a>
-                    <a href="{{ url_for('main.messages') }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-comment-dots text-xl mb-1"></i>
-                        <span class="text-xs font-medium">Messages</span>
-                    </a>
-                    <a href="#" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-bell text-xl mb-1"></i>
-                        <span class="text-xs font-medium">Notifications</span>
-                    </a>
-                    <a href="/analytics" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-chart-bar text-xl mb-1"></i>
-                        <span class="text-xs font-medium">Analytics</span>
-                    </a>
-                    <a href="{{ url_for('profile.view_profile', username=current_user.username) }}" class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900">
-                        <div class="w-6 h-6 rounded-full overflow-hidden">
-                           <img src="{{ current_user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
-                        </div>
-                        <span class="text-xs font-medium">Me</span>
-                    </a>
-                </nav>
+      <div class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between h-14">
+          <div class="flex items-center space-x-2">
+            <div class="flex items-center">
+              <div
+                class="w-9 h-9 bg-blue-600 rounded flex items-center justify-center"
+              >
+                <i class="fas fa-graduation-cap text-white text-lg"></i>
+              </div>
+              <span class="ml-2 text-xl font-bold text-blue-600"
+                >AstraLearn</span
+              >
             </div>
+            <input
+              type="text"
+              placeholder="Search"
+              class="hidden md:block ml-2 w-64 px-3 py-1.5 bg-gray-100 rounded text-sm focus:outline-none focus:bg-white focus:border focus:border-gray-300"
+            />
+          </div>
+          <nav class="flex items-center space-x-6">
+            <a
+              href="#"
+              class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900"
+            >
+              <i class="fas fa-home text-xl mb-1"></i>
+              <span class="text-xs font-medium">Home</span>
+            </a>
+            <a
+              href="{{ url_for('main.network') }}"
+              class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900"
+            >
+              <i class="fas fa-user-friends text-xl mb-1"></i>
+              <span class="text-xs font-medium">People</span>
+            </a>
+            <a
+              href="{{ url_for('main.internships') }}"
+              class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900"
+            >
+              <i class="fas fa-briefcase text-xl mb-1"></i>
+              <span class="text-xs font-medium">Internships</span>
+            </a>
+            <a
+              href="{{ url_for('main.messages') }}"
+              class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900"
+            >
+              <i class="fas fa-comment-dots text-xl mb-1"></i>
+              <span class="text-xs font-medium">Messages</span>
+            </a>
+            <a
+              href="#"
+              class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900"
+            >
+              <i class="fas fa-bell text-xl mb-1"></i>
+              <span class="text-xs font-medium">Notifications</span>
+            </a>
+            <a
+              href="/analytics"
+              class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900"
+            >
+              <i class="fas fa-chart-bar text-xl mb-1"></i>
+              <span class="text-xs font-medium">Analytics</span>
+            </a>
+            <a
+              href="{{ url_for('profile.view_profile', username=current_user.username) }}"
+              class="nav-icon flex flex-col items-center text-gray-600 hover:text-gray-900"
+            >
+              <div class="w-6 h-6 rounded-full overflow-hidden">
+                <img
+                  src="{{ current_user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}"
+                  alt="User Profile"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+              <span class="text-xs font-medium">Me</span>
+            </a>
+          </nav>
         </div>
+      </div>
     </header>
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 py-6">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-            <!-- Left Sidebar -->
-            <aside class="md:col-span-3">
-                <div class="card mb-4">
-                    <a href="{{ url_for('profile.view_profile', username=current_user.username) }}">
-                        <div class="h-14 bg-gradient-to-r from-blue-400 to-purple-500"></div>
-                        <div class="px-4 pb-4 text-center -mt-8">
-                            <div class="w-16 h-16 mx-auto rounded-full overflow-hidden border-4 border-white mb-2">
-                                <img src="{{ current_user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
-                            </div>
-                            <h3 class="font-semibold text-gray-900">{{ current_user.name or current_user.username }}</h3>
-                        </div>
-                    </a>
-                    <div class="px-4 pb-4 text-center -mt-10">
-                        <p class="text-xs text-gray-600 mb-3">{{ current_user.role }}</p>
-                    </div>
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <!-- Left Sidebar -->
+        <aside class="md:col-span-3">
+          <div class="card mb-4">
+            <a
+              href="{{ url_for('profile.view_profile', username=current_user.username) }}"
+            >
+              <div
+                class="h-14 bg-gradient-to-r from-blue-400 to-purple-500"
+              ></div>
+              <div class="px-4 pb-4 text-center -mt-8">
+                <div
+                  class="w-16 h-16 mx-auto rounded-full overflow-hidden border-4 border-white mb-2"
+                >
+                  <img
+                    src="{{ current_user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}"
+                    alt="User Profile"
+                    class="w-full h-full object-cover"
+                  />
                 </div>
-                <!-- Quick Links -->
-                <div class="card p-3 text-sm">
-                    <div class="space-y-2">
-                        {% if current_user.role == 'provider' %}
-                        <a href="http://localhost:8000/create/" target="_blank" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-blue-600 font-semibold">Create New Course</a>
-                        {% else %}
-                        <a href="{{ url_for('main.enrollments') }}" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">My Enrollments</a>
-                        {% endif %}
-                        <a href="{{ url_for('main.groups') }}" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Groups</a>
-                        <a href="{{ url_for('main.events') }}" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Events</a>
-                        <a href="{{ url_for('main.workshops') }}" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Workshops</a>
-                        <a href="{{ url_for('main.internships') }}" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700">Internships</a>
-                        <a href="http://localhost:3000" target="_blank" class="block py-1.5 px-2 hover:bg-gray-50 rounded text-blue-600 font-semibold">**AiGuru</a>
-                    </div>
-                </div>
-            </aside>
+                <h3 class="font-semibold text-gray-900">
+                  {{ current_user.name or current_user.username }}
+                </h3>
+              </div>
+            </a>
+            <div class="px-4 pb-4 text-center -mt-10">
+              <p class="text-xs text-gray-600 mb-3">{{ current_user.role }}</p>
+            </div>
+          </div>
+          <!-- Quick Links -->
+          <div class="card p-3 text-sm">
+            <div class="space-y-2">
+              {% if current_user.role == 'provider' %}
+              <a
+                href="http://localhost:8000/create/"
+                target="_blank"
+                class="block py-1.5 px-2 hover:bg-gray-50 rounded text-blue-600 font-semibold"
+                >Create New Course</a
+              >
+              {% else %}
+              <a
+                href="{{ url_for('main.enrollments') }}"
+                class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700"
+                >My Enrollments</a
+              >
+              {% endif %}
+              <a
+                href="{{ url_for('main.groups') }}"
+                class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700"
+                >Groups</a
+              >
+              <a
+                href="{{ url_for('main.events') }}"
+                class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700"
+                >Events</a
+              >
+              <a
+                href="{{ url_for('main.workshops') }}"
+                class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700"
+                >Workshops</a
+              >
+              <a
+                href="{{ url_for('main.internships') }}"
+                class="block py-1.5 px-2 hover:bg-gray-50 rounded text-gray-700"
+                >Internships</a
+              >
+              <a
+                href="http://localhost:3000"
+                target="_blank"
+                class="block py-1.5 px-2 hover:bg-gray-50 rounded text-blue-600 font-semibold"
+                >**AiGuru</a
+              >
+            </div>
+          </div>
+        </aside>
 
-            <!-- Center Feed -->
-            <main class="md:col-span-6">
-                <!-- Create Post -->
-                <div class="card p-4 mb-4">
-                    <div class="flex items-center space-x-3 mb-3">
-                        <div class="w-12 h-12 rounded-full overflow-hidden">
-                           <img src="{{ current_user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}" alt="User Profile" class="w-full h-full object-cover">
-                        </div>
-                        <input type="text" placeholder="Start a post..." class="flex-1 px-4 py-2 border border-gray-300 rounded-full hover:bg-gray-50 cursor-pointer" onclick="openPostModal()">
-                    </div>
-                    <div class="flex justify-around pt-2 border-t border-gray-200">
-                        <button class="btn-action flex items-center space-x-2 text-gray-600" onclick="openPostModal()">
-                            <i class="fas fa-image text-blue-500"></i>
-                            <span class="text-sm font-medium">Media</span>
-                        </button>
-                        <a href="http://localhost:8000/courses/" target="_blank" class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="fas fa-book-open text-green-500"></i>
-                            <span class="text-sm font-medium">View Courses</span>
-                        </a>
-                        {% if current_user.role == 'provider' %}
-                        <a href="http://localhost:8000/create/" target="_blank" class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="fas fa-lightbulb text-yellow-600"></i>
-                            <span class="text-sm font-medium">Create Course</span>
-                        </a>
-                        {% endif %}
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="fas fa-newspaper text-red-500"></i>
-                            <span class="text-sm font-medium">Write article</span>
-                        </button>
-                    </div>
-                </div>
+        <!-- Center Feed -->
+        <main class="md:col-span-6">
+          <!-- Create Post -->
+          <div class="card p-4 mb-4">
+            <div class="flex items-center space-x-3 mb-3">
+              <div class="w-12 h-12 rounded-full overflow-hidden">
+                <img
+                  src="{{ current_user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}"
+                  alt="User Profile"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+              <input
+                type="text"
+                placeholder="Start a post..."
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-full hover:bg-gray-50 cursor-pointer"
+                onclick="openPostModal()"
+              />
+            </div>
+            <div class="flex justify-around pt-2 border-t border-gray-200">
+              <button
+                class="btn-action flex items-center space-x-2 text-gray-600"
+                onclick="openPostModal()"
+              >
+                <i class="fas fa-image text-blue-500"></i>
+                <span class="text-sm font-medium">Media</span>
+              </button>
+              <a
+                href="http://localhost:8000/courses/"
+                target="_blank"
+                class="btn-action flex items-center space-x-2 text-gray-600"
+              >
+                <i class="fas fa-book-open text-green-500"></i>
+                <span class="text-sm font-medium">View Courses</span>
+              </a>
+              {% if current_user.role == 'provider' %}
+              <a
+                href="http://localhost:8000/create/"
+                target="_blank"
+                class="btn-action flex items-center space-x-2 text-gray-600"
+              >
+                <i class="fas fa-lightbulb text-yellow-600"></i>
+                <span class="text-sm font-medium">Create Course</span>
+              </a>
+              {% endif %}
+              <button
+                class="btn-action flex items-center space-x-2 text-gray-600"
+              >
+                <i class="fas fa-newspaper text-red-500"></i>
+                <span class="text-sm font-medium">Write article</span>
+              </button>
+            </div>
+          </div>
 
-                <!-- Feed -->
-                {% for post in posts %}
-                <div class="card p-4 mb-4">
-                    <div class="flex items-start space-x-3 mb-3">
-                        <div class="w-12 h-12 bg-gray-300 rounded-full overflow-hidden">
-                            <img src="{{ post.author.profile_pic_url or 'https://via.placeholder.com/48' }}" alt="Author profile picture" class="w-full h-full object-cover">
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <h3 class="font-semibold text-gray-900"><a href="{{ url_for('profile.view_profile', username=post.author.username) }}">{{ post.author.name or post.author.username }}</a></h3>
-                                    <p class="text-xs text-gray-500">{{ post.timestamp.strftime('%B %d, %Y at %I:%M %p') }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="text-sm text-gray-900 mb-3 leading-relaxed">{{ post.content }}</p>
-                    {% if post.image_url %}
-                    <img src="{{ post.image_url }}" alt="Post image" class="w-full rounded-lg mb-3">
-                    {% endif %}
-                    {% if post.link_url %}
-                    <a href="{{ post.link_url }}" target="_blank" class="text-blue-600 hover:underline">{{ post.link_url }}</a>
-                    {% endif %}
-                    <div class="flex justify-around pt-2 border-t border-gray-200">
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="fas fa-thumbs-up"></i>
-                            <span class="text-sm font-medium">Like</span>
-                        </button>
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="fas fa-comment"></i>
-                            <span class="text-sm font-medium">Comment</span>
-                        </button>
-                        <button class="btn-action flex items-center space-x-2 text-gray-600">
-                            <i class="fas fa-share"></i>
-                            <span class="text-sm font-medium">Share</span>
-                        </button>
-                    </div>
+          <!-- Feed -->
+          {% for post in posts %}
+          <div class="card p-4 mb-4">
+            <div class="flex items-start space-x-3 mb-3">
+              <div class="w-12 h-12 bg-gray-300 rounded-full overflow-hidden">
+                <img
+                  src="{{ post.author.profile_pic_url or 'https://via.placeholder.com/48' }}"
+                  alt="Author profile picture"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+              <div class="flex-1">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <h3 class="font-semibold text-gray-900">
+                      <a
+                        href="{{ url_for('profile.view_profile', username=post.author.username) }}"
+                        >{{ post.author.name or post.author.username }}</a
+                      >
+                    </h3>
+                    <p class="text-xs text-gray-500">
+                      {{ post.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
+                    </p>
+                  </div>
                 </div>
-                {% endfor %}
-            </main>
+              </div>
+            </div>
+            <p class="text-sm text-gray-900 mb-3 leading-relaxed">
+              {{ post.content }}
+            </p>
+            {% if post.image_url %}
+            <img
+              src="{{ post.image_url }}"
+              alt="Post image"
+              class="w-full rounded-lg mb-3"
+            />
+            {% endif %} {% if post.link_url %}
+            <a
+              href="{{ post.link_url }}"
+              target="_blank"
+              class="text-blue-600 hover:underline"
+              >{{ post.link_url }}</a
+            >
+            {% endif %}
+            <div class="flex justify-around pt-2 border-t border-gray-200">
+              <button
+                class="btn-action flex items-center space-x-2 text-gray-600"
+              >
+                <i class="fas fa-thumbs-up"></i>
+                <span class="text-sm font-medium">Like</span>
+              </button>
+              <button
+                class="btn-action flex items-center space-x-2 text-gray-600"
+              >
+                <i class="fas fa-comment"></i>
+                <span class="text-sm font-medium">Comment</span>
+              </button>
+              <button
+                class="btn-action flex items-center space-x-2 text-gray-600"
+              >
+                <i class="fas fa-share"></i>
+                <span class="text-sm font-medium">Share</span>
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+        </main>
 
-            <!-- Right Sidebar -->
-            <aside class="md:col-span-3">
-                <!-- News Section -->
-                <div class="card p-4 mb-4">
-                    <h3 class="font-semibold text-gray-900 mb-3">AstraLearn News</h3>
-                    <p class="text-xs text-gray-600 mb-3">Top Stories</p>
-                    <ul class="space-y-3 text-sm">
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
-                            <div class="font-medium text-gray-900 mb-0.5">• Story -1</div>
-                        </li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
-                            <div class="font-medium text-gray-900 mb-0.5">• Story -2</div>
-                        </li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
-                            <div class="font-medium text-gray-900 mb-0.5">• Story -3</div>
-                        </li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
-                            <div class="font-medium text-gray-900 mb-0.5">• Story -4</div>
-                        </li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
-                            <div class="font-medium text-gray-900 mb-0.5">• Story -5</div>
-                        </li>
-                    </ul>
-                    <a href="#" class="block mt-3 text-sm text-gray-600 hover:text-blue-600">See More</a>
+        <!-- Right Sidebar -->
+        <aside class="md:col-span-3">
+          <!-- News Section -->
+          <div class="card p-4 mb-4">
+            <h3 class="font-semibold text-gray-900 mb-3">AstraLearn News</h3>
+            <p class="text-xs text-gray-600 mb-3">Top Stories</p>
+            {% if recent_news %}
+            <ul class="space-y-3 text-sm">
+              {% for news_item in recent_news %}
+              <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                <div class="font-medium text-gray-900 mb-0.5">
+                  <a
+                    href="{{ url_for('main.news') }}?category={{ news_item.category if news_item.category != 'Live News' else 'all' }}&source={{ 'api' if news_item.source == 'api' else 'manual' }}"
+                    class="hover:text-blue-600"
+                  >
+                    {{ news_item.title[:60] }}{% if news_item.title|length > 60
+                    %}...{% endif %}
+                  </a>
                 </div>
+                {% if news_item.summary %}
+                <div class="text-xs text-gray-600">
+                  {{ news_item.summary[:50] }}{% if news_item.summary|length >
+                  50 %}...{% endif %}
+                </div>
+                {% endif %}
+                <div class="text-xs text-gray-500 mt-1">
+                  {% if news_item.category %}
+                  <span
+                    class="inline-block bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-xs font-medium mr-1"
+                  >
+                    {{ news_item.category }}
+                  </span>
+                  {% endif %} {% if news_item.source == 'api' %}
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
+                  >
+                    <i class="fas fa-globe mr-1"></i>Live News
+                  </span>
+                  {% else %} {{ news_item.date_posted.strftime('%b %d') }} {%
+                  endif %}
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+            <a
+              href="{{ url_for('main.news') }}"
+              class="block mt-3 text-sm text-gray-600 hover:text-blue-600"
+              >See More</a
+            >
+            {% else %}
+            <div class="text-center py-4">
+              <i class="fas fa-newspaper text-gray-400 text-2xl mb-2"></i>
+              <p class="text-xs text-gray-500">No news articles yet</p>
+              <p class="text-xs text-gray-400 mt-1">Stay tuned for updates!</p>
+            </div>
+            {% endif %}
+          </div>
 
-                <!-- Games Section -->
-                <div class="card p-4">
-                    <h3 class="font-semibold text-gray-900 mb-3">Games</h3>
-                    <ul class="space-y-2 text-sm text-gray-700">
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">Quiz Games</li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">Puzzle Games</li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">Problem Solving Games</li>
-                        <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">Skills Improve Games</li>
-                    </ul>
-                </div>
-            </aside>
-        </div>
+          <!-- Games Section -->
+          <div class="card p-4">
+            <h3 class="font-semibold text-gray-900 mb-3">Games</h3>
+            <ul class="space-y-2 text-sm text-gray-700">
+              <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                Quiz Games
+              </li>
+              <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                Puzzle Games
+              </li>
+              <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                Problem Solving Games
+              </li>
+              <li class="hover:bg-gray-50 p-2 rounded cursor-pointer">
+                Skills Improve Games
+              </li>
+            </ul>
+          </div>
+        </aside>
+      </div>
     </div>
 
     <!-- Post Modal -->
-    <div id="postModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3 text-center">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Create Post</h3>
-                <div class="mt-2 px-7 py-3">
-                    <form action="{{ url_for('main.create_post') }}" method="POST">
-                        <textarea name="content" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500" rows="5" placeholder="What do you want to talk about?"></textarea>
-                        <input type="text" name="image_url" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 mt-2" placeholder="Image URL">
-                        <input type="text" name="link_url" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 mt-2" placeholder="Link URL">
-                        <div class="items-center px-4 py-3">
-                            <button id="ok-btn" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
-                                Post
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                <div class="items-center px-4 py-3">
-                    <button id="cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300" onclick="closePostModal()">
-                        Cancel
-                    </button>
-                </div>
-            </div>
+    <div
+      id="postModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full"
+    >
+      <div
+        class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white"
+      >
+        <div class="mt-3 text-center">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Create Post
+          </h3>
+          <div class="mt-2 px-7 py-3">
+            <form action="{{ url_for('main.create_post') }}" method="POST">
+              <textarea
+                name="content"
+                class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                rows="5"
+                placeholder="What do you want to talk about?"
+              ></textarea>
+              <input
+                type="text"
+                name="image_url"
+                class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 mt-2"
+                placeholder="Image URL"
+              />
+              <input
+                type="text"
+                name="link_url"
+                class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 mt-2"
+                placeholder="Link URL"
+              />
+              <div class="items-center px-4 py-3">
+                <button
+                  id="ok-btn"
+                  class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                >
+                  Post
+                </button>
+              </div>
+            </form>
+          </div>
+          <div class="items-center px-4 py-3">
+            <button
+              id="cancel-btn"
+              class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              onclick="closePostModal()"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
+      </div>
     </div>
 
     <script>
-        function openPostModal() {
-            document.getElementById('postModal').style.display = 'block';
-        }
+      function openPostModal() {
+        document.getElementById("postModal").style.display = "block";
+      }
 
-        function closePostModal() {
-            document.getElementById('postModal').style.display = 'none';
-        }
+      function closePostModal() {
+        document.getElementById("postModal").style.display = "none";
+      }
     </script>
-</body>
+  </body>
 </html>
