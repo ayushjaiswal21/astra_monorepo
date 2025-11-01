@@ -53,74 +53,95 @@ def calculate_profile_completeness(user):
     return round((filled_items / total_items) * 100, 1) if total_items > 0 else 0
 
 def fetch_news_from_api(category="general", limit=10):
-    """Fetch news from GNews API based on category"""
+    """Fetch news from GNews API based on category with focus on jobs, careers, and market news"""
     api_key = "c137fde903ff8adc20b448777fcd183d"
-    base_url = "https://gnews.io/api/v4/top-headlines"
-
-    # Map our categories to GNews categories
-    category_mapping = {
-        "general": "general",
-        "technology": "technology",
-        "education": "general",  # GNews doesn't have education category, use general
-        "announcements": "general",
-        "events": "general",
-        "research": "science"
+    base_url = "https://gnews.io/api/v4/search"  # Using search endpoint for better targeting
+    
+    # Define search queries for relevant job market and career news
+    category_queries = {
+        "general": "jobs OR careers OR employment OR hiring OR recruitment OR job market",
+        "technology": "tech jobs OR software engineer hiring OR IT careers OR tech industry jobs",
+        "education": "education jobs OR teaching careers OR academic positions OR student employment OR internships",
+        "announcements": "job openings OR hiring announcement OR recruitment drive OR career opportunities",
+        "events": "job fair OR career event OR recruitment event OR hiring event",
+        "research": "research positions OR academic jobs OR scientist careers OR research opportunities"
     }
-
-    gnews_category = category_mapping.get(category.lower(), "general")
-
-    # Try different parameter combinations to avoid 403 errors
-    # Start with minimal parameters first
-    params_minimal = {
+    
+    # Get the search query for the category
+    search_query = category_queries.get(category.lower(), category_queries["general"])
+    
+    # Try with search query and English language filter
+    params = {
         "token": api_key,
-        "max": min(limit, 5)  # Start with smaller limit
+        "q": search_query,
+        "lang": "en",  # Force English language
+        "country": "us",  # Focus on US/international market news
+        "max": min(limit, 10),
+        "sortby": "relevance"  # Sort by relevance to get most relevant results
     }
-
+    
     try:
-        response = requests.get(base_url, params=params_minimal, timeout=10)
-
-        # If successful with minimal params, try adding more
+        # First attempt: Search with full parameters
+        response = requests.get(base_url, params=params, timeout=10)
+        
         if response.status_code == 200:
             data = response.json()
             articles = data.get("articles", [])
             if articles:
-                print(f"Successfully fetched {len(articles)} articles from GNews API with minimal params")
+                print(f"Successfully fetched {len(articles)} job/market articles from GNews API")
                 return articles
-
-            # If empty, try with language
-            params_lang = {
+        
+        # Second attempt: Try with simpler query if first fails
+        if response.status_code == 403 or not articles:
+            print("Trying simplified query...")
+            params_simple = {
                 "token": api_key,
+                "q": "jobs careers",
                 "lang": "en",
-                "max": min(limit, 5)
+                "max": min(limit, 10)
             }
-            response = requests.get(base_url, params=params_lang, timeout=10)
+            response = requests.get(base_url, params=params_simple, timeout=10)
+            
             if response.status_code == 200:
                 data = response.json()
                 articles = data.get("articles", [])
                 if articles:
-                    print(f"Successfully fetched {len(articles)} articles from GNews API with language param")
+                    print(f"Successfully fetched {len(articles)} articles with simplified query")
                     return articles
-
-        # If still failing, try without any optional parameters
-        if response.status_code == 403:
-            print(f"GNews API 403 error, trying with just token...")
-            params_token_only = {
-                "token": api_key
+        
+        # Third attempt: Fall back to top headlines with category
+        if not articles:
+            print("Falling back to top headlines...")
+            headline_url = "https://gnews.io/api/v4/top-headlines"
+            category_mapping = {
+                "general": "business",  # Business news often covers job market
+                "technology": "technology",
+                "education": "general",
+                "announcements": "business",
+                "events": "general",
+                "research": "science"
             }
-            response = requests.get(base_url, params=params_token_only, timeout=10)
-
-        if response.status_code == 200:
-            data = response.json()
-            articles = data.get("articles", [])
-            if articles:
-                print(f"Successfully fetched {len(articles)} articles from GNews API")
-                return articles
-            else:
-                print("GNews API returned empty articles array")
-                return []
-        else:
-            print(f"GNews API error: {response.status_code} - {response.text}")
-            return []
+            
+            params_headline = {
+                "token": api_key,
+                "category": category_mapping.get(category.lower(), "business"),
+                "lang": "en",
+                "country": "us",
+                "max": min(limit, 10)
+            }
+            
+            response = requests.get(headline_url, params=params_headline, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                articles = data.get("articles", [])
+                if articles:
+                    print(f"Successfully fetched {len(articles)} headline articles")
+                    return articles
+        
+        print(f"GNews API error: {response.status_code} - {response.text if response else 'No response'}")
+        return []
+        
     except requests.RequestException as e:
         print(f"Error fetching news from API: {e}")
         return []
@@ -186,24 +207,38 @@ def dashboard():
     except Exception as e:
         print(f"Error fetching live news for dashboard: {e}")
 
-    # If no live news, add fallback articles
+    # If no live news, add fallback articles focused on jobs and careers
     if not live_news:
-        print("No live news available, adding fallback articles for dashboard")
+        print("No live news available, adding job-focused fallback articles for dashboard")
         fallback_articles = [
             {
-                'id': f"fallback_dashboard_{i+1}",
-                'title': f'AstraLearn Update {i+1}: Latest Platform Developments',
-                'content': f'Exciting updates from AstraLearn platform covering new features, user growth, and educational innovations.',
-                'summary': f'AstraLearn platform update {i+1} with new features and improvements.',
+                'id': 'fallback_dashboard_1',
+                'title': 'Top Companies Hiring Now: 10,000+ Open Positions',
+                'content': 'Leading employers across tech, finance, and healthcare sectors announce major hiring initiatives. Entry-level to senior positions available with competitive benefits and remote work options.',
+                'summary': 'Major companies launch recruitment drives with thousands of job opportunities.',
                 'category': 'General',
-                'tags': 'astralearn, updates, platform, features',
-                'image_url': 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400',
-                'link_url': f'https://astralearn.com/update-{i+1}',
+                'tags': 'jobs, hiring, careers, recruitment, opportunities',
+                'image_url': 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=400',
+                'link_url': 'https://www.linkedin.com/jobs',
                 'source': 'api',
-                'source_url': 'https://astralearn.com',
+                'source_url': 'https://www.linkedin.com',
                 'date_posted': datetime.utcnow(),
-                'author': type('obj', (object,), {'name': 'AstraLearn', 'username': 'astralearn'})()
-            } for i in range(2)
+                'author': type('obj', (object,), {'name': 'Career News', 'username': 'careernews'})()
+            },
+            {
+                'id': 'fallback_dashboard_2',
+                'title': 'Skills in Demand: What Employers Are Looking For in 2025',
+                'content': 'Latest market analysis reveals top skills employers seek: AI/ML expertise, cloud computing, data analysis, and soft skills like communication and adaptability lead the list.',
+                'summary': 'Market report highlights most sought-after skills for career advancement.',
+                'category': 'General',
+                'tags': 'skills, careers, job market, professional development',
+                'image_url': 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400',
+                'link_url': 'https://www.indeed.com/career-advice',
+                'source': 'api',
+                'source_url': 'https://www.indeed.com',
+                'date_posted': datetime.utcnow(),
+                'author': type('obj', (object,), {'name': 'Job Market Insights', 'username': 'jobinsights'})()
+            }
         ]
         live_news = fallback_articles
 
@@ -628,84 +663,84 @@ def news():
             if not api_articles:
                 print(f"No live {cat} news found from API, adding diverse fallback articles")
 
-                # Create diverse fallback articles based on category
+                # Create diverse fallback articles based on category - focused on jobs and market
                 fallback_data = {
                     'general': [
                         {
-                            'title': 'Global Economic Recovery Shows Promising Signs',
-                            'content': 'World economies are demonstrating resilience with improved growth indicators across multiple sectors. Manufacturing output has increased by 3.2% in the last quarter, while service industries show steady recovery patterns.',
-                            'summary': 'Global economic indicators show positive recovery trends with manufacturing and services leading the way.',
-                            'image_url': 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400',
-                            'tags': 'economy, global, recovery, growth',
-                            'external_url': 'https://www.bbc.com/news/business'
+                            'title': 'Tech Industry Hiring Surge: 50,000+ New Positions Open',
+                            'content': 'Major technology companies announce massive hiring initiatives across software engineering, data science, and AI roles. Remote and hybrid positions available globally with competitive compensation packages.',
+                            'summary': 'Tech companies launch major recruitment drives with thousands of new job openings worldwide.',
+                            'image_url': 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=400',
+                            'tags': 'jobs, hiring, tech, careers, recruitment',
+                            'external_url': 'https://www.linkedin.com/jobs'
                         },
                         {
-                            'title': 'Healthcare Innovation Reaches New Milestones',
-                            'content': 'Breakthrough developments in telemedicine and personalized medicine are transforming healthcare delivery worldwide. New AI-driven diagnostic tools have improved accuracy rates by 94%.',
-                            'summary': 'Healthcare sector sees revolutionary changes with AI diagnostics and telemedicine advancements.',
-                            'image_url': 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400',
-                            'tags': 'healthcare, innovation, ai, medicine',
-                            'external_url': 'https://www.who.int/news-room/feature-stories'
+                            'title': 'Job Market Shows Strong Growth in Q4 2025',
+                            'content': 'Employment rates reach new highs with 250,000 jobs added last month. Healthcare, technology, and finance sectors lead hiring trends with increased demand for skilled professionals.',
+                            'summary': 'Job market demonstrates robust growth with record employment gains across key sectors.',
+                            'image_url': 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400',
+                            'tags': 'employment, job market, careers, hiring trends',
+                            'external_url': 'https://www.bls.gov/news.release/empsit.toc.htm'
                         },
                         {
-                            'title': 'Climate Action Initiatives Gain Momentum',
-                            'content': 'International cooperation on climate change has intensified with new agreements and technological solutions. Renewable energy adoption has reached record levels globally.',
-                            'summary': 'International climate initiatives show progress with increased renewable energy adoption.',
-                            'image_url': 'https://images.unsplash.com/photo-1569163139394-de4e4f43e4e3?w=400',
-                            'tags': 'climate, environment, renewable, energy',
-                            'external_url': 'https://unfccc.int/news'
+                            'title': 'Remote Work Revolution: Companies Embrace Flexible Hiring',
+                            'content': 'Organizations worldwide adopt permanent remote work policies, opening opportunities for global talent. Work-from-anywhere positions increase by 300% compared to pre-pandemic levels.',
+                            'summary': 'Remote work becomes standard practice with companies hiring talent globally.',
+                            'image_url': 'https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?w=400',
+                            'tags': 'remote work, flexible jobs, work from home, careers',
+                            'external_url': 'https://www.flexjobs.com'
                         }
                     ],
                     'technology': [
                         {
-                            'title': 'AI Revolutionizes Software Development Process',
-                            'content': 'New AI-powered development tools are reducing coding time by 60% while improving code quality. Machine learning algorithms now assist in debugging and optimization automatically.',
-                            'summary': 'AI tools transform software development with automated coding assistance and quality improvements.',
-                            'image_url': 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=400',
-                            'tags': 'ai, software, development, automation',
-                            'external_url': 'https://techcrunch.com/ai'
+                            'title': 'AI Engineers in High Demand: Salaries Reach $200K+',
+                            'content': 'Artificial intelligence and machine learning roles see unprecedented demand. Companies offer competitive packages with average salaries exceeding $200,000 for experienced AI engineers.',
+                            'summary': 'AI engineering positions command premium salaries as demand outpaces supply.',
+                            'image_url': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400',
+                            'tags': 'ai jobs, tech careers, machine learning, high salary',
+                            'external_url': 'https://www.indeed.com/jobs?q=ai+engineer'
                         },
                         {
-                            'title': 'Quantum Computing Breakthroughs Accelerate',
-                            'content': 'Recent advances in quantum computing have achieved error correction milestones. Commercial quantum computers are now available for research and enterprise applications.',
-                            'summary': 'Quantum computing reaches new milestones with error correction and commercial availability.',
-                            'image_url': 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400',
-                            'tags': 'quantum, computing, breakthrough, research',
-                            'external_url': 'https://www.ibm.com/quantum'
+                            'title': 'Software Developer Shortage Creates Opportunities',
+                            'content': 'Tech industry faces talent shortage with 1.4 million unfilled developer positions. Companies invest in training programs and offer attractive relocation packages to attract talent.',
+                            'summary': 'Developer shortage opens doors for career switchers and new graduates.',
+                            'image_url': 'https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=400',
+                            'tags': 'software jobs, developer careers, tech hiring, programming',
+                            'external_url': 'https://stackoverflow.com/jobs'
                         },
                         {
-                            'title': '5G Networks Enable Smart City Innovations',
-                            'content': 'Fifth-generation networks are powering smart city initiatives worldwide. IoT devices, autonomous vehicles, and real-time monitoring systems are becoming mainstream.',
-                            'summary': '5G technology enables smart city innovations with IoT and autonomous systems integration.',
-                            'image_url': 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400',
-                            'tags': '5g, iot, smart cities, connectivity',
-                            'external_url': 'https://www.qualcomm.com/5g'
+                            'title': 'Cybersecurity Careers Boom Amid Digital Threats',
+                            'content': 'Cybersecurity professionals in critical demand as organizations prioritize digital security. Entry-level positions start at $80K with rapid career advancement opportunities.',
+                            'summary': 'Cybersecurity field offers lucrative careers with strong job security and growth.',
+                            'image_url': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400',
+                            'tags': 'cybersecurity jobs, infosec careers, security analyst, tech',
+                            'external_url': 'https://www.cybersecurityjobs.net'
                         }
                     ],
                     'science': [
                         {
-                            'title': 'CRISPR Technology Opens New Medical Frontiers',
-                            'content': 'Gene-editing technology continues to advance with successful treatments for genetic disorders. Clinical trials show promising results for previously incurable conditions.',
-                            'summary': 'CRISPR gene-editing technology shows success in treating genetic disorders.',
+                            'title': 'Research Scientist Positions Open at Leading Labs',
+                            'content': 'Top research institutions announce openings for PhD-level scientists in biotechnology, pharmaceutical research, and clinical trials. Competitive salaries and grant funding opportunities available.',
+                            'summary': 'Leading research labs seek scientists for breakthrough medical and biotech projects.',
                             'image_url': 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400',
-                            'tags': 'crispr, genetics, medicine, research',
-                            'external_url': 'https://www.nature.com/articles/d41586-023-00001-0'
+                            'tags': 'research jobs, scientist careers, biotech, pharma',
+                            'external_url': 'https://www.nature.com/naturecareers'
                         },
                         {
-                            'title': 'Space Exploration Missions Yield Rich Data',
-                            'content': 'Recent space missions have returned unprecedented data about our solar system. Mars rovers and lunar missions provide insights into planetary science and potential colonization.',
-                            'summary': 'Space missions deliver valuable data about Mars, Moon, and solar system exploration.',
-                            'image_url': 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400',
-                            'tags': 'space, mars, exploration, research',
-                            'external_url': 'https://science.nasa.gov/missions'
+                            'title': 'Data Science Careers in Healthcare Boom',
+                            'content': 'Healthcare organizations seek data scientists to analyze patient outcomes and improve treatment protocols. Positions offer $120K+ salaries with opportunities to impact millions of lives.',
+                            'summary': 'Healthcare data science roles combine technology with meaningful medical impact.',
+                            'image_url': 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400',
+                            'tags': 'data science, healthcare jobs, analytics, medical careers',
+                            'external_url': 'https://www.healthcareitnews.com/jobs'
                         },
                         {
-                            'title': 'Climate Science Models Improve Accuracy',
-                            'content': 'Advanced climate models now predict weather patterns with 85% accuracy up to 10 days in advance. This improvement aids disaster preparedness and resource management.',
-                            'summary': 'Climate models achieve higher accuracy for weather prediction and disaster planning.',
+                            'title': 'Environmental Scientists Needed for Climate Projects',
+                            'content': 'Growing demand for environmental scientists to lead sustainability initiatives. Government and private sector roles focus on renewable energy, conservation, and climate modeling.',
+                            'summary': 'Climate change drives demand for environmental science professionals.',
                             'image_url': 'https://images.unsplash.com/photo-1569163139394-de4e4f43e4e3?w=400',
-                            'tags': 'climate, weather, prediction, science',
-                            'external_url': 'https://www.ipcc.ch/'
+                            'tags': 'environmental jobs, climate careers, sustainability, science',
+                            'external_url': 'https://www.environmentalscience.org/careers'
                         }
                     ]
                 }
