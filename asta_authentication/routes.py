@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify, send_from_directory, current_app
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from .models import db, User, Post, Article
+from models import db, User, Post, Article
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 

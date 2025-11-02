@@ -8,20 +8,11 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from sqlalchemy import or_
 
-# Handle both relative and absolute imports
-try:
-    from .models import db, User, Post, Article, Education, Experience, Skill, Certification, Message, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration
-    from .auth_routes import auth_bp
-    from .main_routes import main_bp
-    from .profile_routes import profile_bp
-    from .routes import api_bp # Import the new API blueprint
-except ImportError:
-    # If relative imports fail, try absolute imports
-    from models import db, User, Post, Article, Education, Experience, Skill, Certification, Message, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration
-    from auth_routes import auth_bp
-    from main_routes import main_bp
-    from profile_routes import profile_bp
-    from routes import api_bp # Import the new API blueprint
+from models import db, User, Post, Article, Education, Experience, Skill, Certification, Message, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration
+from auth_routes import auth_bp
+from main_routes import main_bp
+from profile_routes import profile_bp
+from routes import api_bp # Import the new API blueprint
 
 import logging
 
