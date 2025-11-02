@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
-from . import config
+import config
 
 client = None
 db = None

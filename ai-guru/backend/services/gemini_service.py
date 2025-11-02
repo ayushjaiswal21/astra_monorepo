@@ -1,5 +1,5 @@
 import google.generativeai as genai
-from .. import utils
+import utils
 
 text_model = genai.GenerativeModel('gemini-pro')
 vision_model = genai.GenerativeModel('gemini-pro-vision')

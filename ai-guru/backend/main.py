@@ -11,17 +11,17 @@ import io
 from datetime import datetime
 import uuid
 import re
-from . import models
+import models
 from collections import defaultdict
 from datetime import timedelta
 import langdetect
 from langdetect import detect, detect_langs, DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
 
-from .services import gemini_service
-from . import utils
-from . import database
-from . import config
+import services.gemini_service as gemini_service
+import utils
+import database
+import config
 
 # Set seed for consistent language detection
 
@@ -62,6 +62,14 @@ class RateLimiter:
 
 # Global rate limiter instance
 rate_limiter = RateLimiter(max_requests=config.RATE_LIMIT_MAX_REQUESTS, time_window=config.RATE_LIMIT_TIME_WINDOW)
+
+# Allowed MIME types for image uploads
+allowed_types = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp'
+]
 
 
 
@@ -414,6 +422,9 @@ async def chat_endpoint(request: models.ChatRequest, http_request: Request):
         text = request.message
         detected_lang, confidence, should_display = utils.detect_language(text)
         language_name = utils.LANGUAGE_NAMES.get(detected_lang, 'Unknown')
+        
+        # Extract session_id from request
+        session_id = request.session_id
         
         # Get learned user preferences for personalization
         learned_prefs = get_learned_preferences(session_id) if session_id else {}
