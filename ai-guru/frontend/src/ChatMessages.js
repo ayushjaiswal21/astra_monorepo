@@ -11,6 +11,7 @@ const ChatMessages = ({ messages, messagesEndRef, submitFeedback, feedbackLoadin
           index={index} 
           submitFeedback={submitFeedback}
           feedbackLoading={feedbackLoading}
+          processingMessages={processingMessages}
         />
       ))}
       <div ref={messagesEndRef} />

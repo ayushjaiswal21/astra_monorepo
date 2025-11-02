@@ -12,7 +12,7 @@ function App() {
   const [currentInput, setCurrentInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [processingMessages, setProcessingMessages] = useState(new Set());
@@ -404,7 +404,6 @@ function App() {
     setSelectedSession(null);
     setCurrentSessionId(null);
     setCurrentInput("");
-    setSelectedImage(null);
     setIsConverting(false);
     setIsLoading(false);
     setIsRecording(false);
@@ -420,7 +419,7 @@ function App() {
     if (!file) return;
 
     cancelActiveRequests();
-    setSelectedImage(file);
+
     const imageUrl = URL.createObjectURL(file);
     const formData = new FormData();
     formData.append("image", file);
@@ -496,7 +495,7 @@ function App() {
       });
       activeRequestsRef.current.delete(messageId);
     }
-    setSelectedImage(null);
+
     e.target.value = "";
   };
 
@@ -529,6 +528,7 @@ function App() {
               messagesEndRef={messagesEndRef}
               submitFeedback={submitFeedback}
               feedbackLoading={feedbackLoading}
+              processingMessages={processingMessages}
             />
           )}
         </div>

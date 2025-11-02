@@ -11,7 +11,7 @@ import io
 from datetime import datetime
 import uuid
 import re
-import models
+from models import ChatRequest, FeedbackRequest
 from collections import defaultdict
 from datetime import timedelta
 import langdetect

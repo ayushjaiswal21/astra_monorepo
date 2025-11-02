@@ -1,8 +1,9 @@
 import React from 'react';
 import { marked } from 'marked';
 
-const Message = ({ msg, index, submitFeedback, feedbackLoading }) => {
+const Message = ({ msg, index, submitFeedback, feedbackLoading, processingMessages }) => {
   const isUser = msg.sender === "user";
+  const isProcessing = processingMessages.has(msg.id);
 
   return (
     <div className={`flex items-start gap-4 mb-6`}>
@@ -25,7 +26,7 @@ const Message = ({ msg, index, submitFeedback, feedbackLoading }) => {
               </div>
             </div>
           )}
-          {msg.isLoading ? (
+          {isProcessing ? (
             <div className="flex items-center gap-2 text-gray-500">
               <div className="w-4 h-4 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
               <span>AI is thinking...</span>
