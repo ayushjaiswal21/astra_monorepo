@@ -1,6 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify
 from werkzeug.utils import secure_filename
 import os
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 try:
     from .models import db, User, Education, Experience, Skill, Certification, ProfileView
     from .main_routes import log_activity
@@ -10,6 +12,24 @@ except ImportError:
 from flask_login import current_user, login_required
 
 profile_bp = Blueprint('profile', __name__, url_prefix='/profile')
+
+# --- API Endpoint for Profile --- 
+@profile_bp.route('/', methods=['GET'])
+@jwt_required()
+def get_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'role': user.role
+    })
+
+# --- Original Form-Based Routes ---
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 

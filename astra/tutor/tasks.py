@@ -5,6 +5,7 @@ from celery import shared_task
 from django.conf import settings
 from django.db import transaction
 from .models import Course, Module, Lesson, Quiz, Question, Choice
+from .prompts import get_course_generation_prompt
 
 def clean_gemini_response(response_text):
     """
@@ -33,36 +34,7 @@ def generate_course_content(course_id, topic):
         genai.configure(api_key=settings.GEMINI_API_KEY)
         model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
-        prompt = f'''
-        You are an expert instructional designer. Generate a complete course on the topic: '{topic}'.
-        The output must be a single, valid JSON object.
-        The JSON structure should be:
-        {{
-          "course_title": "Course Title",
-          "course_description": "A brief description of the course.",
-          "modules": [
-            {{
-              "module_title": "Module 1 Title",
-              "module_objective": "The learning objective for this module.",
-              "lessons": [
-                {{
-                  "lesson_title": "Lesson 1.1 Title",
-                  "lesson_content": "The full lesson content in Markdown format. It should be detailed, clear, and easy to understand.",
-                  "quiz": {{
-                    "question": "A multiple-choice question to test the core concept of the lesson.",
-                    "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
-                    "answer": "The correct option from the list."
-                  }}
-                }}
-              ]
-            }}
-          ]
-        }}
-
-        Generate 3-5 modules for the course.
-        Each module should have 2-4 lessons.
-        Ensure the JSON is well-formed and contains all the requested fields.
-        '''
+        prompt = get_course_generation_prompt(topic)
 
         response = model.generate_content(prompt)
         ai_response_json = clean_gemini_response(response.text)

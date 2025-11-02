@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, redirect, url_for, session, request, flash, g, current_app
+from flask import Blueprint, render_template, redirect, url_for, session, request, flash, g, current_app, jsonify
 from flask_dance.contrib.google import google
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import create_access_token
 try:
     from .models import db, User
 except ImportError:
@@ -8,6 +9,58 @@ except ImportError:
 from flask_login import login_user, logout_user, current_user
 
 auth_bp = Blueprint('auth', __name__)
+
+# --- API Endpoints for Testing ---
+
+@auth_bp.route('/register', methods=['POST'])
+def api_register():
+    data = request.get_json()
+    if not data or not data.get('email') or not data.get('password'):
+        return jsonify({'error': 'Email and password are required.'}), 400
+
+    email = data.get('email')
+    password = data.get('password')
+    
+    # Basic email validation
+    if '@' not in email or '.' not in email.split('@')[1]:
+        return jsonify({'error': 'Invalid email format.'}), 400
+
+    # Basic password strength
+    if len(password) < 8:
+        return jsonify({'error': 'Password must be at least 8 characters long.'}), 400
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({'error': 'User with this email already exists.'}), 409
+
+    username = email.split('@')[0]
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    
+    new_user = User(email=email, username=username, password=hashed_password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({'message': 'User created successfully.'}), 201
+
+@auth_bp.route('/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    if not data or not data.get('email') or not data.get('password'):
+        return jsonify({'error': 'Email and password are required.'}), 400
+
+    email = data.get('email')
+    password = data.get('password')
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user or not check_password_hash(user.password, password):
+        return jsonify({'error': 'Invalid credentials'}), 401
+
+    # Create JWT token using Flask-JWT-Extended
+    access_token = create_access_token(identity=user.id)
+    return jsonify(access_token=access_token), 200
+
+# --- Original Form-Based Routes ---
+
 
 @auth_bp.route('/test')
 def test():

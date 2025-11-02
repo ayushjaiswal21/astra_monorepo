@@ -33,7 +33,10 @@ class User(db.Model, UserMixin):
     experience = db.relationship('Experience', backref='user', lazy=True, cascade="all, delete-orphan")
     skills = db.relationship('Skill', backref='user', lazy=True, cascade="all, delete-orphan")
     certifications = db.relationship('Certification', backref='user', lazy=True, cascade="all, delete-orphan")
-    posts = db.relationship('Post', backref='author', lazy=True, cascade="all, delete-orphan")
+
+    # New relationships for Posts and Articles
+    posts = db.relationship('Post', back_populates='author', lazy='dynamic', cascade="all, delete-orphan")
+    articles = db.relationship('Article', back_populates='author', lazy='dynamic', cascade="all, delete-orphan")
 
     internships = db.relationship('Internship', backref='provider', lazy=True)
     job_posts = db.relationship('JobPost', backref='provider', lazy=True)
@@ -74,12 +77,24 @@ class Certification(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 class Post(db.Model):
+    __tablename__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    image_url = db.Column(db.String(200))
-    link_url = db.Column(db.String(200))
+    content = db.Column(db.Text, nullable=False)
+    media_url = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    author = db.relationship('User', back_populates='posts')
+
+class Article(db.Model):
+    __tablename__ = 'articles'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    cover_image_url = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    author = db.relationship('User', back_populates='articles')
+
 
 class Internship(db.Model):
     id = db.Column(db.Integer, primary_key=True)
