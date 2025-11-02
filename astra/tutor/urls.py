@@ -30,4 +30,9 @@ urlpatterns = [
 
     path('api/lessons/<int:lesson_id>/complete/', views.mark_lesson_complete, name='mark_lesson_complete'),
     path('api/analytics/<str:user_id>/', views.analytics, name='analytics'),
+    
+    # Comprehensive Test
+    path('courses/<int:course_id>/test/', views.start_course_test_view, name='start_course_test'),
+    path('api/courses/<int:course_id>/test/generate/', views.generate_course_test_api, name='generate_course_test'),
+    path('api/test/<int:test_session_id>/submit/', views.submit_course_test_api, name='submit_course_test'),
 ]

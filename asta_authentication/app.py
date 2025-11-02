@@ -5,20 +5,23 @@ from flask import Flask, jsonify
 from flask_socketio import SocketIO
 from flask_login import LoginManager, login_required, current_user
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 from sqlalchemy import or_
 
 # Handle both relative and absolute imports
 try:
-    from .models import db, User, Post, Education, Experience, Skill, Certification, Message, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration
+    from .models import db, User, Post, Article, Education, Experience, Skill, Certification, Message, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration
     from .auth_routes import auth_bp
     from .main_routes import main_bp
     from .profile_routes import profile_bp
+    from .routes import api_bp # Import the new API blueprint
 except ImportError:
     # If relative imports fail, try absolute imports
-    from models import db, User, Post, Education, Experience, Skill, Certification, Message, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration
+    from models import db, User, Post, Article, Education, Experience, Skill, Certification, Message, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration
     from auth_routes import auth_bp
     from main_routes import main_bp
     from profile_routes import profile_bp
+    from routes import api_bp # Import the new API blueprint
 
 import logging
 
@@ -40,6 +43,9 @@ app.config['SECRET_KEY'] = "prototype-dev-key-not-for-production"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'asta_authentication/static/uploads'
+app.config['POST_UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'posts')
+app.config['ARTICLE_UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'articles')
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
 app.config['SESSION_COOKIE_SAMESITE'] = None  # Allow cross-origin cookies
 app.config['SESSION_COOKIE_SECURE'] = False  # Allow HTTP (not just HTTPS)
 app.config['SESSION_COOKIE_HTTPONLY'] = False  # Allow JavaScript access
@@ -50,6 +56,7 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # --- Database, CSRF, and Login Manager Initialization ---
 db.init_app(app)
+jwt = JWTManager(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'auth.signin'
@@ -68,6 +75,7 @@ def load_user(user_id):
 app.register_blueprint(auth_bp, url_prefix="/auth")
 app.register_blueprint(main_bp)
 app.register_blueprint(profile_bp)
+app.register_blueprint(api_bp) # Register the new API blueprint
 
 # Import chat events after socketio is initialized
 
