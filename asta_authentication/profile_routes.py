@@ -4,10 +4,10 @@ import os
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 try:
-    from .models import db, User, Education, Experience, Skill, Certification, ProfileView
+    from .models import db, User, Education, Experience, Skill, Certification, ProfileView, Post
     from .main_routes import log_activity
 except ImportError:
-    from models import db, User, Education, Experience, Skill, Certification, ProfileView
+    from models import db, User, Education, Experience, Skill, Certification, ProfileView, Post
     from main_routes import log_activity
 from flask_login import current_user, login_required
 
@@ -64,12 +64,13 @@ def upload_images():
 @login_required
 def view_profile(username):
     user = User.query.filter_by(username=username).first_or_404()
+    posts = Post.query.filter_by(user_id=user.id).order_by(Post.created_at.desc()).all()
     if current_user.id != user.id:
         profile_view = ProfileView(viewer_id=current_user.id, viewed_id=user.id)
         db.session.add(profile_view)
         db.session.commit()
         log_activity(current_user.id, 'viewed_profile', f"viewed {user.username}'s profile")
-    return render_template('profile/profile_view.html', user=user)
+    return render_template('profile/profile_view.html', user=user, posts=posts)
 
 @profile_bp.route('/edit-about', methods=['POST'])
 @login_required

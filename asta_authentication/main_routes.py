@@ -11,6 +11,30 @@ from datetime import datetime, timedelta
 import requests
 import json
 
+def save_uploaded_file(file):
+    if not file or file.filename == '':
+        return None
+    filename = secure_filename(file.filename)
+    # To make the path relative for url_for('static', ...), we should save it relative to the static folder
+    # The UPLOAD_FOLDER is an absolute path, so we need to find the relative path from the static folder.
+    static_folder = current_app.static_folder
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    
+    # Ensure the upload folder exists
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder)
+
+    filepath = os.path.join(upload_folder, filename)
+    file.save(filepath)
+    
+    # Return a path that can be used with url_for('static', filename=...)
+    # This requires the upload folder to be inside the static folder.
+    # Let's assume UPLOAD_FOLDER is a sub-directory of the static folder.
+    # e.g. static/uploads
+    relative_path = os.path.relpath(filepath, static_folder)
+    return relative_path.replace('\\', '/') # Ensure forward slashes for URLs
+
+
 main_bp = Blueprint('main', __name__)
 
 def fetch_ai_guru_analytics(user_id):
@@ -415,20 +439,26 @@ def network():
     users = User.query.all()
     return render_template('network/network_hub.html', users=users, current_user=current_user)
 
+@main_bp.route('/new-post', methods=['GET'])
+@login_required
+def new_post():
+    return render_template('posts/new.html')
+
 @main_bp.route('/create-post', methods=['POST'])
 @login_required
 def create_post():
     content = request.form.get('content')
-    image_url = request.form.get('image_url')
-    link_url = request.form.get('link_url')
+    media = request.files.get('media')
 
     if content:
-        new_post = Post(content=content, author=current_user, image_url=image_url, link_url=link_url)
+        media_url = save_uploaded_file(media) if media else None
+        new_post = Post(content=content, author=current_user, media_url=media_url)
         db.session.add(new_post)
         db.session.commit()
         log_activity(current_user.id, 'created_post')
+        flash('Post published!', 'success')
     
-    return redirect(url_for('main.dashboard'))
+    return redirect(url_for('profile.view_profile', username=current_user.username))
 
 @main_bp.route('/internships')
 @login_required

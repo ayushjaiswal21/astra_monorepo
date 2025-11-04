@@ -1,0 +1,10 @@
+
+<article class="card mb-3">
+  <div class="card-body">
+    <strong>{{ post.author.username }}</strong> &middot; <small class="text-muted">{{ post.created_at.strftime('%b %d, %Y') }}</small>
+    <p class="mt-2">{{ post.content }}</p>
+    {% if post.media_url %}
+      <img src="{{ url_for('static', filename=post.media_url.replace('asta_authentication/static/', '')) }}" class="img-fluid rounded mt-2">
+    {% endif %}
+  </div>
+</article>

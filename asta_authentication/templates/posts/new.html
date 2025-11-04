@@ -1,0 +1,44 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Create New Post{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Create a new post</h1>
+    <form method="POST" action="{{ url_for('main.create_post') }}" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="content" class="form-label">Post Content</label>
+            <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="media" class="form-label">Attach Media (Image or Document)</label>
+            <input class="form-control" type="file" id="media" name="media" onchange="previewMedia(event)">
+        </div>
+        <div class="mb-3" id="media-preview-container" style="display: none;">
+            <p>Media Preview:</p>
+            <img id="media-preview" src="#" alt="Media Preview" class="img-fluid rounded" style="max-height: 300px;">
+        </div>
+        <button type="submit" class="btn btn-primary">Post</button>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+<script>
+function previewMedia(event) {
+    const previewContainer = document.getElementById('media-preview-container');
+    const preview = document.getElementById('media-preview');
+    const file = event.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function() {
+        preview.src = reader.result;
+        previewContainer.style.display = 'block';
+    }
+
+    if (file) {
+        reader.readAsDataURL(file);
+    }
+}
+</script>
+{% endblock %}
