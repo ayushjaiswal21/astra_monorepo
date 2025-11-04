@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import current_user, login_required
 try:
-    from .models import db, User, Post, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News
+    from .models import db, User, Post, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News, Notification
 except ImportError:
-    from models import db, User, Post, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News
+    from models import db, User, Post, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News, Notification
 from werkzeug.utils import secure_filename
 import os
 from sqlalchemy import or_, func
@@ -358,6 +358,56 @@ def get_messages(username):
         'content': msg.content,
         'timestamp': msg.timestamp.isoformat()
     } for msg in messages])
+
+
+@main_bp.route('/api/messages/<username>', methods=['POST'])
+@login_required
+def post_message(username):
+    """
+    Send a message to 'username'. Accepts JSON or form: { 'content': '...' }.
+    Persists message, emits 'new_message' and creates a Notification for recipient.
+    """
+    other_user = User.query.filter_by(username=username).first_or_404()
+    data = request.get_json(silent=True) or request.form
+    content = data.get('content')
+    if not content:
+        return jsonify({'error': 'content is required'}), 400
+
+    msg = Message(sender_id=current_user.id, recipient_id=other_user.id, content=content)
+    db.session.add(msg)
+    db.session.commit()
+
+    # Build payload and emit to recipient personal room
+    payload = {
+        'id': msg.id,
+        'sender_id': current_user.id,
+        'sender_username': current_user.username,
+        'recipient_id': other_user.id,
+        'content': content,
+        'timestamp': msg.timestamp.isoformat() if hasattr(msg, 'timestamp') else None
+    }
+
+    # Emit via socketio namespace '/chat' to recipient's room
+    try:
+        from app import socketio
+        socketio.emit('new_message', payload, room=f'user_{other_user.id}', namespace='/chat')
+    except Exception as e:
+        current_app.logger.debug("socketio emit failed: %s", e)
+
+    # Persist a notification
+    try:
+        notif = Notification(user_id=other_user.id, payload={'type': 'message', 'from': current_user.id, 'message_id': msg.id, 'excerpt': content[:200]})
+        db.session.add(notif)
+        db.session.commit()
+        # Emit notification
+        try:
+            socketio.emit('notification', {'id': notif.id, 'payload': notif.payload}, room=f'user_{other_user.id}', namespace='/chat')
+        except Exception:
+            pass
+    except Exception as e:
+        current_app.logger.debug("notification create failed: %s", e)
+
+    return jsonify({'id': msg.id}), 201
 
 @main_bp.route('/network')
 @login_required

@@ -45,6 +45,8 @@ class User(db.Model, UserMixin):
 
     sent_messages = db.relationship('Message', foreign_keys='Message.sender_id', back_populates='sender')
     received_messages = db.relationship('Message', foreign_keys=[Message.recipient_id], back_populates='recipient')
+    # Notifications relationship
+    notifications = db.relationship('Notification', backref='user', lazy=True, cascade="all, delete-orphan")
 
 class Education(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -211,3 +213,20 @@ class News(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     author = db.relationship('User', backref='news_posts', lazy=True)
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    payload = db.Column(db.JSON, nullable=False)  # store notification payload (type, message_id, excerpt...)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'payload': self.payload,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'is_read': self.is_read
+        }
