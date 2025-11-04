@@ -27,11 +27,11 @@ try:
     feedback_collection = db.user_feedback
 
 except ConnectionFailure as e:
-    print(f"❌ MongoDB connection failed: {e}")
-    print("📝 Fallback: Application will not be able to persist data.")
+    print(f"[ERROR] MongoDB connection failed: {e}")
+    print("[INFO] Fallback: Application will not be able to persist data.")
     # In a real application, you might want to exit or have a more robust fallback.
 except Exception as e:
-    print(f"❌ An unexpected error occurred with MongoDB: {e}")
+    print(f"[ERROR] An unexpected error occurred with MongoDB: {e}")
 
 def get_db():
     return db

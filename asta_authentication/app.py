@@ -69,6 +69,18 @@ app.register_blueprint(profile_bp)
 app.register_blueprint(api_bp) # Register the new API blueprint
 
 # Import chat events after socketio is initialized
+# Load chat socket handlers (this file registers the '/chat' namespace)
+try:
+    # relative import if project packaged; fallback to top-level
+    from chat_socket import attach_chat_namespace
+    attach_chat_namespace(socketio)
+except Exception:
+    # Try alternate import path
+    try:
+        from asta_authentication.chat_socket import attach_chat_namespace
+        attach_chat_namespace(socketio)
+    except Exception as e:
+        app.logger.info("Chat socket handlers not loaded: %s", e)
 
 
 # --- Database Creation ---

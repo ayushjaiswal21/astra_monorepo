@@ -415,7 +415,7 @@ app.add_middleware(
 )
 
 @app.post("/chat")
-async def chat_endpoint(request: models.ChatRequest, http_request: Request):
+async def chat_endpoint(request: ChatRequest, http_request: Request):
     try:
         # Security: Rate limiting
         await rate_limiter.check_rate_limit(http_request.client.host)
@@ -718,7 +718,7 @@ def delete_session(session_id: str):
 
 # User feedback system for continuous learning
 @app.post("/feedback")
-async def submit_feedback(feedback: models.FeedbackRequest, http_request: Request):
+async def submit_feedback(feedback: FeedbackRequest, http_request: Request):
     """Allow users to provide feedback on AI responses for continuous learning"""
     if not database.is_db_available():
         raise HTTPException(status_code=503, detail="Database unavailable")
