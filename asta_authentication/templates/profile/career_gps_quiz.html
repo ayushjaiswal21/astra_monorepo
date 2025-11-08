@@ -1,0 +1,218 @@
+{% extends 'layout.html' %}
+
+{% block title %}Career GPS Quiz{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">🎯 Career GPS Discovery</h3>
+                    <p class="text-muted mb-0">Answer a few questions to discover your ideal career path</p>
+                </div>
+                <div class="card-body">
+                    <form id="careerGpsForm" method="POST">
+                        <!-- Step 1: Interests -->
+                        <div class="quiz-step" id="step1">
+                            <h5>What topics excite you most?</h5>
+                            <p class="text-muted">Select all that apply</p>
+                            <div class="mb-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="interests" value="Technology" id="tech">
+                                    <label class="form-check-label" for="tech">Technology</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="interests" value="Art" id="art">
+                                    <label class="form-check-label" for="art">Art</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="interests" value="Finance" id="finance">
+                                    <label class="form-check-label" for="finance">Finance</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="interests" value="Media" id="media">
+                                    <label class="form-check-label" for="media">Media</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="interests" value="Sports" id="sports">
+                                    <label class="form-check-label" for="sports">Sports</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="interests" value="Education" id="education">
+                                    <label class="form-check-label" for="education">Education</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="interests" value="Healthcare" id="healthcare">
+                                    <label class="form-check-label" for="healthcare">Healthcare</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="interests" value="Business" id="business">
+                                    <label class="form-check-label" for="business">Business</label>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="nextStep(1, 2)">Next</button>
+                        </div>
+
+                        <!-- Step 2: Skills -->
+                        <div class="quiz-step d-none" id="step2">
+                            <h5>What skills do you already have?</h5>
+                            <p class="text-muted">Select all that apply or add your own</p>
+                            <div class="mb-3">
+                                <select class="form-select" multiple aria-label="Skills" name="skills" id="skillsSelect">
+                                    <option value="Communication">Communication</option>
+                                    <option value="Leadership">Leadership</option>
+                                    <option value="Problem Solving">Problem Solving</option>
+                                    <option value="Programming">Programming</option>
+                                    <option value="Design">Design</option>
+                                    <option value="Writing">Writing</option>
+                                    <option value="Data Analysis">Data Analysis</option>
+                                    <option value="Project Management">Project Management</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Sales">Sales</option>
+                                </select>
+                                <div class="mt-2">
+                                    <input type="text" class="form-control" id="customSkill" placeholder="Add your own skill">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addCustomSkill()">Add Skill</button>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" onclick="prevStep(2, 1)">Previous</button>
+                                <button type="button" class="btn btn-primary" onclick="nextStep(2, 3)">Next</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Career Goal -->
+                        <div class="quiz-step d-none" id="step3">
+                            <h5>What's your biggest career goal now?</h5>
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="goal" value="Get a job" id="goal1">
+                                    <label class="form-check-label" for="goal1">Get a job</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="goal" value="Build a product" id="goal2">
+                                    <label class="form-check-label" for="goal2">Build a product</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="goal" value="Teach others" id="goal3">
+                                    <label class="form-check-label" for="goal3">Teach others</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="goal" value="Earn well" id="goal4">
+                                    <label class="form-check-label" for="goal4">Earn well</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="goal" value="Make impact" id="goal5">
+                                    <label class="form-check-label" for="goal5">Make impact</label>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" onclick="prevStep(3, 2)">Previous</button>
+                                <button type="button" class="btn btn-primary" onclick="nextStep(3, 4)">Next</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Motivation -->
+                        <div class="quiz-step d-none" id="step4">
+                            <h5>What drives you in life?</h5>
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="motivation" value="Freedom" id="motivation1">
+                                    <label class="form-check-label" for="motivation1">Freedom</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="motivation" value="Stability" id="motivation2">
+                                    <label class="form-check-label" for="motivation2">Stability</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="motivation" value="Growth" id="motivation3">
+                                    <label class="form-check-label" for="motivation3">Growth</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="motivation" value="Creativity" id="motivation4">
+                                    <label class="form-check-label" for="motivation4">Creativity</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="motivation" value="Service" id="motivation5">
+                                    <label class="form-check-label" for="motivation5">Service</label>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" onclick="prevStep(4, 3)">Previous</button>
+                                <button type="button" class="btn btn-primary" onclick="nextStep(4, 5)">Next</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 5: Learning Style -->
+                        <div class="quiz-step d-none" id="step5">
+                            <h5>How do you prefer to learn?</h5>
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="learning_style" value="Visual" id="learning1">
+                                    <label class="form-check-label" for="learning1">Visual (diagrams, videos)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="learning_style" value="Hands-on" id="learning2">
+                                    <label class="form-check-label" for="learning2">Hands-on (practice, projects)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="learning_style" value="Collaborative" id="learning3">
+                                    <label class="form-check-label" for="learning3">Collaborative (group work)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="learning_style" value="Reading" id="learning4">
+                                    <label class="form-check-label" for="learning4">Reading (books, articles)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="learning_style" value="Audio" id="learning5">
+                                    <label class="form-check-label" for="learning5">Audio (lectures, podcasts)</label>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" onclick="prevStep(5, 4)">Previous</button>
+                                <button type="submit" class="btn btn-success">Generate My Career GPS</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.quiz-step {
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+</style>
+
+<script>
+function nextStep(current, next) {
+    document.getElementById('step' + current).classList.add('d-none');
+    document.getElementById('step' + next).classList.remove('d-none');
+}
+
+function prevStep(current, prev) {
+    document.getElementById('step' + current).classList.add('d-none');
+    document.getElementById('step' + prev).classList.remove('d-none');
+}
+
+function addCustomSkill() {
+    const customSkillInput = document.getElementById('customSkill');
+    const skill = customSkillInput.value.trim();
+    if (skill) {
+        const select = document.getElementById('skillsSelect');
+        const option = document.createElement('option');
+        option.value = skill;
+        option.text = skill;
+        option.selected = true;
+        select.add(option);
+        customSkillInput.value = '';
+    }
+}
+</script>
+{% endblock %}

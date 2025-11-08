@@ -218,7 +218,7 @@ class Notification(db.Model):
     __tablename__ = 'notifications'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    payload = db.Column(db.JSON, nullable=False)  # store notification payload (type, message_id, excerpt...)
+    payload = db.Column(db.JSON, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_read = db.Column(db.Boolean, default=False, nullable=False)
 
@@ -227,6 +227,40 @@ class Notification(db.Model):
             'id': self.id,
             'user_id': self.user_id,
             'payload': self.payload,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': self.created_at.isoformat(),
             'is_read': self.is_read
         }
+
+class CareerGPS(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    interests = db.Column(db.Text)
+    skills = db.Column(db.Text)
+    goal = db.Column(db.String(100))
+    motivation = db.Column(db.String(100))
+    learning_style = db.Column(db.String(100))
+    top_careers = db.Column(db.Text)
+    selected_career = db.Column(db.String(100))
+    progress = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user = db.relationship('User', backref='career_gps', lazy=True)
+
+class LearningPath(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    career_name = db.Column(db.String(150), nullable=False)
+    career_summary = db.Column(db.Text)
+    match_percentage = db.Column(db.Integer)
+    learning_path_data = db.Column(db.Text)
+    # Progress tracking
+    progress = db.Column(db.Integer, default=0)  # Overall progress percentage
+    completed_items = db.Column(db.Text)  # JSON array of completed item IDs
+    
+    # Metadata
+    is_active = db.Column(db.Boolean, default=True)  # Is this the current active path
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='learning_paths', lazy=True)
+>>>>>>> 27e5b26 (feat(learning-path): add AI-powered learning path generation, docs, templates, services (2025-11-08))

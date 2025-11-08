@@ -88,8 +88,10 @@ with app.app_context():
     # PROTOTYPE MODE: Don't drop tables automatically to preserve data
     db.create_all()
     app.logger.info("✅ Database initialized (prototype mode)")
-    app.logger.info(f"GOOGLE_CLIENT_ID: {os.environ.get('GOOGLE_CLIENT_ID')}")
-    app.logger.info(f"GOOGLE_CLIENT_SECRET: {os.environ.get('GOOGLE_CLIENT_SECRET')}")
+    # Read both variants for compatibility
+    client_id = os.environ.get('GOOGLE_OAUTH_CLIENT_ID') or os.environ.get('GOOGLE_CLIENT_ID')
+    client_secret = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET') or os.environ.get('GOOGLE_CLIENT_SECRET')
+    app.logger.info(f"Google OAuth configured: client_id={'set' if client_id else 'missing'}, secret={'set' if client_secret else 'missing'}")
 
 # --- Main Execution ---
 if __name__ == '__main__':

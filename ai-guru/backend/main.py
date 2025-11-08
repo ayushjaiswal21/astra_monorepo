@@ -1,4 +1,10 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+import models
 from fastapi import FastAPI, Body, UploadFile, File, HTTPException, Depends, Request
+from typing import Optional
 from pymongo import MongoClient
 import tempfile
 import os
@@ -206,7 +212,7 @@ def extract_topic(text):
         'science': ['science', 'physics', 'chemistry', 'biology', 'research'],
         'technology': ['AI', 'computer', 'software', 'programming', 'tech'],
         'education': ['learn', 'study', 'school', 'education', 'knowledge'],
-        'general': []
+        'career': ['job', 'career', 'work', 'profession', 'employment', 'gps']
     }
     
     text_lower = text.lower()
@@ -217,69 +223,37 @@ def extract_topic(text):
 
 def detect_sentiment(text):
     """Simple sentiment detection"""
-    positive_words = ['good', 'great', 'awesome', 'excellent', 'love', 'like', 'amazing']
-    negative_words = ['bad', 'terrible', 'hate', 'dislike', 'awful', 'wrong']
+    positive_words = ['good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic']
+    negative_words = ['bad', 'terrible', 'awful', 'horrible', 'disappointing']
     
     text_lower = text.lower()
-    positive_count = sum(1 for word in positive_words if word in text_lower)
-    negative_count = sum(1 for word in negative_words if word in text_lower)
+    pos_count = sum(1 for word in positive_words if word in text_lower)
+    neg_count = sum(1 for word in negative_words if word in text_lower)
     
-    if positive_count > negative_count:
+    if pos_count > neg_count:
         return 'positive'
-    elif negative_count > positive_count:
+    elif neg_count > pos_count:
         return 'negative'
-    return 'neutral'
+    else:
+        return 'neutral'
 
 def assess_complexity(text):
-    """Assess input complexity"""
-    if len(text) < 30:
+    """Assess text complexity"""
+    words = text.split()
+    if len(words) < 10:
         return 'simple'
-    elif len(text) > 100 or any(word in text.lower() for word in ['complex', 'detailed', 'comprehensive', 'analyze']):
+    elif len(words) > 50:
         return 'complex'
-    return 'medium'
+    else:
+        return 'moderate'
 
 def detect_success_patterns(user_input, bot_response):
-    """Detect patterns that indicate successful interactions"""
-    success_patterns = {
-        "format_match": check_format_alignment(user_input, bot_response),
-        "appropriate_length": check_length_appropriateness(user_input, bot_response),
-        "topic_relevance": check_topic_relevance(user_input, bot_response)
+    """Detect success patterns in interactions"""
+    return {
+        "follow_up_question": "?" in bot_response[-50:],  # Ends with question
+        "personalization": "you" in bot_response.lower() or "your" in bot_response.lower(),
+        "actionable": any(word in bot_response.lower() for word in ['try', 'use', 'apply', 'practice'])
     }
-    return success_patterns
-
-def check_format_alignment(user_input, bot_response):
-    """Check if response format matches user request"""
-    user_lower = user_input.lower()
-    
-    # User asked for paragraph
-    if any(word in user_lower for word in ['paragraph', 'write', 'describe']):
-        has_structure = bool(re.search(r'\*\*.*\*\*', bot_response) or re.search(r'^[\s]*[-•*\d+\.]', bot_response, re.MULTILINE))
-        return not has_structure  # Success if no structure when paragraph requested
-    
-    # User asked for structure
-    elif any(word in user_lower for word in ['explain', 'list', 'break down', 'steps']):
-        has_structure = bool(re.search(r'\*\*.*\*\*', bot_response) or re.search(r'^[\s]*[-•*\d+\.]', bot_response, re.MULTILINE))
-        return has_structure  # Success if structured when structure requested
-    
-    return True  # Neutral case
-
-def check_length_appropriateness(user_input, bot_response):
-    """Check if response length is appropriate for the request"""
-    if len(user_input) < 20:  # Short question
-        return len(bot_response) < 500  # Should get short response
-    elif len(user_input) > 100:  # Detailed question
-        return len(bot_response) > 200  # Should get detailed response
-    return True
-
-def check_topic_relevance(user_input, bot_response):
-    """Simple topic relevance check"""
-    user_topics = set(re.findall(r'\b[a-zA-Z]{4,}\b', user_input.lower()))
-    response_topics = set(re.findall(r'\b[a-zA-Z]{4,}\b', bot_response.lower()))
-    
-    if len(user_topics) > 0:
-        relevance_score = len(user_topics.intersection(response_topics)) / len(user_topics)
-        return relevance_score > 0.3  # At least 30% topic overlap
-    return True
 
 def learn_from_interaction(interaction_data):
     """Learn patterns from successful interactions to improve future responses"""
@@ -1049,10 +1023,91 @@ def get_analytics():
     except Exception as e:
         return {"error": str(e)}
 
+# Import the Career GPS service
+import services.career_gps_service as career_gps_service
+
+# Career GPS API Endpoints
+@app.post("/career-gps/recommendations")
+async def get_career_recommendations(
+    interests: list[str] = [],
+    skills: list[str] = [],
+    goal: str = "",
+    motivation: str = "",
+    learning_style: str = "",
+    user_profile: Optional[dict] = None
+):
+    """
+    Generate career recommendations based on user preferences and comprehensive profile data
+    """
+    try:
+        recommendations = career_gps_service.analyze_career_preferences(
+            interests, skills, goal, motivation, learning_style, user_profile
+        )
+        return {"recommendations": recommendations}
+    except Exception as e:
+        print(f"Career GPS error: {e}")
+        # Return fallback recommendations
+        fallback = career_gps_service.generate_relevant_defaults(interests, skills, goal)
+        return {"recommendations": fallback[:3]}
+
+@app.get("/career-gps/roadmap/{career_name}")
+async def get_career_roadmap(career_name: str, progress: int = 0):
+    """
+    Get a personalized roadmap for a selected career path
+    """
+    roadmap = career_gps_service.get_career_roadmap(career_name, progress)
+    return roadmap
+
+@app.post("/career-gps/learning-path")
+async def generate_learning_path(
+    career_name: str,
+    career_summary: str = "",
+    match_percentage: int = 75,
+    user_profile: Optional[dict] = None
+):
+    """
+    Generate a comprehensive personalized learning path for a selected career.
+    This is called when a seeker clicks "View Details" and wants to see the learning path.
+    """
+    try:
+        print(f"🎓 Generating learning path for: {career_name}")
+        learning_path = career_gps_service.generate_personalized_learning_path(
+            career_name=career_name,
+            career_summary=career_summary,
+            user_profile=user_profile,
+            match_percentage=match_percentage
+        )
+        return {"success": True, "learning_path": learning_path}
+    except Exception as e:
+        print(f"❌ Learning path generation error: {e}")
+        import traceback
+        traceback.print_exc()
+        # Return default learning path on error
+        fallback = career_gps_service.generate_default_learning_path(career_name, career_summary)
+        return {"success": True, "learning_path": fallback}
+
 if __name__ == "__main__":
-    import uvicorn
+    import uvicorn, signal, threading, time
+
+    shutdown_reason = {"signal": None}
+
+    def _handle_signal(sig, frame):
+        name = {signal.SIGINT: "SIGINT", signal.SIGTERM: "SIGTERM"}.get(sig, str(sig))
+        print(f"⚠️ Received {name}, initiating graceful shutdown...")
+        shutdown_reason["signal"] = name
+
+    for s in (signal.SIGINT, signal.SIGTERM):
+        try:
+            signal.signal(s, _handle_signal)
+        except Exception:
+            pass  # Some platforms may not allow setting all handlers
+
     print("🚀 Starting AI Guru Multibot Backend...")
     print("📡 API Documentation: http://localhost:8001/docs")
     print("🔗 Chat API: http://localhost:8001/chat")
     print("🧪 Test Gemini: http://localhost:8001/test-gemini")
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=8001)
+    finally:
+        print(f"✅ Server shutdown complete. Reason: {shutdown_reason['signal'] or 'unknown / external trigger'}")

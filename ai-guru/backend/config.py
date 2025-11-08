@@ -15,11 +15,11 @@ RATE_LIMIT_TIME_WINDOW = int(os.getenv('RATE_LIMIT_TIME_WINDOW', 60))
 
 # --- API Keys & URIs ---
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-MONGODB_URI = os.getenv('MONGODB_URI')
+MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')  # Default MongoDB URI
 
 # --- Validation ---
 # Ensure critical environment variables are set
-REQUIRED_ENV_VARS = ['GEMINI_API_KEY', 'MONGODB_URI']
+REQUIRED_ENV_VARS = ['GEMINI_API_KEY']  # Only GEMINI_API_KEY is required, MongoDB is optional
 missing_vars = [var for var in REQUIRED_ENV_VARS if not globals().get(var)]
 if missing_vars:
     raise RuntimeError(f"Missing required environment variables: {', '.join(missing_vars)}")
