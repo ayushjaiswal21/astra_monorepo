@@ -40,7 +40,8 @@ main_bp = Blueprint('main', __name__)
 def fetch_ai_guru_analytics(user_id):
     """Fetch analytics data from ai-guru backend"""
     try:
-        response = requests.get(f'http://localhost:8001/analytics/{user_id}', timeout=5)
+        # AI Guru currently exposes a global analytics endpoint (no user scoping)
+        response = requests.get('http://localhost:8001/analytics', timeout=5)
         if response.status_code == 200:
             return response.json()
         else:

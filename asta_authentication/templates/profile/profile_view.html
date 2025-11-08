@@ -1,64 +1,273 @@
 {% extends 'layout.html' %}
-
 {% block title %}{{ user.name }}'s Profile{% endblock %}
 
 {% block content %}
-    <form id="imageUploadForm" action="{{ url_for('profile.upload_images') }}" method="POST" enctype="multipart/form-data" class="d-none">
-        <input type="file" id="bannerUpload" name="banner_image" onchange="this.form.submit()">
-        <input type="file" id="profilePicUpload" name="profile_picture" onchange="this.form.submit()">
-    </form>
+<form id="imageUploadForm" action="{{ url_for('profile.upload_images') }}" method="POST" enctype="multipart/form-data" class="d-none">
+    <input type="file" id="bannerUpload" name="banner_image" onchange="this.form.submit()">
+    <input type="file" id="profilePicUpload" name="profile_picture" onchange="this.form.submit()">
+</form>
 
-    <div class="card profile-header-card">
-        <div class="profile-banner-container">
-            <img src="{{ user.banner_url or url_for('static', filename='images/bg.png') }}" alt="Banner Image" class="profile-banner">
-            {% if current_user.id == user.id %}
-            <a class="edit-icon-overlay" style="top: 15px; right: 15px;" onclick="document.getElementById('bannerUpload').click();" title="Edit banner">
-                <i class="fas fa-camera"></i>
-            </a>
-            {% endif %}
-            <img src="{{ user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}" alt="Profile Picture" class="profile-picture">
-        </div>
-        
-        <div class="profile-header-content">
-            {% if current_user.id == user.id %}
-            <a class="edit-icon-overlay" style="top: auto; bottom: 15px; right: 15px;" onclick="document.getElementById('profilePicUpload').click();" title="Edit profile picture">
-                <i class="fas fa-camera"></i>
-            </a>
-            {% endif %}
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <h2 class="mb-0 fw-bold">{{ user.name }}</h2>
-                    <p class="text-muted fs-5">{{ user.headline }}</p>
-                    <small class="text-muted">{{ user.location }} · <a href="#">Contact info</a></small>
-                </div>
-                <div>
-                    <h5 class="fw-bold"><i class="fas fa-university me-2"></i>{{ user.university }}</h5>
-                </div>
+<div class="card profile-header-card">
+    <div class="profile-banner-container">
+        <img src="{{ user.banner_url or url_for('static', filename='images/bg.png') }}" alt="Banner Image" class="profile-banner">
+        {% if current_user.id == user.id %}
+        <a class="edit-icon-overlay" style="top: 15px; right: 15px;" onclick="document.getElementById('bannerUpload').click();" title="Edit banner">
+            <i class="fas fa-camera"></i>
+        </a>
+        {% endif %}
+        <img src="{{ user.profile_pic_url or url_for('static', filename='images/dp.jpeg') }}" alt="Profile Picture" class="profile-picture">
+    </div>
+    
+    <div class="profile-header-content">
+        {% if current_user.id == user.id %}
+        <a class="edit-icon-overlay" style="top: auto; bottom: 15px; right: 15px;" onclick="document.getElementById('profilePicUpload').click();" title="Edit profile picture">
+            <i class="fas fa-camera"></i>
+        </a>
+        {% endif %}
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h2 class="mb-0 fw-bold">{{ user.name }}</h2>
+                <p class="text-muted fs-5">{{ user.headline }}</p>
+                <small class="text-muted">{{ user.location }} · <a href="#">Contact info</a></small>
             </div>
-            {% if current_user.id != user.id %}
-                <div class="mt-3">
-                    {% if not is_connected %}
-                        <button onclick="sendConnectionRequest({{ user.id }})" class="btn btn-primary">Connect</button>
-                    {% else %}
-                        <span class="text-success">Connected</span>
-                    {% endif %}
-                </div>
-            {% endif %}
+            <div>
+                <h5 class="fw-bold"><i class="fas fa-university me-2"></i>{{ user.university }}</h5>
+            </div>
         </div>
+        {% if current_user.id != user.id %}
+            <div class="mt-3">
+                {% if not is_connected %}
+                    <button onclick="sendConnectionRequest({{ user.id }})" class="btn btn-primary">Connect</button>
+                {% else %}
+                    <span class="text-success">Connected</span>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+        <h2 class="mb-0 fw-bold">{{ user.name }}</h2>
+        <p class="text-muted fs-5">{{ user.headline }}</p>
+        <!-- Career GPS Banner -->
+        {% if user.career_gps and user.career_gps.selected_career %}
+        <div
+          class="alert alert-success d-flex align-items-center mt-2 py-2 px-3 rounded-pill"
+          style="width: fit-content"
+        >
+          <i class="fas fa-compass me-2"></i>
+          <span
+            >Guided by Career GPS → {{ user.career_gps.selected_career }} | {{
+            user.career_gps.progress }}% Complete</span
+          >
+          <a
+            href="#"
+            class="ms-2"
+            data-bs-toggle="tooltip"
+            title="✨ Update or Explore New Directions"
+          >
+            <i class="fas fa-sync-alt"></i>
+          </a>
+        </div>
+        {% else %}
+        <a
+          href="{{ url_for('profile.start_career_gps') }}"
+          class="btn btn-outline-primary btn-sm mt-2"
+        >
+          <i class="fas fa-compass me-1"></i> Discover My Career Path
+        </a>
+        {% endif %}
+        <small class="text-muted"
+          >{{ user.location }} · <a href="#">Contact info</a></small
+        >
+      </div>
+      <div>
+        <h5 class="fw-bold">
+          <i class="fas fa-university me-2"></i>{{ user.university }}
+        </h5>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Career GPS Roadmap Section -->
+{% if user.career_gps and user.career_gps.selected_career %}
+<div class="card mt-4" id="careerGpsSection">
+  <div class="card-header">
+    <h5 class="card-title fw-bold mb-0">Career GPS Journey</h5>
+    <a href="{{ url_for('profile.start_career_gps') }}" title="Update My GPS"
+      ><i class="fas fa-sync-alt ms-2"></i
+    ></a>
+  </div>
+  <div class="card-body">
+    <h6 class="fw-bold">{{ user.career_gps.selected_career }}</h6>
+
+    <!-- Progress Bar -->
+    <div class="mb-3">
+      <div class="d-flex justify-content-between mb-1">
+        <small>Progress</small>
+        <small>{{ user.career_gps.progress }}%</small>
+      </div>
+      <div class="progress" style="height: 10px">
+        <div
+          class="progress-bar"
+          role="progressbar"
+          style="width: {{ user.career_gps.progress }}%"
+          aria-valuenow="{{ user.career_gps.progress }}"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        ></div>
+      </div>
     </div>
 
+    <!-- Milestone Timeline -->
+    <h6 class="mt-4">Milestones</h6>
+    <div class="timeline-steps">
+      <div class="step completed">
+        <div class="step-icon">1</div>
+        <div class="step-content">
+          <h6 class="mb-0">Career Discovery</h6>
+          <small class="text-muted">Completed</small>
+        </div>
+      </div>
+      <div
+        class="step {% if user.career_gps.progress >= 25 %}completed{% endif %}"
+      >
+        <div class="step-icon">2</div>
+        <div class="step-content">
+          <h6 class="mb-0">Skill Assessment</h6>
+          {% if user.career_gps.progress >= 25 %}
+          <small class="text-muted">Completed</small>
+          {% else %}
+          <small class="text-muted">In Progress</small>
+          {% endif %}
+        </div>
+      </div>
+      <div
+        class="step {% if user.career_gps.progress >= 50 %}completed{% endif %}"
+      >
+        <div class="step-icon">3</div>
+        <div class="step-content">
+          <h6 class="mb-0">Learning Path</h6>
+          {% if user.career_gps.progress >= 50 %}
+          <small class="text-muted">Completed</small>
+          {% else %}
+          <small class="text-muted">Upcoming</small>
+          {% endif %}
+        </div>
+      </div>
+      <div
+        class="step {% if user.career_gps.progress >= 75 %}completed{% endif %}"
+      >
+        <div class="step-icon">4</div>
+        <div class="step-content">
+          <h6 class="mb-0">Mentorship</h6>
+          {% if user.career_gps.progress >= 75 %}
+          <small class="text-muted">Completed</small>
+          {% else %}
+          <small class="text-muted">Upcoming</small>
+          {% endif %}
+        </div>
+      </div>
+      <div
+        class="step {% if user.career_gps.progress >= 100 %}completed{% endif %}"
+      >
+        <div class="step-icon">5</div>
+        <div class="step-content">
+          <h6 class="mb-0">Career Ready</h6>
+          {% if user.career_gps.progress >= 100 %}
+          <small class="text-muted">Completed</small>
+          {% else %}
+          <small class="text-muted">Goal</small>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Mentor Recommendations -->
+    <h6 class="mt-4">Recommended Mentors</h6>
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body text-center">
+            <div
+              class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+              style="width: 60px; height: 60px"
+            >
+              <i class="fas fa-user fs-4 text-secondary"></i>
+            </div>
+            <h6 class="mb-0">Industry Expert</h6>
+            <small class="text-muted"
+              >Senior {{ user.career_gps.selected_career }}</small
+            >
+          </div>
+>>>>>>> 27e5b26 (feat(learning-path): add AI-powered learning path generation, docs, templates, services (2025-11-08))
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body text-center">
+            <div
+              class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+              style="width: 60px; height: 60px"
+            >
+              <i class="fas fa-user fs-4 text-secondary"></i>
+            </div>
+            <h6 class="mb-0">Career Coach</h6>
+            <small class="text-muted">Professional Development</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body text-center">
+            <div
+              class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+              style="width: 60px; height: 60px"
+            >
+              <i class="fas fa-user fs-4 text-secondary"></i>
+            </div>
+            <h6 class="mb-0">Alumni Network</h6>
+            <small class="text-muted">Peer Mentor</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<<<<<<< HEAD
     <div class="card mt-4">
         <div class="card-header">
             <h5 class="card-title fw-bold">About</h5>
             {% if current_user.id == user.id %}
             <a href="#" data-bs-toggle="modal" data-bs-target="#editAboutModal" title="Edit about section"><i class="fas fa-pencil-alt"></i></a>
             {% endif %}
+=======
+    <!-- Learning Path Summary -->
+    <h6 class="mt-4">Learning Path</h6>
+    <div class="alert alert-info">
+      <div class="d-flex">
+        <div class="flex-shrink-0">
+          <i class="fas fa-graduation-cap"></i>
+>>>>>>> 27e5b26 (feat(learning-path): add AI-powered learning path generation, docs, templates, services (2025-11-08))
         </div>
-        <div class="card-body">
-            <p>{{ user.about }}</p>
+        <div class="flex-grow-1 ms-3">
+          <h6 class="mb-1">Personalized Learning Plan</h6>
+          <p class="mb-2">
+            Based on your career path, we've created a custom learning plan to
+            help you develop the necessary skills.
+          </p>
+          <a
+            href="{{ url_for('profile.my_learning_paths') }}"
+            class="btn btn-sm btn-outline-info"
+          >
+            <i class="fas fa-external-link-alt me-1"></i> View My Learning Paths
+          </a>
         </div>
+      </div>
     </div>
+  </div>
+</div>
+{% endif %}
 
+<<<<<<< HEAD
     <div class="card mt-4">
         <div class="card-header">
             <h5 class="card-title fw-bold">Posts</h5>
@@ -110,8 +319,173 @@
                     <p class="text-muted">No experience information added yet.</p>
                 {% endif %}
             </ul>
+=======
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="card-title fw-bold">About</h5>
+    <a
+      href="#"
+      data-bs-toggle="modal"
+      data-bs-target="#editAboutModal"
+      title="Edit about section"
+      ><i class="fas fa-pencil-alt"></i
+    ></a>
+  </div>
+  <div class="card-body">
+    <p>{{ user.about }}</p>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="card-title fw-bold">Experience</h5>
+    <a
+      href="#"
+      data-bs-toggle="modal"
+      data-bs-target="#addExperienceModal"
+      title="Add experience"
+    >
+      <i class="fas fa-plus"></i>
+    </a>
+  </div>
+  <div class="card-body">
+    <ul class="list-unstyled mb-0">
+      {% if user.experience %} {% for exp in user.experience %}
+      <li
+        class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}"
+      >
+        <div class="flex-shrink-0 me-3">
+          {% if exp.logo %}
+          <img
+            src="{{ exp.logo }}"
+            alt="{{ exp.company }} logo"
+            style="
+              width: 50px;
+              height: 50px;
+              border-radius: 4px;
+              object-fit: contain;
+            "
+          />
+          {% else %}
+          <div
+            class="bg-light rounded d-flex align-items-center justify-content-center"
+            style="width: 50px; height: 50px"
+          >
+            <i class="fas fa-briefcase text-secondary fs-4"></i>
+          </div>
+          {% endif %}
         </div>
+        <div class="flex-grow-1">
+          <h6 class="fw-bold mb-0">{{ exp.title }}</h6>
+          <p class="mb-1 text-sm">{{ exp.company }}</p>
+          <small class="text-muted d-block"
+            >{{ exp.dates }} · {{ exp.location }}</small
+          >
+          <p class="mt-2 mb-0 text-sm">{{ exp.description }}</p>
+>>>>>>> 27e5b26 (feat(learning-path): add AI-powered learning path generation, docs, templates, services (2025-11-08))
+        </div>
+        <a
+          href="#"
+          data-bs-toggle="modal"
+          data-bs-target="#editExperienceModal-{{ exp.id }}"
+          title="Edit experience"
+          class="text-secondary ms-3"
+          ><i class="fas fa-pencil-alt"></i
+        ></a>
+      </li>
+      {% endfor %} {% else %}
+      <p class="text-muted">No experience information added yet.</p>
+      {% endif %}
+    </ul>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="card-title fw-bold">Education</h5>
+    <a
+      href="#"
+      data-bs-toggle="modal"
+      data-bs-target="#addEducationModal"
+      title="Add education"
+    >
+      <i class="fas fa-plus"></i>
+    </a>
+  </div>
+  <div class="card-body">
+    <ul class="list-unstyled mb-0">
+      {% if user.education %} {% for edu in user.education %}
+      <li
+        class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}"
+      >
+        <div class="flex-shrink-0 me-3">
+          {% if edu.logo %}
+          <img
+            src="{{ edu.logo }}"
+            alt="{{ edu.school }} logo"
+            style="
+              width: 50px;
+              height: 50px;
+              border-radius: 4px;
+              object-fit: contain;
+            "
+          />
+          {% else %}
+          <div
+            class="bg-light rounded d-flex align-items-center justify-content-center"
+            style="width: 50px; height: 50px"
+          >
+            <i class="fas fa-university text-secondary fs-4"></i>
+          </div>
+          {% endif %}
+        </div>
+        <div class="flex-grow-1">
+          <h6 class="fw-bold mb-0">{{ edu.school }}</h6>
+          <p class="mb-1 text-sm">{{ edu.degree }}</p>
+          <small class="text-muted d-block">{{ edu.dates }}</small>
+        </div>
+        <a
+          href="#"
+          data-bs-toggle="modal"
+          data-bs-target="#editEducationModal-{{ edu.id }}"
+          title="Edit education"
+          class="text-secondary ms-3"
+          ><i class="fas fa-pencil-alt"></i
+        ></a>
+      </li>
+      {% endfor %} {% else %}
+      <p class="text-muted">No education information added yet.</p>
+      {% endif %}
+    </ul>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="card-title fw-bold">Skills</h5>
+    <a
+      href="#"
+      data-bs-toggle="modal"
+      data-bs-target="#addSkillModal"
+      title="Add new skill"
+    >
+      <i class="fas fa-plus"></i>
+    </a>
+  </div>
+  <div class="card-body">
+    {% if user.skills %} {% for skill in user.skills[:7] %}
+    <p class="py-2 mb-0 {% if not loop.last %}border-bottom{% endif %}">
+      {{ skill }}
+    </p>
+    {% endfor %} {% if user.skills|length > 7 %}
+    <div class="collapse" id="moreSkills">
+      {% for skill in user.skills[7:] %}
+      <p class="py-2 mb-0 {% if not loop.last %}border-bottom{% endif %}">
+        {{ skill }}
+      </p>
+      {% endfor %}
     </div>
+<<<<<<< HEAD
 
     <div class="card mt-4">
         <div class="card-header">
@@ -284,3 +658,178 @@
     }
 </script>
 {% endblock %}
+=======
+    <div class="text-center mt-3">
+      <a
+        class="btn btn-outline-secondary btn-sm"
+        data-bs-toggle="collapse"
+        href="#moreSkills"
+        role="button"
+        aria-expanded="false"
+        aria-controls="moreSkills"
+      >
+        <span class="when-collapsed"
+          >Show all {{ user.skills|length - 7 }} skills
+          <i class="fas fa-chevron-down ms-1"></i
+        ></span>
+        <span class="when-expanded"
+          >Show less <i class="fas fa-chevron-up ms-1"></i
+        ></span>
+      </a>
+    </div>
+    {% endif %} {% else %}
+    <p class="text-muted">No skills added yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+  .when-expanded {
+    display: none;
+  }
+  .collapsed .when-expanded {
+    display: inline;
+  }
+  .collapsed .when-collapsed {
+    display: none;
+  }
+</style>
+
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="card-title fw-bold">Licenses & certifications</h5>
+    <a
+      href="#"
+      data-bs-toggle="modal"
+      data-bs-target="#addCertificationModal"
+      title="Add certification"
+    >
+      <i class="fas fa-plus"></i>
+    </a>
+  </div>
+  <div class="card-body">
+    <ul class="list-unstyled mb-0">
+      {% if user.certifications %} {% for cert in user.certifications %}
+      <li
+        class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}"
+      >
+        <div class="flex-shrink-0 me-3">
+          {% if cert.logo %}
+          <img
+            src="{{ cert.logo }}"
+            alt="{{ cert.issuing_organization }} logo"
+            style="
+              width: 50px;
+              height: 50px;
+              border-radius: 4px;
+              object-fit: contain;
+            "
+          />
+          {% else %}
+          <div
+            class="bg-light rounded d-flex align-items-center justify-content-center"
+            style="width: 50px; height: 50px"
+          >
+            <i class="fas fa-award text-secondary fs-4"></i>
+          </div>
+          {% endif %}
+        </div>
+        <div class="flex-grow-1">
+          <h6 class="fw-bold mb-0">{{ cert.name }}</h6>
+          <p class="mb-1 text-sm">{{ cert.issuing_organization }}</p>
+          <small class="text-muted d-block">{{ cert.issue_date }}</small>
+          <a
+            href="{{ cert.credential_url }}"
+            class="btn btn-sm btn-outline-secondary mt-2"
+            target="_blank"
+            >Show credential <i class="fas fa-external-link-alt ms-1"></i
+          ></a>
+        </div>
+        <a
+          href="#"
+          data-bs-toggle="modal"
+          data-bs-target="#editCertificationModal-{{ cert.id }}"
+          title="Edit certification"
+          class="text-secondary ms-3"
+          ><i class="fas fa-pencil-alt"></i
+        ></a>
+      </li>
+      {% endfor %} {% else %}
+      <p class="text-muted">No certifications added yet.</p>
+      {% endif %}
+    </ul>
+  </div>
+</div>
+
+<style>
+  .timeline-steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin: 20px 0;
+  }
+
+  .timeline-steps:before {
+    content: "";
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #e0e0e0;
+    z-index: 1;
+  }
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 2;
+    position: relative;
+  }
+
+  .step-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    color: #6c757d;
+    font-weight: bold;
+    z-index: 3;
+  }
+
+  .step.completed .step-icon {
+    background-color: #28a745;
+    color: white;
+  }
+
+  .step-content {
+    text-align: center;
+    max-width: 100px;
+  }
+
+  .step.completed .step-content h6 {
+    color: #28a745;
+  }
+</style>
+
+{% include 'profile/modals/edit_about.html' %} {# Add Modals #} {% include
+'profile/modals/add_education.html' %} {% include
+'profile/modals/add_experience.html' %} {% include
+'profile/modals/add_skill.html' %} {% include
+'profile/modals/add_certification.html' %}
+
+<!-- Edit Modals -->
+{% for edu in user.education %} {% include 'profile/modals/edit_education.html'
+%} {% endfor %} {% for exp in user.experience %} {% include
+'profile/modals/edit_experience.html' %} {% endfor %} {% for skill in
+user.skills %} {% with index=loop.index %} {% include
+'profile/modals/edit_skill.html' %} {% endwith %} {% endfor %} {% if
+user.certifications %} {% for cert in user.certifications %} {% include
+'profile/modals/edit_certification.html' %} {% endfor %} {% endif %} {% endblock
+%}
+>>>>>>> 27e5b26 (feat(learning-path): add AI-powered learning path generation, docs, templates, services (2025-11-08))

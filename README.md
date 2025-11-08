@@ -6,9 +6,20 @@ This repository contains the complete collection of projects for the Astra Learn
 
 This monorepo contains the following three projects:
 
-1.  **`asta_authentication/`**: A Flask-based web application for user authentication and dashboard.
-2.  **`ai-guru/`**: A FastAPI and React-based AI chat application with self-learning capabilities.
-3.  **`astra/`**: A Django-based application for learning modules.
+1. **asta_authentication/**: A Flask-based web application for user authentication and dashboard.
+2. **ai-guru/**: A FastAPI and React-based AI chat application with self-learning capabilities.
+3. **astra/**: A Django-based application for learning modules.
+
+## New Feature: Career GPS
+
+The Career GPS is an AI-driven feature that helps users discover their ideal career path through a guided quiz and displays personalized recommendations on their profile. Key components include:
+
+- Interactive career discovery quiz
+- AI-generated career recommendations
+- Personalized roadmap with milestones
+- Integration with learning paths and mentorship
+
+For detailed implementation information, see [CAREER_GPS_IMPLEMENTATION.md](CAREER_GPS_IMPLEMENTATION.md).
 
 ## Setup and Installation
 
