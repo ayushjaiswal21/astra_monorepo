@@ -1,0 +1,122 @@
+{% extends 'layout.html' %} {% block title %}My Learning Paths{% endblock %} {%
+block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+      <div class="card">
+        <div class="card-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">
+              <i class="fas fa-graduation-cap me-2"></i>My Learning Paths
+            </h3>
+            <a
+              href="{{ url_for('profile.career_gps') }}"
+              class="btn btn-primary"
+            >
+              <i class="fas fa-plus me-2"></i>Create New Path
+            </a>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if learning_paths %}
+          <div class="row">
+            {% for path in learning_paths %}
+            <div class="col-md-6 mb-4">
+              <div
+                class="card h-100 {% if path.is_active %}border-success{% endif %}"
+              >
+                <div class="card-body">
+                  <div
+                    class="d-flex justify-content-between align-items-start mb-2"
+                  >
+                    <h5 class="card-title">{{ path.career_name }}</h5>
+                    {% if path.is_active %}
+                    <span class="badge bg-success">Active</span>
+                    {% endif %}
+                  </div>
+
+                  <p class="card-text text-muted">
+                    {{ path.career_summary[:150] }}{% if
+                    path.career_summary|length > 150 %}...{% endif %}
+                  </p>
+
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                      <small class="text-muted">Progress</small>
+                      <small class="text-muted">{{ path.progress }}%</small>
+                    </div>
+                    <div class="progress">
+                      <div
+                        class="progress-bar bg-success"
+                        role="progressbar"
+                        style="width: {{ path.progress }}%"
+                        aria-valuenow="{{ path.progress }}"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <small class="text-muted">
+                      <i class="fas fa-calendar me-1"></i>Created: {{
+                      path.created_at.strftime('%b %d, %Y') }}
+                    </small>
+                  </div>
+
+                  <div class="d-flex gap-2">
+                    <a
+                      href="{{ url_for('profile.view_learning_path', path_id=path.id) }}"
+                      class="btn btn-primary btn-sm flex-grow-1"
+                    >
+                      <i class="fas fa-eye me-1"></i>View Path
+                    </a>
+                    {% if not path.is_active %}
+                    <button
+                      class="btn btn-outline-success btn-sm"
+                      onclick="activatePath({{ path.id }})"
+                    >
+                      <i class="fas fa-check me-1"></i>Activate
+                    </button>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="card-footer text-muted">
+                  <small>
+                    <i class="fas fa-star me-1"></i>{{ path.match_percentage }}%
+                    Match
+                  </small>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-compass fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No Learning Paths Yet</h5>
+            <p class="text-muted">
+              Take the Career GPS quiz to discover your ideal career path and
+              get a personalized learning roadmap.
+            </p>
+            <a
+              href="{{ url_for('profile.career_gps') }}"
+              class="btn btn-primary mt-3"
+            >
+              <i class="fas fa-compass me-2"></i>Start Career GPS
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function activatePath(pathId) {
+    // You can implement path activation logic here
+    alert("Path activation feature coming soon!");
+  }
+</script>
+{% endblock %}

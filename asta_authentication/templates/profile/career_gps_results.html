@@ -1,0 +1,142 @@
+{% extends 'layout.html' %} {% block title %}Career GPS Results{% endblock %} {%
+block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+      <div class="card">
+        <div class="card-header text-center">
+          <h3 class="card-title mb-0">✨ Your Career GPS is Ready!</h3>
+          <p class="text-muted mb-0">
+            Based on your responses, here are the best career paths for you
+          </p>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% for career in top_careers %}
+            <div class="col-md-4 mb-4">
+              <div class="card h-100 border-primary">
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title">{{ career.name }}</h5>
+                  <div class="mb-2">
+                    <span class="badge bg-primary"
+                      >{{ career.match }}% Match</span
+                    >
+                  </div>
+                  <p class="card-text flex-grow-1">{{ career.summary }}</p>
+                  <div class="mt-auto">
+                    <button
+                      class="btn btn-outline-primary btn-sm mb-2"
+                      onclick="showDetails({{ loop.index0 }})"
+                    >
+                      View Details
+                    </button>
+                    <a
+                      href="{{ url_for('profile.select_career', gps_id=gps_data.id, career_index=loop.index0) }}"
+                      class="btn btn-primary btn-sm w-100"
+                    >
+                      Select This Path
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <div class="text-center mt-4">
+            <a
+              href="{{ url_for('profile.career_gps') }}"
+              class="btn btn-secondary"
+              >Retake Quiz</a
+            >
+            <a
+              href="{{ url_for('profile.view_profile', username=current_user.username) }}"
+              class="btn btn-outline-secondary"
+              >Back to Profile</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Career Details Modal -->
+<div
+  class="modal fade"
+  id="careerDetailsModal"
+  tabindex="-1"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="careerTitle">Career Details</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div id="careerDetailsContent"></div>
+
+        <div class="mt-4">
+          <h6>Recommended Actions:</h6>
+          <div class="d-grid gap-2">
+            <a href="#" class="btn btn-outline-info" id="askAiGuruBtn">
+              <i class="fas fa-robot me-2"></i>Ask AI Guru About This Career
+            </a>
+            <a href="#" class="btn btn-success" id="generateLearningPathBtn">
+              <i class="fas fa-graduation-cap me-2"></i>Generate My Learning
+              Path
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showDetails(index) {
+      const careers = {{ top_careers | tojson }};
+      const career = careers[index];
+
+      document.getElementById('careerTitle').textContent = career.name;
+
+      let content = `
+          <p>${career.summary}</p>
+
+          <h6>Key Skills Required:</h6>
+          <ul>`;
+      career.skills.forEach(skill => {
+          content += `<li>${skill}</li>`;
+      });
+      content += `</ul>
+
+          <h6>Recommended Mentors:</h6>
+          <ul>`;
+      career.mentors.forEach(mentor => {
+          content += `<li>${mentor}</li>`;
+      });
+      content += `</ul>`;
+
+      document.getElementById('careerDetailsContent').innerHTML = content;
+
+      // Set up action buttons with career index for learning path generation
+      document.getElementById('askAiGuruBtn').href = `/ai-guru/chat?context=career:${career.name}`;
+      document.getElementById('generateLearningPathBtn').href = `/profile/generate-learning-path/${index}`;
+
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('careerDetailsModal'));
+      modal.show();
+  }
+</script>
+{% endblock %}

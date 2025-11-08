@@ -1,7 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from models import db, User, Education, Experience, Skill, Certification, CareerGPS, LearningPath
 from werkzeug.utils import secure_filename
 import os
-from models import db, User, Education, Experience, Skill, Certification
+import json
+import requests
 from flask_login import current_user, login_required
 
 profile_bp = Blueprint('profile', __name__, url_prefix='/profile')
@@ -138,6 +140,78 @@ def edit_certification(cert_id):
     if cert.user_id != current_user.id:
         flash("You are not authorized to edit this certification.", "danger")
         return redirect(url_for('profile.view_profile', username=current_user.username))
+    
+    def get_comprehensive_user_profile(user_id):
+        """Get comprehensive user profile data for career recommendations"""
+        user = User.query.get(user_id)
+        if not user:
+            return {}
+    
+        # Get all user data
+        education = Education.query.filter_by(user_id=user_id).all()
+        experience = Experience.query.filter_by(user_id=user_id).all()
+        skills = Skill.query.filter_by(user_id=user_id).all()
+        certifications = Certification.query.filter_by(user_id=user_id).all()
+    
+        # Format education data
+        education_data = []
+        for edu in education:
+            education_data.append({
+                "school": edu.school,
+                "degree": edu.degree,
+                "dates": edu.dates,
+                "grade": getattr(edu, 'grade', None)
+            })
+    
+        # Format experience data
+        experience_data = []
+        for exp in experience:
+            experience_data.append({
+                "title": exp.title,
+                "company": exp.company,
+                "dates": exp.dates,
+                "location": exp.location,
+                "description": exp.description
+            })
+    
+        # Format skills data
+        skills_data = [skill.name for skill in skills]
+    
+        # Format certifications data
+        certifications_data = []
+        for cert in certifications:
+            certifications_data.append({
+                "name": cert.name,
+                "issuing_organization": cert.issuing_organization,
+                "issue_date": cert.issue_date,
+                "credential_url": cert.credential_url
+            })
+    
+        # Get existing career GPS data if any
+        career_gps = CareerGPS.query.filter_by(user_id=user_id).first()
+        career_history = None
+        if career_gps:
+            career_history = {
+                "selected_career": career_gps.selected_career,
+                "progress": career_gps.progress,
+                "created_at": career_gps.created_at.isoformat() if career_gps.created_at else None
+            }
+    
+        return {
+            "basic_info": {
+                "name": user.name,
+                "headline": user.headline,
+                "location": user.location,
+                "university": user.university,
+                "about": user.about,
+                "role": user.role
+            },
+            "education": education_data,
+            "experience": experience_data,
+            "skills": skills_data,
+            "certifications": certifications_data,
+            "career_history": career_history
+        }
 
     cert.name = request.form.get('name', cert.name)
     cert.issuing_organization = request.form.get('issuing_organization', cert.issuing_organization)
@@ -145,3 +219,431 @@ def edit_certification(cert_id):
     cert.credential_url = request.form.get('credential_url', cert.credential_url)
     db.session.commit()
     return redirect(url_for('profile.view_profile', username=current_user.username))
+
+def get_comprehensive_user_profile(user_id):
+    """Get comprehensive user profile data for career recommendations"""
+    user = User.query.get(user_id)
+    if not user:
+        return {}
+
+    # Get all user data
+    education = Education.query.filter_by(user_id=user_id).all()
+    experience = Experience.query.filter_by(user_id=user_id).all()
+    skills = Skill.query.filter_by(user_id=user_id).all()
+    certifications = Certification.query.filter_by(user_id=user_id).all()
+
+    # Format education data
+    education_data = []
+    for edu in education:
+        education_data.append({
+            "school": edu.school,
+            "degree": edu.degree,
+            "dates": edu.dates,
+            "grade": getattr(edu, 'grade', None)
+        })
+
+    # Format experience data
+    experience_data = []
+    for exp in experience:
+        experience_data.append({
+            "title": exp.title,
+            "company": exp.company,
+            "dates": exp.dates,
+            "location": exp.location,
+            "description": exp.description
+        })
+
+    # Format skills data
+    skills_data = [skill.name for skill in skills]
+
+    # Format certifications data
+    certifications_data = []
+    for cert in certifications:
+        certifications_data.append({
+            "name": cert.name,
+            "issuing_organization": cert.issuing_organization,
+            "issue_date": cert.issue_date,
+            "credential_url": cert.credential_url
+        })
+
+    # Get existing career GPS data if any
+    career_gps = CareerGPS.query.filter_by(user_id=user_id).first()
+    career_history = None
+    if career_gps:
+        career_history = {
+            "selected_career": career_gps.selected_career,
+            "progress": career_gps.progress,
+            "created_at": career_gps.created_at.isoformat() if career_gps.created_at else None
+        }
+
+    return {
+        "basic_info": {
+            "name": user.name,
+            "headline": user.headline,
+            "location": user.location,
+            "university": user.university,
+            "about": user.about,
+            "role": user.role
+        },
+        "education": education_data,
+        "experience": experience_data,
+        "skills": skills_data,
+        "certifications": certifications_data,
+        "career_history": career_history
+    }
+
+# Career GPS Routes
+@profile_bp.route('/career-gps')
+@login_required
+def career_gps():
+    # Check if user already has a career GPS
+    gps_data = CareerGPS.query.filter_by(user_id=current_user.id).first()
+    return render_template('profile/career_gps.html', gps_data=gps_data)
+
+@profile_bp.route('/career-gps/start', methods=['GET', 'POST'])
+@login_required
+def start_career_gps():
+    if request.method == 'POST':
+        # Save quiz responses
+        gps_data = CareerGPS(
+            user_id=current_user.id,
+            interests=request.form.get('interests', '[]'),
+            skills=request.form.get('skills', '[]'),
+            goal=request.form.get('goal'),
+            motivation=request.form.get('motivation'),
+            learning_style=request.form.get('learning_style')
+        )
+        db.session.add(gps_data)
+        db.session.commit()
+        
+        # Redirect to AI processing endpoint
+        return redirect(url_for('profile.process_career_gps', gps_id=gps_data.id))
+    
+    return render_template('profile/career_gps_quiz.html')
+
+@profile_bp.route('/career-gps/process/<int:gps_id>')
+@login_required
+def process_career_gps(gps_id):
+    gps_data = CareerGPS.query.get_or_404(gps_id)
+    if gps_data.user_id != current_user.id:
+        flash("You are not authorized to access this career GPS data.", "danger")
+        return redirect(url_for('profile.view_profile', username=current_user.username))
+    
+    # Parse user data
+    try:
+        interests = json.loads(gps_data.interests) if gps_data.interests else []
+    except json.JSONDecodeError:
+        interests = []
+    try:
+        skills = json.loads(gps_data.skills) if gps_data.skills else []
+    except json.JSONDecodeError:
+        skills = []
+    
+    # Get comprehensive user profile data for better recommendations
+    user_profile_data = get_comprehensive_user_profile(current_user.id)
+    
+    # Generate career recommendations by calling the AI Guru service
+    try:
+        import requests
+        
+        # Debug: Print the data being passed to the service
+        print(f"DEBUG: interests={interests}")
+        print(f"DEBUG: skills={skills}")
+        print(f"DEBUG: goal={gps_data.goal}")
+        print(f"DEBUG: motivation={gps_data.motivation}")
+        print(f"DEBUG: learning_style={gps_data.learning_style}")
+        print(f"DEBUG: user_profile_data keys={user_profile_data.keys() if user_profile_data else None}")
+
+        # Call the AI Guru API for career recommendations
+        ai_guru_url = "http://localhost:8001/career-gps/recommendations"
+        print(f"🚀 Calling AI Guru service at {ai_guru_url}")
+        
+        payload = {
+            "interests": interests,
+            "skills": skills,
+            "goal": gps_data.goal or "",
+            "motivation": gps_data.motivation or "",
+            "learning_style": gps_data.learning_style or "",
+            "user_profile": user_profile_data
+        }
+        
+        response = requests.post(ai_guru_url, json=payload, timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            top_careers = result.get('recommendations', [])
+            print(f"✅ Received {len(top_careers)} recommendations from AI Guru")
+            print(f"DEBUG: top_careers={top_careers}")
+        else:
+            print(f"❌ AI Guru service returned status {response.status_code}: {response.text}")
+            raise Exception(f"AI Guru service error: {response.status_code}")
+        
+        # Ensure we have at least 3 recommendations
+        if len(top_careers) < 3:
+            print(f"⚠️ Only received {len(top_careers)} recommendations, filling with defaults")
+            top_careers = get_default_career_recommendations()[:3]
+        
+        gps_data.top_careers = json.dumps(top_careers)
+        db.session.commit()
+    except requests.exceptions.ConnectionError as e:
+        # AI Guru service is not running
+        print(f"❌ Cannot connect to AI Guru service: {e}")
+        print("⚠️ Make sure the AI Guru service is running on http://localhost:8001")
+        print("🔄 Using fallback recommendations")
+        top_careers = get_default_career_recommendations()
+        gps_data.top_careers = json.dumps(top_careers)
+        db.session.commit()
+    except requests.exceptions.Timeout as e:
+        # AI Guru service timed out
+        print(f"❌ AI Guru service timeout: {e}")
+        print("🔄 Using fallback recommendations")
+        top_careers = get_default_career_recommendations()
+        gps_data.top_careers = json.dumps(top_careers)
+        db.session.commit()
+    except Exception as e:
+        # Fallback to default recommendations if anything fails
+        print(f"❌ Error generating career recommendations: {e}")
+        print(f"❌ Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
+        print("🔄 Using fallback recommendations")
+        top_careers = get_default_career_recommendations()
+        gps_data.top_careers = json.dumps(top_careers)
+        db.session.commit()
+    
+    return render_template('profile/career_gps_results.html', gps_data=gps_data, top_careers=top_careers)
+
+def get_default_career_recommendations():
+    """Fallback function to provide default career recommendations"""
+    return [
+        {
+            "name": "UX Designer",
+            "match": 85,
+            "summary": "Create meaningful experiences for users by designing intuitive interfaces.",
+            "skills": ["User Research", "Wireframing", "Prototyping", "Interaction Design"],
+            "mentors": ["Design Experts", "Product Managers"],
+            "learning_path": "design-fundamentals"
+        },
+        {
+            "name": "Data Scientist",
+            "match": 78,
+            "summary": "Extract insights from data to drive business decisions and innovation.",
+            "skills": ["Python", "Statistics", "Machine Learning", "Data Visualization"],
+            "mentors": ["Senior Data Scientists", "Analytics Leaders"],
+            "learning_path": "data-science-basics"
+        },
+        {
+            "name": "Full Stack Developer",
+            "match": 72,
+            "summary": "Build complete web applications from frontend to backend systems.",
+            "skills": ["JavaScript", "React", "Node.js", "Database Management"],
+            "mentors": ["Lead Developers", "Engineering Managers"],
+            "learning_path": "full-stack-development"
+        }
+    ]
+
+@profile_bp.route('/career-gps/select/<int:gps_id>/<int:career_index>')
+@login_required
+def select_career(gps_id, career_index):
+    gps_data = CareerGPS.query.get_or_404(gps_id)
+    if gps_data.user_id != current_user.id:
+        flash("You are not authorized to access this career GPS data.", "danger")
+        return redirect(url_for('profile.view_profile', username=current_user.username))
+    
+    import json
+    top_careers = json.loads(gps_data.top_careers)
+    if 0 <= career_index < len(top_careers):
+        selected_career = top_careers[career_index]
+        gps_data.selected_career = selected_career['name']
+        gps_data.progress = 10  # Initial progress
+        db.session.commit()
+    
+    return redirect(url_for('profile.view_profile', username=current_user.username))
+
+@profile_bp.route('/generate-learning-path/<int:career_index>')
+@login_required
+def generate_learning_path(career_index):
+    """
+    Generate and save a personalized learning path for a selected career
+    This is called when seeker clicks "View Details" on a career recommendation
+    """
+    # Get the user's career GPS data
+    gps_data = CareerGPS.query.filter_by(user_id=current_user.id).order_by(CareerGPS.created_at.desc()).first()
+    
+    if not gps_data or not gps_data.top_careers:
+        flash("Please complete the Career GPS quiz first.", "warning")
+        return redirect(url_for('profile.career_gps'))
+    
+    import json
+    try:
+        top_careers = json.loads(gps_data.top_careers)
+        if career_index < 0 or career_index >= len(top_careers):
+            flash("Invalid career selection.", "danger")
+            return redirect(url_for('profile.career_gps'))
+        
+        selected_career = top_careers[career_index]
+        career_name = selected_career['name']
+        career_summary = selected_career.get('summary', '')
+        match_percentage = selected_career.get('match', 75)
+        
+        print(f"🎓 Generating learning path for {current_user.username}: {career_name}")
+        
+        # Check if learning path already exists for this career
+        existing_path = LearningPath.query.filter_by(
+            user_id=current_user.id,
+            career_name=career_name
+        ).first()
+        
+        if existing_path:
+            print(f"✅ Found existing learning path (ID: {existing_path.id})")
+            flash(f"Loading your learning path for {career_name}!", "success")
+            return redirect(url_for('profile.view_learning_path', path_id=existing_path.id))
+        
+        # Get comprehensive user profile
+        user_profile_data = get_comprehensive_user_profile(current_user.id)
+        
+        # Call AI Guru service to generate learning path
+        try:
+            import requests
+            
+            ai_guru_url = "http://localhost:8001/career-gps/learning-path"
+            print(f"🚀 Calling AI Guru service at {ai_guru_url}")
+            
+            payload = {
+                "career_name": career_name,
+                "career_summary": career_summary,
+                "match_percentage": match_percentage,
+                "user_profile": user_profile_data
+            }
+            
+            response = requests.post(ai_guru_url, json=payload, timeout=60)
+            
+            if response.status_code == 200:
+                result = response.json()
+                learning_path_data = result.get('learning_path', {})
+                print(f"✅ Received learning path with {len(learning_path_data.get('phases', []))} phases")
+            else:
+                print(f"❌ AI Guru service returned status {response.status_code}")
+                raise Exception(f"AI Guru service error: {response.status_code}")
+            
+        except requests.exceptions.ConnectionError:
+            print("❌ Cannot connect to AI Guru service - using default path")
+            flash("Using default learning path template. AI Guru service is unavailable.", "warning")
+            learning_path_data = create_default_learning_path_structure(career_name, career_summary)
+        except Exception as e:
+            print(f"❌ Error calling AI Guru: {e}")
+            flash("Using default learning path template.", "warning")
+            learning_path_data = create_default_learning_path_structure(career_name, career_summary)
+        
+        # Save learning path to database
+        new_learning_path = LearningPath(
+            user_id=current_user.id,
+            career_name=career_name,
+            career_summary=career_summary,
+            match_percentage=match_percentage,
+            learning_path_data=json.dumps(learning_path_data),
+            progress=0,
+            completed_items=json.dumps([]),
+            is_active=True
+        )
+        
+        # Deactivate other learning paths for this user
+        LearningPath.query.filter_by(user_id=current_user.id, is_active=True).update({'is_active': False})
+        
+        db.session.add(new_learning_path)
+        db.session.commit()
+        
+        print(f"✅ Learning path saved to database (ID: {new_learning_path.id})")
+        flash(f"Your personalized learning path for {career_name} has been generated!", "success")
+        return redirect(url_for('profile.view_learning_path', path_id=new_learning_path.id))
+        
+    except Exception as e:
+        print(f"❌ Error generating learning path: {e}")
+        import traceback
+        traceback.print_exc()
+        flash("Failed to generate learning path. Please try again.", "danger")
+        return redirect(url_for('profile.career_gps'))
+
+@profile_bp.route('/learning-path/<int:path_id>')
+@login_required
+def view_learning_path(path_id):
+    """
+    Display a personalized learning path
+    """
+    learning_path = LearningPath.query.get_or_404(path_id)
+    
+    # Security check
+    if learning_path.user_id != current_user.id:
+        flash("You are not authorized to view this learning path.", "danger")
+        return redirect(url_for('profile.view_profile', username=current_user.username))
+    
+    # Parse the learning path data
+    import json
+    try:
+        path_data = json.loads(learning_path.learning_path_data)
+        completed_items = json.loads(learning_path.completed_items) if learning_path.completed_items else []
+    except json.JSONDecodeError:
+        flash("Error loading learning path data.", "danger")
+        return redirect(url_for('profile.career_gps'))
+    
+    return render_template('profile/learning_path.html', 
+                         learning_path=learning_path,
+                         path_data=path_data,
+                         completed_items=completed_items)
+
+@profile_bp.route('/learning-paths')
+@login_required
+def my_learning_paths():
+    """
+    View all learning paths for the current user
+    """
+    learning_paths = LearningPath.query.filter_by(user_id=current_user.id).order_by(LearningPath.created_at.desc()).all()
+    return render_template('profile/my_learning_paths.html', learning_paths=learning_paths)
+
+def create_default_learning_path_structure(career_name, career_summary):
+    """Create a default learning path structure when AI service is unavailable"""
+    return {
+        "career_name": career_name,
+        "overview": f"This is your personalized learning path to become a {career_name}. {career_summary}",
+        "total_duration": "6-12 months",
+        "phases": [
+            {
+                "phase_number": 1,
+                "title": "Foundation Building",
+                "duration": "2-3 months",
+                "description": "Build strong fundamentals",
+                "skills_to_learn": ["Core Skills", "Basic Tools", "Fundamentals"],
+                "courses": [
+                    {
+                        "name": f"Introduction to {career_name}",
+                        "provider": "Online Learning Platform",
+                        "duration": "4-6 weeks",
+                        "difficulty": "Beginner",
+                        "why_relevant": "Establishes foundation"
+                    }
+                ],
+                "projects": [
+                    {
+                        "title": "Beginner Project",
+                        "description": "Apply what you learned",
+                        "skills_practiced": ["Skills"],
+                        "estimated_time": "2 weeks"
+                    }
+                ],
+                "milestones": ["Complete courses", "Build first project"]
+            }
+        ],
+        "certifications": [
+            {
+                "name": f"{career_name} Certificate",
+                "provider": "Industry Standard",
+                "importance": "Industry recognized",
+                "estimated_cost": "$100-$300",
+                "preparation_time": "2-4 weeks"
+            }
+        ],
+        "key_resources": [],
+        "networking_tips": ["Join communities", "Attend meetups"],
+        "success_metrics": ["Build portfolio", "Complete projects"],
+        "next_steps": "Continue learning and applying for opportunities"
+    }

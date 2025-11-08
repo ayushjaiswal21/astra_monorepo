@@ -1,0 +1,331 @@
+{% extends 'layout.html' %} {% block title %}Learning Path - {{
+path_data.career_name }}{% endblock %} {% block content %}
+<div class="container mt-5">
+  <div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+      <div class="card sticky-top" style="top: 20px">
+        <div class="card-body">
+          <h6 class="card-title">Quick Navigation</h6>
+          <nav class="nav flex-column">
+            <a class="nav-link" href="#overview">Overview</a>
+            <a class="nav-link" href="#phases">Learning Phases</a>
+            <a class="nav-link" href="#certifications">Certifications</a>
+            <a class="nav-link" href="#resources">Resources</a>
+            <a class="nav-link" href="#networking">Networking</a>
+          </nav>
+          <hr />
+          <div class="mt-3">
+            <h6>Progress</h6>
+            <div class="progress">
+              <div
+                class="progress-bar bg-success"
+                role="progressbar"
+                style="width: {{ learning_path.progress }}%"
+                aria-valuenow="{{ learning_path.progress }}"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                {{ learning_path.progress }}%
+              </div>
+            </div>
+            <small class="text-muted d-block mt-2">
+              {{ completed_items|length }} items completed
+            </small>
+          </div>
+          <hr />
+          <a
+            href="{{ url_for('profile.career_gps') }}"
+            class="btn btn-sm btn-outline-secondary w-100 mb-2"
+          >
+            <i class="fas fa-arrow-left me-1"></i> Back to Career GPS
+          </a>
+          <a
+            href="{{ url_for('profile.my_learning_paths') }}"
+            class="btn btn-sm btn-outline-primary w-100"
+          >
+            <i class="fas fa-list me-1"></i> My Learning Paths
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9">
+      <!-- Header -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h2 class="card-title mb-2">
+                <i class="fas fa-graduation-cap text-primary me-2"></i>
+                {{ path_data.career_name }}
+              </h2>
+              <p class="text-muted mb-2">
+                <span class="badge bg-success"
+                  >{{ learning_path.match_percentage }}% Match</span
+                >
+                <span class="badge bg-info ms-2"
+                  >{{ path_data.total_duration }}</span
+                >
+              </p>
+              <p class="mb-0">{{ learning_path.career_summary }}</p>
+            </div>
+            <div>
+              {% if learning_path.is_active %}
+              <span class="badge bg-success">Active Path</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Overview Section -->
+      <div id="overview" class="card mb-4">
+        <div class="card-header">
+          <h4 class="mb-0">
+            <i class="fas fa-info-circle me-2"></i>Learning Path Overview
+          </h4>
+        </div>
+        <div class="card-body">
+          <p class="lead">{{ path_data.overview }}</p>
+          <div class="alert alert-info">
+            <strong
+              ><i class="fas fa-clock me-2"></i>Estimated Duration:</strong
+            >
+            {{ path_data.total_duration }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Learning Phases -->
+      <div id="phases" class="mb-4">
+        <h3 class="mb-3"><i class="fas fa-list-ol me-2"></i>Learning Phases</h3>
+
+        {% for phase in path_data.phases %}
+        <div class="card mb-3 phase-card">
+          <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">
+                Phase {{ phase.phase_number }}: {{ phase.title }}
+              </h5>
+              <span class="badge bg-light text-dark">{{ phase.duration }}</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-text">{{ phase.description }}</p>
+
+            <!-- Skills to Learn -->
+            <div class="mb-3">
+              <h6><i class="fas fa-tools me-2"></i>Skills to Learn:</h6>
+              <div class="d-flex flex-wrap gap-2">
+                {% for skill in phase.skills_to_learn %}
+                <span class="badge bg-secondary">{{ skill }}</span>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Courses -->
+            <div class="mb-3">
+              <h6><i class="fas fa-book me-2"></i>Recommended Courses:</h6>
+              {% for course in phase.courses %}
+              <div class="card mb-2">
+                <div class="card-body py-2">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <strong>{{ course.name }}</strong>
+                      <br />
+                      <small class="text-muted">
+                        <i class="fas fa-university me-1"></i>{{ course.provider
+                        }} | <i class="fas fa-clock me-1"></i>{{ course.duration
+                        }} |
+                        <span class="badge badge-sm bg-info"
+                          >{{ course.difficulty }}</span
+                        >
+                      </small>
+                      <p class="mb-0 mt-1">
+                        <small>{{ course.why_relevant }}</small>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- Projects -->
+            <div class="mb-3">
+              <h6>
+                <i class="fas fa-project-diagram me-2"></i>Practice Projects:
+              </h6>
+              {% for project in phase.projects %}
+              <div class="card mb-2 border-success">
+                <div class="card-body py-2">
+                  <strong>{{ project.title }}</strong>
+                  <p class="mb-1 mt-1">{{ project.description }}</p>
+                  <small class="text-muted">
+                    <i class="fas fa-wrench me-1"></i>Skills: {{
+                    project.skills_practiced | join(', ') }} |
+                    <i class="fas fa-clock me-1"></i>{{ project.estimated_time
+                    }}
+                  </small>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- Milestones -->
+            <div>
+              <h6><i class="fas fa-flag-checkered me-2"></i>Milestones:</h6>
+              <ul class="list-unstyled">
+                {% for milestone in phase.milestones %}
+                <li>
+                  <i class="fas fa-check-circle text-success me-2"></i>{{
+                  milestone }}
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Certifications -->
+      <div id="certifications" class="card mb-4">
+        <div class="card-header">
+          <h4 class="mb-0">
+            <i class="fas fa-certificate me-2"></i>Recommended Certifications
+          </h4>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% for cert in path_data.certifications %}
+            <div class="col-md-6 mb-3">
+              <div class="card h-100 border-warning">
+                <div class="card-body">
+                  <h6 class="card-title">{{ cert.name }}</h6>
+                  <p class="mb-2">
+                    <strong>Provider:</strong> {{ cert.provider }}
+                  </p>
+                  <p class="mb-2">
+                    <strong>Cost:</strong> {{ cert.estimated_cost }}
+                  </p>
+                  <p class="mb-2">
+                    <strong>Prep Time:</strong> {{ cert.preparation_time }}
+                  </p>
+                  <p class="mb-0 text-muted">
+                    <small>{{ cert.importance }}</small>
+                  </p>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Resources -->
+      {% if path_data.key_resources %}
+      <div id="resources" class="card mb-4">
+        <div class="card-header">
+          <h4 class="mb-0"><i class="fas fa-link me-2"></i>Key Resources</h4>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% for resource in path_data.key_resources %}
+            <div class="col-md-6 mb-3">
+              <div class="card">
+                <div class="card-body">
+                  <span class="badge bg-info mb-2">{{ resource.type }}</span>
+                  <h6 class="card-title">{{ resource.name }}</h6>
+                  <p class="mb-2">{{ resource.description }}</p>
+                  {% if resource.url != 'Search online' %}
+                  <a
+                    href="{{ resource.url }}"
+                    target="_blank"
+                    class="btn btn-sm btn-outline-primary"
+                  >
+                    Visit <i class="fas fa-external-link-alt ms-1"></i>
+                  </a>
+                  {% else %}
+                  <small class="text-muted">{{ resource.url }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Networking Tips -->
+      <div id="networking" class="card mb-4">
+        <div class="card-header">
+          <h4 class="mb-0">
+            <i class="fas fa-users me-2"></i>Networking & Community
+          </h4>
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            {% for tip in path_data.networking_tips %}
+            <li class="list-group-item">
+              <i class="fas fa-lightbulb text-warning me-2"></i>{{ tip }}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- Success Metrics -->
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-chart-line me-2"></i>Success Metrics
+          </h4>
+        </div>
+        <div class="card-body">
+          <p class="mb-3">Track your progress with these key indicators:</p>
+          <ul>
+            {% for metric in path_data.success_metrics %}
+            <li class="mb-2">{{ metric }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- Next Steps -->
+      <div class="card mb-4 border-primary">
+        <div class="card-body">
+          <h5><i class="fas fa-forward me-2"></i>What's Next?</h5>
+          <p class="mb-3">{{ path_data.next_steps }}</p>
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
+              <i class="fas fa-home me-2"></i>Go to Dashboard
+            </a>
+            <a href="#" class="btn btn-success">
+              <i class="fas fa-check me-2"></i>Mark Phase as Complete
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .phase-card {
+    transition: transform 0.2s;
+  }
+
+  .phase-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .sticky-top {
+    z-index: 100;
+  }
+</style>
+{% endblock %}

@@ -139,3 +139,51 @@ class News(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     author = db.relationship('User', backref='news_posts', lazy=True)
+
+class CareerGPS(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # Career discovery quiz responses
+    interests = db.Column(db.Text)  # JSON string of selected interests
+    skills = db.Column(db.Text)     # JSON string of existing skills
+    goal = db.Column(db.String(100))  # Career goal
+    motivation = db.Column(db.String(100))  # Life motivation
+    learning_style = db.Column(db.String(100))  # Preferred learning style
+    # AI generated results
+    top_careers = db.Column(db.Text)  # JSON string of top 3 career matches
+    selected_career = db.Column(db.String(100))  # User selected career path
+    progress = db.Column(db.Integer, default=0)  # Progress percentage
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='career_gps', lazy=True)
+
+class LearningPath(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    career_name = db.Column(db.String(150), nullable=False)  # The career this learning path is for
+    career_summary = db.Column(db.Text)  # Summary of the career
+    match_percentage = db.Column(db.Integer)  # How well this career matches
+    
+    # AI Generated Learning Path Content
+    learning_path_data = db.Column(db.Text)  # JSON string containing the complete learning path
+    # Structure: {
+    #   "phases": [...],  # Different learning phases
+    #   "skills_to_develop": [...],  # Skills to acquire
+    #   "courses": [...],  # Recommended courses
+    #   "projects": [...],  # Practice projects
+    #   "certifications": [...],  # Recommended certifications
+    #   "timeline": "...",  # Estimated completion time
+    #   "resources": [...]  # Additional resources
+    # }
+    
+    # Progress tracking
+    progress = db.Column(db.Integer, default=0)  # Overall progress percentage
+    completed_items = db.Column(db.Text)  # JSON array of completed item IDs
+    
+    # Metadata
+    is_active = db.Column(db.Boolean, default=True)  # Is this the current active path
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='learning_paths', lazy=True)
