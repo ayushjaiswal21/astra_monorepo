@@ -263,4 +263,3 @@ class LearningPath(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     user = db.relationship('User', backref='learning_paths', lazy=True)
->>>>>>> 27e5b26 (feat(learning-path): add AI-powered learning path generation, docs, templates, services (2025-11-08))
