@@ -1,0 +1,86 @@
+<!-- Add Skill Modal -->
+<div class="modal fade" id="addSkillModal" tabindex="-1" aria-labelledby="addSkillModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSkillModalLabel">Add Skills</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addSkillForm" action="{{ url_for('profile.add_skill') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="skillName" class="form-label">Skill Name*</label>
+                        <input type="text" class="form-control" id="skillName" name="name" required 
+                               placeholder="e.g., Python, Project Management, Public Speaking">
+                    </div>
+                    <div class="mb-3">
+                        <label for="skillLevel" class="form-label">Proficiency Level (1-10)</label>
+                        <div class="d-flex align-items-center">
+                            <input type="range" class="form-range me-3" id="skillLevel" name="level" min="1" max="10" value="5">
+                            <span id="skillLevelValue" class="badge bg-primary">5</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="skillCategory" class="form-label">Category</label>
+                        <select class="form-select" id="skillCategory" name="category">
+                            <option value="technical">Technical</option>
+                            <option value="soft">Soft Skills</option>
+                            <option value="language">Language</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="highlightSkill" name="is_highlighted">
+                        <label class="form-check-label" for="highlightSkill">Highlight this skill on my profile</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Skill</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const skillLevel = document.getElementById('skillLevel');
+    const skillLevelValue = document.getElementById('skillLevelValue');
+    
+    if (skillLevel && skillLevelValue) {
+        skillLevel.addEventListener('input', function() {
+            skillLevelValue.textContent = this.value;
+        });
+    }
+    
+    const form = document.getElementById('addSkillForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams(formData).toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    showToast(data.message || 'Failed to add skill', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('An error occurred while adding skill', 'error');
+            });
+        });
+    }
+});
+</script>

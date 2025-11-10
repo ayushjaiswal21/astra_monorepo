@@ -1,0 +1,66 @@
+<!-- Edit About Modal -->
+<div class="modal fade" id="editAboutModal" tabindex="-1" aria-labelledby="editAboutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editAboutModalLabel">Edit About</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editAboutForm" action="{{ url_for('profile.edit_about') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="aboutText" class="form-label">Tell us about yourself</label>
+                        <textarea class="form-control" id="aboutText" name="about" rows="8" placeholder="Share your background, interests, or anything else you'd like others to know">{{ user.about or '' }}</textarea>
+                        <div class="form-text">This will be displayed on your profile.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('editAboutForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams(formData).toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the about section on the page
+                    const aboutSection = document.querySelector('.profile-about-content');
+                    if (aboutSection) {
+                        aboutSection.textContent = data.about || 'No information provided yet.';
+                    }
+                    // Show success message
+                    showToast('About section updated successfully!', 'success');
+                    // Close the modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editAboutModal'));
+                    if (modal) modal.hide();
+                } else {
+                    showToast(data.message || 'Failed to update about section', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('An error occurred while updating', 'error');
+            });
+        });
+    }
+});
+</script>

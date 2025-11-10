@@ -688,4 +688,3 @@ def create_default_learning_path_structure(career_name, career_summary):
         "success_metrics": ["Build portfolio", "Complete projects"],
         "next_steps": "Continue learning and applying for opportunities"
     }
->>>>>>> 27e5b26 (feat(learning-path): add AI-powered learning path generation, docs, templates, services (2025-11-08))
