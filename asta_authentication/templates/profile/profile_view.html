@@ -525,7 +525,7 @@
     {% if user.education %}
         {% for edu in user.education %}
             {% with education=edu %}
-                {% include 'profile/modals/edit_education_modal.html' %}
+                {% include 'profile/modals/edit_education.html' %}
             {% endwith %}
         {% endfor %}
     {% endif %}
@@ -577,45 +577,73 @@
 <script>
 // Handle connection request
 function sendConnectionRequest(userId) {
-    const modal = new bootstrap.Modal(document.getElementById('connectionRequestModal'));
+    // Show loading state
+    const connectBtn = document.querySelector('button[onclick^="sendConnectionRequest"]');
+    const originalContent = connectBtn ? connectBtn.innerHTML : '';
     
-    document.getElementById('confirmSendRequest').onclick = function() {
-        const message = document.getElementById('connectionMessage').value;
-        
-        fetch(`/api/connections/request/${userId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({ message: message })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast('Connection request sent!', 'success');
-                // Update UI to show pending status
-                const connectBtn = document.querySelector('button[onclick^="sendConnectionRequest"]');
-                if (connectBtn) {
+    if (connectBtn) {
+        connectBtn.disabled = true;
+        connectBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+    }
+    
+    fetch(`/profile/api/user/${userId}/connect`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.error || 'Failed to send request');
+            }).catch(() => {
+                throw new Error('Failed to process response');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showToast(data.message || 'Connection request sent!', 'success');
+            // Update UI based on connection status
+            if (connectBtn) {
+                if (data.status === 'connected') {
+                    connectBtn.outerHTML = `
+                        <span class="badge bg-success">
+                            <i class="fas fa-check-circle me-1"></i> Connected
+                        </span>
+                    `;
+                } else {
                     connectBtn.outerHTML = `
                         <span class="badge bg-warning text-dark">
                             <i class="fas fa-clock me-1"></i> Request Sent
                         </span>
                     `;
                 }
-            } else {
-                showToast(data.message || 'Failed to send request', 'error');
             }
-            modal.hide();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('An error occurred', 'error');
-            modal.hide();
-        });
-    };
-    
-    modal.show();
+            
+            // Optional: Reload the page after a short delay to reflect changes
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showToast(data.error || 'Failed to send connection request', 'error');
+            if (connectBtn) {
+                connectBtn.disabled = false;
+                connectBtn.innerHTML = originalContent;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast(error.message || 'An error occurred while processing your request', 'error');
+        if (connectBtn) {
+            connectBtn.disabled = false;
+            connectBtn.innerHTML = originalContent;
+        }
+    });
 }
 
 // Helper function to show toast notifications

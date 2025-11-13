@@ -1,8 +1,9 @@
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables from .env and .env.test (test overrides)
 load_dotenv()
+load_dotenv('.env.test')
 
 # --- Application Settings ---
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
@@ -19,7 +20,10 @@ MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')  # Default 
 
 # --- Validation ---
 # Ensure critical environment variables are set
-REQUIRED_ENV_VARS = ['GEMINI_API_KEY']  # Only GEMINI_API_KEY is required, MongoDB is optional
-missing_vars = [var for var in REQUIRED_ENV_VARS if not globals().get(var)]
-if missing_vars:
-    raise RuntimeError(f"Missing required environment variables: {', '.join(missing_vars)}")
+# GEMINI_API_KEY is not strictly required if a mock server is used
+USE_MOCK = bool(os.getenv('GEMINI_API_BASE_URL'))
+if not USE_MOCK:
+    REQUIRED_ENV_VARS = ['GEMINI_API_KEY']
+    missing_vars = [var for var in REQUIRED_ENV_VARS if not globals().get(var)]
+    if missing_vars:
+        raise RuntimeError(f"Missing required environment variables: {', '.join(missing_vars)}")

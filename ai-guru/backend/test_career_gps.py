@@ -4,7 +4,7 @@ sys.path.append('.')
 
 # Test importing the service
 try:
-    import services.career_gps_service as career_gps
+    from .services import career_gps_service as career_gps
     print("✅ Successfully imported career_gps_service")
 except Exception as e:
     print(f"❌ Failed to import career_gps_service: {e}")

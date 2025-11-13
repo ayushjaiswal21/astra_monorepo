@@ -47,6 +47,53 @@ class User(db.Model, UserMixin):
     received_messages = db.relationship('Message', foreign_keys=[Message.recipient_id], back_populates='recipient')
     # Notifications relationship
     notifications = db.relationship('Notification', backref='user', lazy=True, cascade="all, delete-orphan")
+    
+    # Connection relationships (using back_populates to avoid naming conflicts)
+    sent_connections = db.relationship('Connection',
+                                     foreign_keys='Connection.requester_id',
+                                     back_populates='requester',
+                                     lazy='dynamic',
+                                     cascade='all, delete-orphan')
+    received_connections = db.relationship('Connection',
+                                         foreign_keys='Connection.receiver_id',
+                                         back_populates='receiver',
+                                         lazy='dynamic',
+                                         cascade='all, delete-orphan')
+    
+    def is_connected(self, user):
+        """Check if this user is connected to another user"""
+        return bool(Connection.query.filter(
+            ((Connection.requester_id == self.id) & (Connection.receiver_id == user.id) |
+             (Connection.requester_id == user.id) & (Connection.receiver_id == self.id)) &
+            (Connection.status == 'accepted')
+        ).first())
+    
+    def has_pending_request(self, user):
+        """Check if there's a pending connection request between users"""
+        return bool(Connection.query.filter(
+            (Connection.requester_id == self.id) & 
+            (Connection.receiver_id == user.id) &
+            (Connection.status == 'pending')
+        ).first())
+        
+    def get_connection_status(self, user):
+        """Get the connection status between this user and another user"""
+        if self.id == user.id:
+            return 'self'
+            
+        connection = Connection.query.filter(
+            ((Connection.requester_id == self.id) & (Connection.receiver_id == user.id)) |
+            ((Connection.requester_id == user.id) & (Connection.receiver_id == self.id))
+        ).first()
+        
+        if connection:
+            if connection.status == 'accepted':
+                return 'connected'
+            elif connection.requester_id == self.id:
+                return 'request_sent'
+            else:
+                return 'request_received'
+        return 'not_connected'
 
 class Education(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -152,14 +199,21 @@ class ProfileView(db.Model):
     viewed = db.relationship('User', foreign_keys=[viewed_id])
 
 class Connection(db.Model):
+    __tablename__ = 'connection'
+    
     id = db.Column(db.Integer, primary_key=True)
     requester_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     status = db.Column(db.String(20), nullable=False, default='pending')  # pending, accepted, rejected
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-    requester = db.relationship('User', foreign_keys=[requester_id])
-    receiver = db.relationship('User', foreign_keys=[receiver_id])
+    # Relationships with back_populates to match User model
+    requester = db.relationship('User', 
+                              foreign_keys=[requester_id],
+                              back_populates='sent_connections')
+    receiver = db.relationship('User', 
+                             foreign_keys=[receiver_id],
+                             back_populates='received_connections')
 
 class ActivityLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)

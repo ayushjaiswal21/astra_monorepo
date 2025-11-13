@@ -39,7 +39,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: new URLSearchParams(formData).toString()
             })
-            .then(response => response.json())
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.text().then(text => {
+                        try {
+                            const data = JSON.parse(text);
+                            throw new Error(data.message || 'Server error');
+                        } catch (e) {
+                            throw new Error('Received non-JSON response from server: ' + text);
+                        }
+                    });
+                }
+            })
             .then(data => {
                 if (data.success) {
                     // Update the about section on the page
