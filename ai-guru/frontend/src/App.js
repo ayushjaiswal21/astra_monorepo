@@ -51,9 +51,8 @@ function App() {
         }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
+        const data = await response.json();
         setMessages((prev) =>
           prev.map((msg) =>
             msg.interactionId === interactionId
@@ -76,7 +75,13 @@ function App() {
           );
         }, 3000);
       } else {
-        console.error("Feedback submission failed:", data.detail);
+        try {
+          const errorData = await response.json();
+          console.error("Feedback submission failed:", errorData.detail);
+        } catch (jsonError) {
+          const errorText = await response.text();
+          console.error("Feedback submission failed with non-JSON response:", errorText);
+        }
       }
     } catch (error) {
       console.error("Error submitting feedback:", error);
@@ -99,7 +104,12 @@ function App() {
 
   useEffect(() => {
     fetch("http://localhost:8001/chat-history")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         setChatSessions(data.sessions || []);
       })
@@ -186,7 +196,12 @@ function App() {
 
   const refreshChatSessions = () => {
     fetch("http://localhost:8001/chat-history")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         setChatSessions(data.sessions || []);
       })
@@ -321,9 +336,22 @@ function App() {
       }
 
       console.error("Error:", error);
+      
+      let errorMessageText = "Sorry, there was an error processing your request.";
+      if (error.response) {
+        try {
+          const errorData = await error.response.json();
+          errorMessageText = errorData.detail || errorMessageText;
+        } catch (jsonError) {
+          errorMessageText = await error.response.text() || errorMessageText;
+        }
+      } else if (error.message) {
+        errorMessageText = error.message;
+      }
+
       setTimeout(() => {
         const errorMessage = {
-          text: "Sorry, there was an error processing your request.",
+          text: errorMessageText,
           sender: "ai",
           id: loadingMessageId,
         };
@@ -352,20 +380,30 @@ function App() {
           method: "DELETE",
         }
       );
-      const result = await response.json();
-      if (result.success) {
-        setChatSessions((prev) =>
-          prev.filter((session) => session.session_id !== sessionId)
-        );
-        if (selectedSession && selectedSession.session_id === sessionId) {
-          setSelectedSession(null);
-          setMessages([]);
-        }
-        if (currentSessionId === sessionId) {
-          setCurrentSessionId(null);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setChatSessions((prev) =>
+            prev.filter((session) => session.session_id !== sessionId)
+          );
+          if (selectedSession && selectedSession.session_id === sessionId) {
+            setSelectedSession(null);
+            setMessages([]);
+          }
+          if (currentSessionId === sessionId) {
+            setCurrentSessionId(null);
+          }
+        } else {
+          console.error("Failed to delete session:", result.message);
         }
       } else {
-        console.error("Failed to delete session:", result.message);
+        try {
+          const errorData = await response.json();
+          console.error("Failed to delete session:", errorData.detail);
+        } catch (jsonError) {
+          const errorText = await response.text();
+          console.error("Failed to delete session with non-JSON response:", errorText);
+        }
       }
     } catch (error) {
       console.error("Error deleting session:", error);
@@ -384,14 +422,24 @@ function App() {
       const response = await fetch("http://localhost:8001/chat-history", {
         method: "DELETE",
       });
-      const result = await response.json();
-      if (result.success) {
-        setChatSessions([]);
-        setSelectedSession(null);
-        setCurrentSessionId(null);
-        setMessages([]);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setChatSessions([]);
+          setSelectedSession(null);
+          setCurrentSessionId(null);
+          setMessages([]);
+        } else {
+          console.error("Failed to delete all chat history:", result.message);
+        }
       } else {
-        console.error("Failed to delete all chat history:", result.message);
+        try {
+          const errorData = await response.json();
+          console.error("Failed to delete all chat history:", errorData.detail);
+        } catch (jsonError) {
+          const errorText = await response.text();
+          console.error("Failed to delete all chat history with non-JSON response:", errorText);
+        }
       }
     } catch (error) {
       console.error("Error deleting all chat history:", error);
@@ -479,8 +527,19 @@ function App() {
         return;
       }
       console.error("Error:", error);
+      let errorMessageText = "Sorry, there was an error processing your image.";
+      if (error.response) {
+        try {
+          const errorData = await error.response.json();
+          errorMessageText = errorData.detail || errorMessageText;
+        } catch (jsonError) {
+          errorMessageText = await error.response.text() || errorMessageText;
+        }
+      } else if (error.message) {
+        errorMessageText = error.message;
+      }
       const errorMessage = {
-        text: "Sorry, there was an error processing your image.",
+        text: errorMessageText,
         sender: "ai",
         id: loadingMessageId,
       };

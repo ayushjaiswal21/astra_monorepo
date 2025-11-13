@@ -4,7 +4,9 @@ import os
 import json
 import requests
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask_login import current_user, login_required
+from flask_login import current_user
+from .utils import api_login_required as login_required
+from sqlalchemy import or_
 
 try:
     from .models import db, User, Education, Experience, Skill, Certification, ProfileView, Post, CareerGPS, LearningPath
@@ -14,6 +16,91 @@ except ImportError:
     from main_routes import log_activity
 
 profile_bp = Blueprint('profile', __name__, url_prefix='/profile')
+
+# Connection Request API Endpoint
+@profile_bp.route('/api/user/<int:user_id>/connect', methods=['POST'])
+@login_required
+def send_connection_request(user_id):
+    try:
+        from .models import User, Connection, db, Notification
+        
+        # Check if user exists
+        target_user = User.query.get_or_404(user_id)
+        
+        # Prevent self-connection
+        if current_user.id == user_id:
+            return jsonify({'success': False, 'error': 'Cannot send connection request to yourself'}), 400
+            
+        # Check if already connected
+        if current_user.is_connected(target_user):
+            return jsonify({'success': False, 'error': 'You are already connected with this user'}), 400
+            
+        # Check if there's already a pending request
+        existing_request = Connection.query.filter(
+            ((Connection.requester_id == current_user.id) & (Connection.receiver_id == user_id)) |
+            ((Connection.requester_id == user_id) & (Connection.receiver_id == current_user.id))
+        ).first()
+        
+        if existing_request:
+            if existing_request.status == 'pending':
+                if existing_request.requester_id == current_user.id:
+                    return jsonify({'success': False, 'error': 'Connection request already sent'}), 400
+                else:
+                    # Accept the pending request
+                    existing_request.status = 'accepted'
+                    db.session.commit()
+                    
+                    # Create notification for the requester
+                    notification = Notification(
+                        user_id=existing_request.requester_id,
+                        payload={
+                            'type': 'connection_accepted',
+                            'message': f'{current_user.username} accepted your connection request',
+                            'user_id': current_user.id,
+                            'username': current_user.username
+                        }
+                    )
+                    db.session.add(notification)
+                    db.session.commit()
+                    
+                    return jsonify({
+                        'success': True, 
+                        'message': 'Connection request accepted',
+                        'status': 'connected'
+                    })
+        
+        # Create new connection request
+        connection = Connection(
+            requester_id=current_user.id,
+            receiver_id=user_id,
+            status='pending'
+        )
+        db.session.add(connection)
+        
+        # Create notification for the receiver
+        notification = Notification(
+            user_id=user_id,
+            payload={
+                'type': 'connection_request',
+                'message': f'{current_user.username} sent you a connection request',
+                'user_id': current_user.id,
+                'username': current_user.username
+            }
+        )
+        db.session.add(notification)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Connection request sent',
+            'status': 'request_sent'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error in send_connection_request: {str(e)}')
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # --- API Endpoint for Profile --- 
 @profile_bp.route('/', methods=['GET'])
@@ -77,11 +164,11 @@ def view_profile(username):
 @profile_bp.route('/edit-about', methods=['POST'])
 @login_required
 def edit_about():
-    new_about_text = request.form.get('about_text')
+    new_about_text = request.form.get('about')
     current_user.about = new_about_text
     db.session.commit()
     log_activity(current_user.id, 'updated_about_section')
-    return redirect(url_for('profile.view_profile', username=current_user.username))
+    return jsonify({'success': True, 'message': 'About section updated successfully.', 'about': new_about_text})
 
 @profile_bp.route('/add-education', methods=['POST'])
 @login_required
@@ -143,6 +230,20 @@ def edit_experience(exp_id):
     exp.description = request.form.get('description', exp.description)
     db.session.commit()
     log_activity(current_user.id, 'edited_experience', f'{exp.title} at {exp.company}')
+    return redirect(url_for('profile.view_profile', username=current_user.username))
+
+@profile_bp.route('/delete-experience/<int:exp_id>', methods=['POST'])
+@login_required
+def delete_experience(exp_id):
+    exp = Experience.query.get_or_404(exp_id)
+    if exp.user_id != current_user.id:
+        flash("You are not authorized to delete this experience.", "danger")
+        return redirect(url_for('profile.view_profile', username=current_user.username))
+
+    db.session.delete(exp)
+    db.session.commit()
+    log_activity(current_user.id, 'deleted_experience', f'{exp.title} at {exp.company}')
+    flash("Experience deleted successfully.", "success")
     return redirect(url_for('profile.view_profile', username=current_user.username))
 
 @profile_bp.route('/add-skill', methods=['POST'])

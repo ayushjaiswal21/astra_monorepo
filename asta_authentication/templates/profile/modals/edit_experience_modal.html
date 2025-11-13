@@ -6,7 +6,7 @@
                 <h5 class="modal-title" id="editExperienceModalLabel-{{ experience.id }}">Edit Experience</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form class="edit-experience-form" action="{{ url_for('profile.update_experience', exp_id=experience.id) }}" method="POST">
+            <form class="edit-experience-form" action="{{ url_for('profile.edit_experience', exp_id=experience.id) }}" method="POST">
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-12">
