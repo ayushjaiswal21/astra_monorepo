@@ -87,57 +87,65 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle form submission
     const form = document.querySelector(`#editExperienceModal-{{ experience.id }} .edit-experience-form`);
     if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', async function(e) {
             e.preventDefault();
             const formData = new FormData(form);
-            
-            fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams(formData).toString()
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams(formData).toString()
+                });
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    showToast('Server returned invalid JSON', 'error');
+                    return;
+                }
+                if (response.ok && data && data.success) {
                     window.location.reload();
                 } else {
-                    showToast(data.message || 'Failed to update experience', 'error');
+                    showToast((data && (data.message || data.error)) || 'Failed to update experience', 'error');
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
                 showToast('An error occurred while updating experience', 'error');
-            });
+            }
         });
     }
     
     // Handle delete form
     const deleteForm = document.querySelector(`#editExperienceModal-{{ experience.id }} .delete-experience-form`);
     if (deleteForm) {
-        deleteForm.addEventListener('submit', function(e) {
+        deleteForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            fetch(this.action, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json'
+            try {
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    showToast('Server returned invalid JSON', 'error');
+                    return;
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
+                if (response.ok && data && data.success) {
                     window.location.reload();
                 } else {
-                    showToast(data.message || 'Failed to delete experience', 'error');
+                    showToast((data && (data.message || data.error)) || 'Failed to delete experience', 'error');
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
                 showToast('An error occurred while deleting experience', 'error');
-            });
+            }
         });
     }
 });

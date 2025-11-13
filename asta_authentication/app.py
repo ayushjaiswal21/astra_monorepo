@@ -27,6 +27,9 @@ app = Flask(__name__)
 # PROTOTYPE MODE: Enable CORS for all origins
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
+# Provide noop csrf_token for prototype templates
+app.jinja_env.globals['csrf_token'] = lambda: ''
+
 # --- Logging Configuration ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 

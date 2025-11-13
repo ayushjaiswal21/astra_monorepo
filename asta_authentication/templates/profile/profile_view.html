@@ -72,6 +72,13 @@
                     {% endif %}
                 </div>
                 {% endif %}
+                {% if current_user.id == user.id %}
+                <div class="mt-3">
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editBasicModal">
+                        <i class="far fa-id-card me-1"></i> Edit Profile
+                    </button>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -507,6 +514,54 @@
 
 <!-- Include all modals -->
 {% if current_user.id == user.id %}
+    <!-- Edit Basic Profile Modal -->
+    <div class="modal fade" id="editBasicModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editBasicForm">
+                        <div class="mb-3">
+                            <label for="basicName" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="basicName" name="name" value="{{ user.name or '' }}" placeholder="Your name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="basicHeadline" class="form-label">Headline</label>
+                            <input type="text" class="form-control" id="basicHeadline" name="headline" value="{{ user.headline or '' }}" placeholder="e.g., Full Stack Developer">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveBasicBtn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    document.getElementById('saveBasicBtn')?.addEventListener('click', function () {
+        const form = document.getElementById('editBasicForm');
+        const fd = new URLSearchParams(new FormData(form));
+        fetch('/profile/edit-basic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: fd.toString(),
+            credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                location.reload();
+            } else {
+                alert(d.error || 'Failed to update profile');
+            }
+        })
+        .catch(() => alert('Failed to update profile'));
+    });
+    </script>
     {% include 'profile/modals/edit_about_modal.html' %}
     {% include 'profile/modals/add_experience_modal.html' %}
     {% include 'profile/modals/add_education_modal.html' %}
@@ -645,47 +700,6 @@ function sendConnectionRequest(userId) {
         }
     });
 }
-
-// Helper function to show toast notifications
-function showToast(message, type = 'info') {
-    const toastContainer = document.getElementById('toastContainer') || createToastContainer();
-    const toastId = 'toast-' + Date.now();
-    const toast = document.createElement('div');
-    
-    toast.id = toastId;
-    toast.className = `toast align-items-center text-white bg-${type} border-0`;
-    toast.role = 'alert';
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-    
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-    
-    toastContainer.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-    
-    // Remove toast after it's hidden
-    toast.addEventListener('hidden.bs.toast', function() {
-        toast.remove();
-    });
-}
-
-function createToastContainer() {
-    const container = document.createElement('div');
-    container.id = 'toastContainer';
-    container.className = 'position-fixed bottom-0 end-0 p-3';
-    container.style.zIndex = '11';
-    document.body.appendChild(container);
-    return container;
-}
-
 // Initialize tooltips
 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -889,502 +903,33 @@ var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     }
 }
 </style>
-    ></a>
-  </div>
-  <div class="card-body">
-    <p>{{ user.about }}</p>
-  </div>
-</div>
 
-<div class="card mt-4">
-  <div class="card-header">
-    <h5 class="card-title fw-bold">Experience</h5>
-    <a
-      href="#"
-      data-bs-toggle="modal"
-      data-bs-target="#addExperienceModal"
-      title="Add experience"
-    >
-      <i class="fas fa-plus"></i>
-    </a>
-  </div>
-  <div class="card-body">
-    <ul class="list-unstyled mb-0">
-      {% if user.experience %} {% for exp in user.experience %}
-      <li
-        class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}"
-      >
-        <div class="flex-shrink-0 me-3">
-          {% if exp.logo %}
-          <img
-            src="{{ exp.logo }}"
-            alt="{{ exp.company }} logo"
-            style="
-              width: 50px;
-              height: 50px;
-              border-radius: 4px;
-              object-fit: contain;
-            "
-          />
-          {% else %}
-          <div
-            class="bg-light rounded d-flex align-items-center justify-content-center"
-            style="width: 50px; height: 50px"
-          >
-            <i class="fas fa-briefcase text-secondary fs-4"></i>
-          </div>
-          {% endif %}
-        </div>
-        <div class="flex-grow-1">
-          <h6 class="fw-bold mb-0">{{ exp.title }}</h6>
-          <p class="mb-1 text-sm">{{ exp.company }}</p>
-          <small class="text-muted d-block"
-            >{{ exp.dates }} · {{ exp.location }}</small
-          >
-          <p class="mt-2 mb-0 text-sm">{{ exp.description }}</p>
-        </div>
-        <a
-          href="#"
-          data-bs-toggle="modal"
-          data-bs-target="#editExperienceModal-{{ exp.id }}"
-          title="Edit experience"
-          class="text-secondary ms-3"
-          ><i class="fas fa-pencil-alt"></i
-        ></a>
-      </li>
-      {% endfor %} {% else %}
-      <p class="text-muted">No experience information added yet.</p>
-      {% endif %}
-    </ul>
-  </div>
-</div>
+<!-- duplicate profile sections removed -->
 
-<div class="card mt-4">
-  <div class="card-header">
-    <h5 class="card-title fw-bold">Education</h5>
-    <a
-      href="#"
-      data-bs-toggle="modal"
-      data-bs-target="#addEducationModal"
-      title="Add education"
-    >
-      <i class="fas fa-plus"></i>
-    </a>
-  </div>
-  <div class="card-body">
-    <ul class="list-unstyled mb-0">
-      {% if user.education %} {% for edu in user.education %}
-      <li
-        class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}"
-      >
-        <div class="flex-shrink-0 me-3">
-          {% if edu.logo %}
-          <img
-            src="{{ edu.logo }}"
-            alt="{{ edu.school }} logo"
-            style="
-              width: 50px;
-              height: 50px;
-              border-radius: 4px;
-              object-fit: contain;
-            "
-          />
-          {% else %}
-          <div
-            class="bg-light rounded d-flex align-items-center justify-content-center"
-            style="width: 50px; height: 50px"
-          >
-            <i class="fas fa-university text-secondary fs-4"></i>
-          </div>
-          {% endif %}
-        </div>
-        <div class="flex-grow-1">
-          <h6 class="fw-bold mb-0">{{ edu.school }}</h6>
-          <p class="mb-1 text-sm">{{ edu.degree }}</p>
-          <small class="text-muted d-block">{{ edu.dates }}</small>
-        </div>
-        <a
-          href="#"
-          data-bs-toggle="modal"
-          data-bs-target="#editEducationModal-{{ edu.id }}"
-          title="Edit education"
-          class="text-secondary ms-3"
-          ><i class="fas fa-pencil-alt"></i
-        ></a>
-      </li>
-      {% endfor %} {% else %}
-      <p class="text-muted">No education information added yet.</p>
-      {% endif %}
-    </ul>
-  </div>
-</div>
+{% include 'profile/modals/edit_about.html' %}
 
-<div class="card mt-4">
-  <div class="card-header">
-    <h5 class="card-title fw-bold">Skills</h5>
-    <a
-      href="#"
-      data-bs-toggle="modal"
-      data-bs-target="#addSkillModal"
-      title="Add new skill"
-    >
-      <i class="fas fa-plus"></i>
-    </a>
-  </div>
-  <div class="card-body">
-    {% if user.skills %} {% for skill in user.skills[:7] %}
-    <p class="py-2 mb-0 {% if not loop.last %}border-bottom{% endif %}">
-      {{ skill }}
-    </p>
-    {% endfor %} {% if user.skills|length > 7 %}
-    <div class="collapse" id="moreSkills">
-      {% for skill in user.skills[7:] %}
-      <p class="py-2 mb-0 {% if not loop.last %}border-bottom{% endif %}">
-        {{ skill }}
-      </p>
-      {% endfor %}
-    </div>
-
-    <div class="card mt-4">
-        <div class="card-header">
-            <h5 class="card-title fw-bold">Education</h5>
-            {% if current_user.id == user.id %}
-            <a href="#" data-bs-toggle="modal" data-bs-target="#addEducationModal" title="Add education">
-                <i class="fas fa-plus"></i>
-            </a>
-            {% endif %}
-        </div>
-        <div class="card-body">
-            <ul class="list-unstyled mb-0">
-                {% if user.education %}
-                    {% for edu in user.education %}
-                    <li class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}">
-                        <div class="flex-shrink-0 me-3">
-                            {% if edu.logo %}
-                                <img src="{{ edu.logo }}" alt="{{ edu.school }} logo" style="width: 50px; height: 50px; border-radius: 4px; object-fit: contain;">
-                            {% else %}
-                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                    <i class="fas fa-university text-secondary fs-4"></i>
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="fw-bold mb-0">{{ edu.school }}</h6>
-                            <p class="mb-1 text-sm">{{ edu.degree }}</p>
-                            <small class="text-muted d-block">{{ edu.dates }}</small>
-                        </div>
-                        {% if current_user.id == user.id %}
-                        <a href="#" data-bs-toggle="modal" data-bs-target="#editEducationModal-{{ edu.id }}" title="Edit education" class="text-secondary ms-3"><i class="fas fa-pencil-alt"></i></a>
-                        {% endif %}
-                    </li>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-muted">No education information added yet.</p>
-                {% endif %}
-            </ul>
-        </div>
-    </div>
-
-    <div class="card mt-4">
-        <div class="card-header">
-            <h5 class="card-title fw-bold">Skills</h5>
-            {% if current_user.id == user.id %}
-            <a href="#" data-bs-toggle="modal" data-bs-target="#addSkillModal" title="Add new skill">
-                <i class="fas fa-plus"></i>
-            </a>
-            {% endif %}
-        </div>
-        <div class="card-body">
-            {% if user.skills %}
-                {% for skill in user.skills[:7] %}
-                <p class="py-2 mb-0 {% if not loop.last %}border-bottom{% endif %}">{{ skill }}</p>
-                {% endfor %}
-
-                {% if user.skills|length > 7 %}
-                <div class="collapse" id="moreSkills">
-                    {% for skill in user.skills[7:] %}
-                    <p class="py-2 mb-0 {% if not loop.last %}border-bottom{% endif %}">{{ skill }}</p>
-                    {% endfor %}
-                </div>
-                <div class="text-center mt-3">
-                    <a class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" href="#moreSkills" role="button" aria-expanded="false" aria-controls="moreSkills">
-                        <span class="when-collapsed">Show all {{ user.skills|length - 7 }} skills <i class="fas fa-chevron-down ms-1"></i></span>
-                        <span class="when-expanded">Show less <i class="fas fa-chevron-up ms-1"></i></span>
-                    </a>
-                </div>
-                {% endif %}
-            {% else %}
-                <p class="text-muted">No skills added yet.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <style>
-    .when-expanded { display: none; }
-    .collapsed .when-expanded { display: inline; }
-    .collapsed .when-collapsed { display: none; }
-    </style>
-
-    <div class="card mt-4">
-        <div class="card-header">
-            <h5 class="card-title fw-bold">Licenses & certifications</h5>
-            {% if current_user.id == user.id %}
-            <a href="#" data-bs-toggle="modal" data-bs-target="#addCertificationModal" title="Add certification">
-                <i class="fas fa-plus"></i>
-            </a>
-            {% endif %}
-        </div>
-        <div class="card-body">
-            <ul class="list-unstyled mb-0">
-                {% if user.certifications %}
-                    {% for cert in user.certifications %}
-                    <li class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}">
-                        <div class="flex-shrink-0 me-3">
-                            {% if cert.logo %}
-                                <img src="{{ cert.logo }}" alt="{{ cert.issuing_organization }} logo" style="width: 50px; height: 50px; border-radius: 4px; object-fit: contain;">
-                            {% else %}
-                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                    <i class="fas fa-award text-secondary fs-4"></i>
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="fw-bold mb-0">{{ cert.name }}</h6>
-                            <p class="mb-1 text-sm">{{ cert.issuing_organization }}</p>
-                            <small class="text-muted d-block">{{ cert.issue_date }}</small>
-                            <a href="{{ cert.credential_url }}" class="btn btn-sm btn-outline-secondary mt-2" target="_blank">Show credential <i class="fas fa-external-link-alt ms-1"></i></a>
-                        </div>
-                        {% if current_user.id == user.id %}
-                        <a href="#" data-bs-toggle="modal" data-bs-target="#editCertificationModal-{{ cert.id }}" title="Edit certification" class="text-secondary ms-3"><i class="fas fa-pencil-alt"></i></a>
-                        {% endif %}
-                    </li>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-muted">No certifications added yet.</p>
-                {% endif %}
-            </ul>
-        </div>
-    </div>
-
-    {% include 'profile/modals/edit_about.html' %}
-
-    {# Add Modals #}
-    {% include 'profile/modals/add_education.html' %}
-    {% include 'profile/modals/add_experience.html' %}
-    {% include 'profile/modals/add_skill.html' %}
-    {% include 'profile/modals/add_certification.html' %}
-
-    <!-- Edit Modals -->
-    {% for edu in user.education %}
-        {% include 'profile/modals/edit_education.html' %}
-    {% endfor %}
-    {% for exp in user.experience %}
-        {% include 'profile/modals/edit_experience.html' %}
-    {% endfor %}
-    {% for skill in user.skills %}
-        {% with index=loop.index %}
-        {% include 'profile/modals/edit_skill.html' %}
-        {% endwith %}
-    {% endfor %}
-    {% if user.certifications %}
-    {% for cert in user.certifications %}
-        {% include 'profile/modals/edit_certification.html' %}
-    {% endfor %}
-    {% endif %}
-
-<script>
-    function sendConnectionRequest(userId) {
-        fetch(`/api/user/${userId}/connect`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Connection request sent!');
-                location.reload();
-            } else {
-                alert('Failed to send connection request: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error sending connection request:', error);
-            alert('Error sending connection request.');
-        });
-    }
-</script>
-    <div class="text-center mt-3">
-      <a
-        class="btn btn-outline-secondary btn-sm"
-        data-bs-toggle="collapse"
-        href="#moreSkills"
-        role="button"
-        aria-expanded="false"
-        aria-controls="moreSkills"
-      >
-        <span class="when-collapsed"
-          >Show all {{ user.skills|length - 7 }} skills
-          <i class="fas fa-chevron-down ms-1"></i
-        ></span>
-        <span class="when-expanded"
-          >Show less <i class="fas fa-chevron-up ms-1"></i
-        ></span>
-      </a>
-    </div>
-    {% endif %} {% else %}
-    <p class="text-muted">No skills added yet.</p>
-    {% endif %}
-  </div>
-</div>
-
-<style>
-  .when-expanded {
-    display: none;
-  }
-  .collapsed .when-expanded {
-    display: inline;
-  }
-  .collapsed .when-collapsed {
-    display: none;
-  }
-</style>
-
-<div class="card mt-4">
-  <div class="card-header">
-    <h5 class="card-title fw-bold">Licenses & certifications</h5>
-    <a
-      href="#"
-      data-bs-toggle="modal"
-      data-bs-target="#addCertificationModal"
-      title="Add certification"
-    >
-      <i class="fas fa-plus"></i>
-    </a>
-  </div>
-  <div class="card-body">
-    <ul class="list-unstyled mb-0">
-      {% if user.certifications %} {% for cert in user.certifications %}
-      <li
-        class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}"
-      >
-        <div class="flex-shrink-0 me-3">
-          {% if cert.logo %}
-          <img
-            src="{{ cert.logo }}"
-            alt="{{ cert.issuing_organization }} logo"
-            style="
-              width: 50px;
-              height: 50px;
-              border-radius: 4px;
-              object-fit: contain;
-            "
-          />
-          {% else %}
-          <div
-            class="bg-light rounded d-flex align-items-center justify-content-center"
-            style="width: 50px; height: 50px"
-          >
-            <i class="fas fa-award text-secondary fs-4"></i>
-          </div>
-          {% endif %}
-        </div>
-        <div class="flex-grow-1">
-          <h6 class="fw-bold mb-0">{{ cert.name }}</h6>
-          <p class="mb-1 text-sm">{{ cert.issuing_organization }}</p>
-          <small class="text-muted d-block">{{ cert.issue_date }}</small>
-          <a
-            href="{{ cert.credential_url }}"
-            class="btn btn-sm btn-outline-secondary mt-2"
-            target="_blank"
-            >Show credential <i class="fas fa-external-link-alt ms-1"></i
-          ></a>
-        </div>
-        <a
-          href="#"
-          data-bs-toggle="modal"
-          data-bs-target="#editCertificationModal-{{ cert.id }}"
-          title="Edit certification"
-          class="text-secondary ms-3"
-          ><i class="fas fa-pencil-alt"></i
-        ></a>
-      </li>
-      {% endfor %} {% else %}
-      <p class="text-muted">No certifications added yet.</p>
-      {% endif %}
-    </ul>
-  </div>
-</div>
-
-<style>
-  .timeline-steps {
-    display: flex;
-    justify-content: space-between;
-    position: relative;
-    margin: 20px 0;
-  }
-
-  .timeline-steps:before {
-    content: "";
-    position: absolute;
-    top: 20px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background-color: #e0e0e0;
-    z-index: 1;
-  }
-
-  .step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 2;
-    position: relative;
-  }
-
-  .step-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-    color: #6c757d;
-    font-weight: bold;
-    z-index: 3;
-  }
-
-  .step.completed .step-icon {
-    background-color: #28a745;
-    color: white;
-  }
-
-  .step-content {
-    text-align: center;
-    max-width: 100px;
-  }
-
-  .step.completed .step-content h6 {
-    color: #28a745;
-  }
-</style>
-
-{% include 'profile/modals/edit_about.html' %} {# Add Modals #} {% include
-'profile/modals/add_education.html' %} {% include
-'profile/modals/add_experience.html' %} {% include
-'profile/modals/add_skill.html' %} {% include
-'profile/modals/add_certification.html' %}
+{# Add Modals #}
+{% include 'profile/modals/add_education.html' %}
+{% include 'profile/modals/add_experience.html' %}
+{% include 'profile/modals/add_skill.html' %}
+{% include 'profile/modals/add_certification.html' %}
 
 <!-- Edit Modals -->
-{% for edu in user.education %} {% include 'profile/modals/edit_education.html'
-%} {% endfor %} {% for exp in user.experience %} {% include
-'profile/modals/edit_experience.html' %} {% endfor %} {% for skill in
-user.skills %} {% with index=loop.index %} {% include
-'profile/modals/edit_skill.html' %} {% endwith %} {% endfor %} {% if
-user.certifications %} {% for cert in user.certifications %} {% include
-'profile/modals/edit_certification.html' %} {% endfor %} {% endif %} {% endblock
-%}
+{% for edu in user.education %}
+    {% include 'profile/modals/edit_education.html' %}
+{% endfor %}
+{% for exp in user.experience %}
+    {% include 'profile/modals/edit_experience.html' %}
+{% endfor %}
+{% for skill in user.skills %}
+    {% with index=loop.index %}
+    {% include 'profile/modals/edit_skill.html' %}
+    {% endwith %}
+{% endfor %}
+{% if user.certifications %}
+{% for cert in user.certifications %}
+    {% include 'profile/modals/edit_certification.html' %}
+{% endfor %}
+{% endif %}
+
+{% endblock %}

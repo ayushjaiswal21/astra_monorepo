@@ -3,11 +3,13 @@ import config
 import json
 import re
 
-# Configure Gemini API
-genai.configure(api_key=config.GEMINI_API_KEY)
-
-# Initialize the generative model (using the stable Gemini 2.5 Flash model)
-model = genai.GenerativeModel('gemini-2.5-flash')  # Using stable Gemini 2.5 Flash
+# Configure Gemini API only when usable
+if not config.USE_MOCK and config.GEMINI_API_KEY:
+    genai.configure(api_key=config.GEMINI_API_KEY)
+    # Initialize the generative model (using the stable Gemini 2.5 Flash model)
+    model = genai.GenerativeModel('gemini-2.5-flash')  # Using stable Gemini 2.5 Flash
+else:
+    model = None
 
 def validate_and_preprocess_list(input_list, field_name):
     """Validate and preprocess list inputs"""
@@ -199,6 +201,10 @@ def analyze_career_preferences(interests, skills, goal, motivation, learning_sty
 
     IMPORTANT: Make each recommendation from a different industry sector and highly personalized to their profile.
     """
+    
+    # If model is unavailable (mock/no-key), return defaults immediately
+    if model is None:
+        return generate_relevant_defaults(interests, skills, goal)
     
     try:
         # Generate response from AI with enhanced parameters

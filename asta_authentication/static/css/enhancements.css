@@ -1,0 +1,67 @@
+/* Global transitions */
+* { transition: color .2s ease, background-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+
+/* Navbar hover underline */
+.navbar .nav-link { position: relative; }
+.navbar .nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: -6px;
+  height: 2px; width: 0;
+  background: #0d6efd;
+  transition: width .25s ease;
+}
+.navbar .nav-link:hover::after, .navbar .nav-link:focus::after { width: 100%; }
+
+/* Buttons: soft lift on hover */
+.btn {
+  transform: translateY(0);
+  box-shadow: 0 0 0 rgba(13,110,253,0);
+}
+.btn:hover, .btn:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(13,110,253,.15);
+}
+.btn-outline-primary:hover { color: #fff; }
+
+/* Cards: subtle hover lift */
+.card { border-radius: 12px; }
+.card:hover { box-shadow: 0 12px 24px rgba(0,0,0,.08); }
+
+/* Profile header */
+.profile-header-card { overflow: visible; }
+.profile-banner-container .edit-icon-overlay { opacity: .9; }
+.profile-banner-container .edit-icon-overlay:hover { opacity: 1; transform: scale(1.08); }
+
+.profile-picture { transition: box-shadow .25s ease, transform .25s ease; }
+.profile-picture:hover { box-shadow: 0 10px 24px rgba(0,0,0,.2); transform: translateY(-2px); }
+
+/* Timeline steps highlight */
+.timeline-steps .step .step-icon { transition: transform .2s ease, background-color .2s ease; }
+.timeline-steps .step:hover .step-icon { transform: scale(1.06); background: #0d6efd; color: #fff; }
+
+/* List rows hover */
+.list-unstyled li, .list-group-item { transition: background-color .15s ease; }
+.list-unstyled li:hover, .list-group-item:hover { background-color: rgba(13,110,253,.05); }
+
+/* Modals polish */
+.modal-content { border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.2); }
+
+/* Inputs focus */
+.form-control:focus { box-shadow: 0 0 0 .2rem rgba(13,110,253,.15); border-color: #86b7fe; }
+
+/* Badges */
+.badge { transform: translateY(0); }
+.badge:hover { transform: translateY(-1px); }
+
+/* Section headers */
+.card-header { background: #fff; position: sticky; top: -1px; z-index: 2; }
+.card-title { letter-spacing: .2px; }
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.card { animation: fadeUp .25s ease both; }
+
+/* Links */
+a { text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
