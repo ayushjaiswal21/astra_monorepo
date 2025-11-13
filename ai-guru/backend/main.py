@@ -31,12 +31,15 @@ import config
 
 # Set seed for consistent language detection
 
-# Configure Gemini
-genai.configure(api_key=config.GEMINI_API_KEY)
-
-# Initialize the generative models
-text_model = genai.GenerativeModel('gemini-pro')
-vision_model = genai.GenerativeModel('gemini-pro-vision')
+# Configure Gemini only when an API key is available and not using mock mode
+if not config.USE_MOCK and config.GEMINI_API_KEY:
+    genai.configure(api_key=config.GEMINI_API_KEY)
+    # Initialize the generative models
+    text_model = genai.GenerativeModel('gemini-pro')
+    vision_model = genai.GenerativeModel('gemini-pro-vision')
+else:
+    text_model = None
+    vision_model = None
 
 
 

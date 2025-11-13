@@ -18,12 +18,7 @@ RATE_LIMIT_TIME_WINDOW = int(os.getenv('RATE_LIMIT_TIME_WINDOW', 60))
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')  # Default MongoDB URI
 
-# --- Validation ---
-# Ensure critical environment variables are set
-# GEMINI_API_KEY is not strictly required if a mock server is used
-USE_MOCK = bool(os.getenv('GEMINI_API_BASE_URL'))
-if not USE_MOCK:
-    REQUIRED_ENV_VARS = ['GEMINI_API_KEY']
-    missing_vars = [var for var in REQUIRED_ENV_VARS if not globals().get(var)]
-    if missing_vars:
-        raise RuntimeError(f"Missing required environment variables: {', '.join(missing_vars)}")
+# --- Validation / Mode Selection ---
+# Prefer mock mode when a mock base URL is provided OR when no API key is set.
+USE_MOCK = bool(os.getenv('GEMINI_API_BASE_URL')) or not GEMINI_API_KEY
+# No hard failure when GEMINI_API_KEY is missing; the app can run in mock mode.

@@ -52,30 +52,34 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('addCertificationForm');
     if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', async function(e) {
             e.preventDefault();
             const formData = new FormData(form);
-            
-            fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams(formData).toString()
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams(formData).toString()
+                });
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    showToast('Server returned invalid JSON', 'error');
+                    return;
+                }
+                if (response.ok && data && data.success) {
                     window.location.reload();
                 } else {
-                    showToast(data.message || 'Failed to add certification', 'error');
+                    showToast((data && (data.message || data.error)) || 'Failed to add certification', 'error');
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
                 showToast('An error occurred while adding certification', 'error');
-            });
+            }
         });
     }
 });

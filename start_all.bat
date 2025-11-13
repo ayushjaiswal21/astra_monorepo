@@ -23,7 +23,7 @@ echo Starting services...
 echo.
 
 echo [1/5] Starting Astra Authentication (Flask on port 5000)...
-start "Astra Auth" cmd /k "cd asta_authentication && python app.py"
+start "Astra Auth" cmd /k "python -m asta_authentication.app"
 
 echo [2/5] Starting AI Guru Backend (FastAPI on port 8001)...
 start "AI Guru Backend" cmd /k "cd ai-guru && python -m uvicorn backend.main:app --port 8001"
@@ -35,7 +35,7 @@ echo [4/5] Starting Astra Platform (Django on port 8000)...
 start "Astra Platform" cmd /k "cd astra && python manage.py migrate && python manage.py runserver"
 
 echo [5/5] Starting Astra Celery Worker...
-start "Astra Celery Worker" cmd /k "cd astra && celery -A astralearn worker -l info"
+start "Astra Celery Worker" cmd /k "cd astra && celery -A astralearn worker -l info --pool=solo"
 
 echo.
 echo ====================================================================

@@ -6,43 +6,54 @@ import json # Import json for handling mock responses
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
+import config
 
-text_model = genai.GenerativeModel('gemini-pro')
-vision_model = genai.GenerativeModel('gemini-pro-vision')
+# Initialize models only if not in mock mode and API key is available
+text_model = None
+vision_model = None
+if not config.USE_MOCK and config.GEMINI_API_KEY:
+    genai.configure(api_key=config.GEMINI_API_KEY)
+    text_model = genai.GenerativeModel('gemini-pro')
+    vision_model = genai.GenerativeModel('gemini-pro-vision')
 
 def generate_text_response(text, recent_context, learned_prefs, detected_lang, language_name, should_display):
     gemini_api_base_url = os.getenv('GEMINI_API_BASE_URL')
-    if gemini_api_base_url:
+    if gemini_api_base_url or config.USE_MOCK or text_model is None:
         # Use mock server
         try:
-            mock_response = requests.post(gemini_api_base_url, json={"message": text})
-            mock_response.raise_for_status()
-            return mock_response.json().get("response", "mocked AI reply")
+            if gemini_api_base_url:
+                mock_response = requests.post(gemini_api_base_url, json={"message": text})
+                mock_response.raise_for_status()
+                return mock_response.json().get("response", "mocked AI reply")
+            # No mock server provided; return static mock
+            return "mocked AI reply"
         except requests.exceptions.RequestException as e:
             print(f"Error connecting to mock Gemini API: {e}. Falling back to default mock response.")
             return "mocked AI reply"
-    
-    system_prompt = _build_system_prompt(text, recent_context, learned_prefs, detected_lang, language_name, should_display)
-    full_prompt = system_prompt + text.strip()
-    response = text_model.generate_content(full_prompt)
-    return response.text if response.text else "Sorry, I couldn't generate a response."
+    else:
+        system_prompt = _build_system_prompt(text, recent_context, learned_prefs, detected_lang, language_name, should_display)
+        full_prompt = system_prompt + text.strip()
+        response = text_model.generate_content(full_prompt)
+        return response.text if response.text else "Sorry, I couldn't generate a response."
 
 def generate_image_response(pil_image, text, detected_lang, language_name, should_display):
     gemini_api_base_url = os.getenv('GEMINI_API_BASE_URL')
-    if gemini_api_base_url:
+    if gemini_api_base_url or config.USE_MOCK or vision_model is None:
         # Use mock server
         try:
             # For image, we might just return a generic mock response
-            mock_response = requests.post(gemini_api_base_url, json={"message": text, "image_present": True})
-            mock_response.raise_for_status()
-            return mock_response.json().get("response", "mocked image reply")
+            if gemini_api_base_url:
+                mock_response = requests.post(gemini_api_base_url, json={"message": text, "image_present": True})
+                mock_response.raise_for_status()
+                return mock_response.json().get("response", "mocked image reply")
+            return "mocked image reply"
         except requests.exceptions.RequestException as e:
             print(f"Error connecting to mock Gemini API for image: {e}. Falling back to default mock response.")
             return "mocked image reply"
-
-    vision_system_prompt = _build_vision_system_prompt(text, detected_lang, language_name, should_display)
-    response = vision_model.generate_content([vision_system_prompt, pil_image])
-    return response.text
+    else:
+        vision_system_prompt = _build_vision_system_prompt(text, detected_lang, language_name, should_display)
+        response = vision_model.generate_content([vision_system_prompt, pil_image])
+        return response.text
 
 def _build_system_prompt(text, recent_context, learned_prefs, detected_lang, language_name, should_display):
     learned_format_pref = learned_prefs.get('preferred_format', 'neutral')

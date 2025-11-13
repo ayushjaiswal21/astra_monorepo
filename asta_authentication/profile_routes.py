@@ -170,6 +170,20 @@ def edit_about():
     log_activity(current_user.id, 'updated_about_section')
     return jsonify({'success': True, 'message': 'About section updated successfully.', 'about': new_about_text})
 
+@profile_bp.route('/edit-basic', methods=['POST'])
+@login_required
+def edit_basic():
+    """Update basic profile fields: name and headline"""
+    name = request.form.get('name')
+    headline = request.form.get('headline')
+    if name is not None:
+        current_user.name = name.strip() or None
+    if headline is not None:
+        current_user.headline = headline.strip() or None
+    db.session.commit()
+    log_activity(current_user.id, 'updated_basic_profile')
+    return jsonify({'success': True, 'name': current_user.name, 'headline': current_user.headline})
+
 @profile_bp.route('/add-education', methods=['POST'])
 @login_required
 def add_education():
@@ -182,22 +196,21 @@ def add_education():
     db.session.add(new_edu)
     db.session.commit()
     log_activity(current_user.id, 'added_education', f'{new_edu.school}')
-    return redirect(url_for('profile.view_profile', username=current_user.username))
+    return jsonify({'success': True, 'id': new_edu.id})
 
 @profile_bp.route('/edit-education/<int:edu_id>', methods=['POST'])
 @login_required
 def edit_education(edu_id):
     edu = Education.query.get_or_404(edu_id)
     if edu.user_id != current_user.id:
-        flash("You are not authorized to edit this education.", "danger")
-        return redirect(url_for('profile.view_profile', username=current_user.username))
+        return jsonify({'success': False, 'error': 'You are not authorized to edit this education.'}), 403
 
     edu.school = request.form.get('school', edu.school)
     edu.degree = request.form.get('degree', edu.degree)
     edu.dates = request.form.get('dates', edu.dates)
     db.session.commit()
     log_activity(current_user.id, 'edited_education', f'{edu.school}')
-    return redirect(url_for('profile.view_profile', username=current_user.username))
+    return jsonify({'success': True})
 
 @profile_bp.route('/add-experience', methods=['POST'])
 @login_required
@@ -213,15 +226,14 @@ def add_experience():
     db.session.add(new_exp)
     db.session.commit()
     log_activity(current_user.id, 'added_experience', f'{new_exp.title} at {new_exp.company}')
-    return redirect(url_for('profile.view_profile', username=current_user.username))
+    return jsonify({'success': True, 'id': new_exp.id})
 
 @profile_bp.route('/edit-experience/<int:exp_id>', methods=['POST'])
 @login_required
 def edit_experience(exp_id):
     exp = Experience.query.get_or_404(exp_id)
     if exp.user_id != current_user.id:
-        flash("You are not authorized to edit this experience.", "danger")
-        return redirect(url_for('profile.view_profile', username=current_user.username))
+        return jsonify({'success': False, 'error': 'You are not authorized to edit this experience.'}), 403
 
     exp.title = request.form.get('title', exp.title)
     exp.company = request.form.get('company', exp.company)
@@ -230,26 +242,25 @@ def edit_experience(exp_id):
     exp.description = request.form.get('description', exp.description)
     db.session.commit()
     log_activity(current_user.id, 'edited_experience', f'{exp.title} at {exp.company}')
-    return redirect(url_for('profile.view_profile', username=current_user.username))
+    return jsonify({'success': True})
 
 @profile_bp.route('/delete-experience/<int:exp_id>', methods=['POST'])
 @login_required
 def delete_experience(exp_id):
     exp = Experience.query.get_or_404(exp_id)
     if exp.user_id != current_user.id:
-        flash("You are not authorized to delete this experience.", "danger")
-        return redirect(url_for('profile.view_profile', username=current_user.username))
+        return jsonify({'success': False, 'error': 'You are not authorized to delete this experience.'}), 403
 
     db.session.delete(exp)
     db.session.commit()
     log_activity(current_user.id, 'deleted_experience', f'{exp.title} at {exp.company}')
-    flash("Experience deleted successfully.", "success")
-    return redirect(url_for('profile.view_profile', username=current_user.username))
+    return jsonify({'success': True})
 
 @profile_bp.route('/add-skill', methods=['POST'])
 @login_required
 def add_skill():
-    skill_name = request.form.get('skill_name')
+    # Accept both 'skill_name' and 'name' from different forms
+    skill_name = request.form.get('skill_name') or request.form.get('name')
     if skill_name:
         existing_skill = Skill.query.filter_by(name=skill_name, user_id=current_user.id).first()
         if not existing_skill:
@@ -257,14 +268,17 @@ def add_skill():
             db.session.add(new_skill)
             db.session.commit()
             log_activity(current_user.id, 'added_skill', f'{new_skill.name}')
-    return redirect(url_for('profile.view_profile', username=current_user.username))
+            return jsonify({'success': True, 'id': new_skill.id})
+        else:
+            return jsonify({'success': False, 'error': 'Skill already exists'}), 400
+    return jsonify({'success': False, 'error': 'Skill name is required'}), 400
 
 @profile_bp.route('/add-certification', methods=['POST'])
 @login_required
 def add_certification():
     new_cert = Certification(
         name=request.form.get('name'),
-        issuing_organization=request.form.get('issuing_organization'),
+        issuing_organization=(request.form.get('issuing_organization') or request.form.get('issuer')),
         issue_date=request.form.get('issue_date'),
         credential_url=request.form.get('credential_url'),
         user_id=current_user.id
@@ -272,15 +286,14 @@ def add_certification():
     db.session.add(new_cert)
     db.session.commit()
     log_activity(current_user.id, 'added_certification', f'{new_cert.name}')
-    return redirect(url_for('profile.view_profile', username=current_user.username))
+    return jsonify({'success': True, 'id': new_cert.id})
 
 @profile_bp.route('/edit-certification/<int:cert_id>', methods=['POST'])
 @login_required
 def edit_certification(cert_id):
     cert = Certification.query.get_or_404(cert_id)
     if cert.user_id != current_user.id:
-        flash("You are not authorized to edit this certification.", "danger")
-        return redirect(url_for('profile.view_profile', username=current_user.username))
+        return jsonify({'success': False, 'error': 'You are not authorized to edit this certification.'}), 403
     
     def get_comprehensive_user_profile(user_id):
         """Get comprehensive user profile data for career recommendations"""
@@ -355,12 +368,12 @@ def edit_certification(cert_id):
         }
 
     cert.name = request.form.get('name', cert.name)
-    cert.issuing_organization = request.form.get('issuing_organization', cert.issuing_organization)
+    cert.issuing_organization = (request.form.get('issuing_organization') or request.form.get('issuer') or cert.issuing_organization)
     cert.issue_date = request.form.get('issue_date', cert.issue_date)
     cert.credential_url = request.form.get('credential_url', cert.credential_url)
     db.session.commit()
     log_activity(current_user.id, 'edited_certification', f'{cert.name}')
-    return redirect(url_for('profile.view_profile', username=current_user.username))
+    return jsonify({'success': True})
 
 def get_comprehensive_user_profile(user_id):
     """Get comprehensive user profile data for career recommendations"""
