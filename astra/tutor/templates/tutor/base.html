@@ -220,6 +220,25 @@
             transform: translateX(0);
         }
 
+        /* None of this app's `md:*` Tailwind classes made it into the purged
+           tailwind-built.css (zero `md:` rules anywhere in that file), so every
+           page using one was stuck in its mobile layout at every screen size -
+           most visibly, the sidebar nav stayed translated fully off the left
+           edge even on desktop, which is why the whole left column looked
+           empty. Polyfill the exact handful this app actually uses, pinned to
+           Tailwind's own `md` breakpoint (768px). */
+        @media (min-width: 768px) {
+            .md\:hidden { display: none; }
+            .md\:relative { position: relative; }
+            .md\:translate-x-0 { transform: translateX(0); }
+            .md\:justify-start { justify-content: flex-start; }
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        @media (min-width: 1024px) {
+            .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+
         /* Overlay for mobile sidebar */
         .sidebar-overlay {
             display: none;
