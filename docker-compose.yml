@@ -1,0 +1,174 @@
+x-astra-image: &astra-build
+  context: ./astra
+  dockerfile: Dockerfile
+
+services:
+  # ---------------------------------------------------------------------
+  # Databases / brokers
+  # ---------------------------------------------------------------------
+  postgres-astra:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_ASTRA_DB:-astralearn}
+      POSTGRES_USER: ${POSTGRES_ASTRA_USER:-astralearn}
+      POSTGRES_PASSWORD: ${POSTGRES_ASTRA_PASSWORD:-change-me-astra-db-password}
+    volumes:
+      - postgres_astra_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_ASTRA_USER:-astralearn}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [astra-net]
+
+  postgres-auth:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_AUTH_DB:-astaauth}
+      POSTGRES_USER: ${POSTGRES_AUTH_USER:-astaauth}
+      POSTGRES_PASSWORD: ${POSTGRES_AUTH_PASSWORD:-change-me-auth-db-password}
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_AUTH_USER:-astaauth}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [astra-net]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [astra-net]
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks: [astra-net]
+
+  # ---------------------------------------------------------------------
+  # astra (Django "AstraLearn" course platform)
+  # ---------------------------------------------------------------------
+  astra-web:
+    build: *astra-build
+    restart: unless-stopped
+    env_file:
+      - ./astra/.env
+    environment:
+      # Overrides for values that MUST point at Docker service names rather
+      # than whatever astra/.env has for local dev (localhost/sqlite).
+      DATABASE_URL: postgresql://${POSTGRES_ASTRA_USER:-astralearn}:${POSTGRES_ASTRA_PASSWORD:-change-me-astra-db-password}@postgres-astra:5432/${POSTGRES_ASTRA_DB:-astralearn}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      ASTRA_AUTH_BASE_URL: http://asta-authentication:5000
+      AI_GURU_BASE_URL: http://ai-guru-backend:8001
+      SSO_SHARED_SECRET: ${SSO_SHARED_SECRET:-change-me-one-shared-secret-for-all-three-apps}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres-astra:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [astra-net]
+
+  astra-celery-worker:
+    build: *astra-build
+    restart: unless-stopped
+    command: ["celery", "-A", "astralearn", "worker", "-l", "info"]
+    env_file:
+      - ./astra/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_ASTRA_USER:-astralearn}:${POSTGRES_ASTRA_PASSWORD:-change-me-astra-db-password}@postgres-astra:5432/${POSTGRES_ASTRA_DB:-astralearn}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      ASTRA_AUTH_BASE_URL: http://asta-authentication:5000
+      AI_GURU_BASE_URL: http://ai-guru-backend:8001
+      SSO_SHARED_SECRET: ${SSO_SHARED_SECRET:-change-me-one-shared-secret-for-all-three-apps}
+    depends_on:
+      postgres-astra:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [astra-net]
+
+  # ---------------------------------------------------------------------
+  # asta_authentication (Flask SSO hub)
+  # ---------------------------------------------------------------------
+  asta-authentication:
+    build:
+      context: ./asta_authentication
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./asta_authentication/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_AUTH_USER:-astaauth}:${POSTGRES_AUTH_PASSWORD:-change-me-auth-db-password}@postgres-auth:5432/${POSTGRES_AUTH_DB:-astaauth}
+      ASTRALEARN_BASE_URL: http://astra-web:8000
+      AI_GURU_BASE_URL: http://ai-guru-backend:8001
+      # Browser-facing ai-guru frontend URL used only for an SSO redirect -
+      # must stay a PUBLIC address (browsers can't resolve Docker service
+      # names), not the internal ai-guru-frontend service name.
+      AI_GURU_FRONTEND_BASE_URL: http://${PUBLIC_HOST:-localhost}:3000
+      CORS_ALLOWED_ORIGINS: http://${PUBLIC_HOST:-localhost}:8000,http://${PUBLIC_HOST:-localhost}:3000
+      SSO_SHARED_SECRET: ${SSO_SHARED_SECRET:-change-me-one-shared-secret-for-all-three-apps}
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    networks: [astra-net]
+
+  # ---------------------------------------------------------------------
+  # ai-guru (FastAPI backend + React frontend via nginx)
+  # ---------------------------------------------------------------------
+  ai-guru-backend:
+    build:
+      context: ./ai-guru/backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./ai-guru/backend/.env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/ai_guru_db
+      SSO_SHARED_SECRET: ${SSO_SHARED_SECRET:-change-me-one-shared-secret-for-all-three-apps}
+    ports:
+      - "8001:8001"
+    depends_on:
+      - mongo
+    networks: [astra-net]
+
+  ai-guru-frontend:
+    build:
+      context: ./ai-guru/frontend
+      dockerfile: Dockerfile
+      args:
+        # CRA bakes this into the JS bundle at BUILD time, and it runs in
+        # the visitor's browser - it must be this VM's public address and
+        # the backend's PUBLISHED port, never the internal service name.
+        REACT_APP_API_URL: http://${PUBLIC_HOST:-localhost}:8001
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - ai-guru-backend
+    networks: [astra-net]
+
+networks:
+  astra-net:
+    driver: bridge
+
+volumes:
+  postgres_astra_data:
+  postgres_auth_data:
+  redis_data:
+  mongo_data:
