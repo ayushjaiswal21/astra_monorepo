@@ -561,6 +561,22 @@ a:hover { text-decoration-thickness: 2px; }
 .listing-card { transition: box-shadow .2s ease, transform .2s ease; }
 .listing-card:hover { box-shadow: var(--shadow-soft); transform: translateY(-2px); }
 
+/* The page body correctly flips to a dark surface in dark mode (set via
+   var(--surface-0) below), but every header/nav across this app's ~30
+   templates has a hardcoded `bg-white` Tailwind class, which never
+   responds to dark mode - result: a dark page with a stuck-white header.
+   Scoped to the actual header/nav containers (not a blanket .bg-white
+   override, which would also hit cards/other elements that may rely on
+   their own hardcoded dark text and shouldn't get a dark background
+   without their text changing too). */
+.navbar.bg-white, header.bg-white, nav.bg-white {
+  background-color: var(--surface-0) !important;
+  border-color: var(--border-hairline);
+}
+.navbar.bg-white .navbar-brand, .navbar.bg-white a:not(.btn):not(.btn-primary) {
+  color: var(--text-primary);
+}
+
 @media print {
   .navbar, nav, .skip-link, .scroll-progress-bar, .theme-toggle-btn,
   .back-to-top-btn, .fab-contact-btn, .cookie-banner, .btn, button,

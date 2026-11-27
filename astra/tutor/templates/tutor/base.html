@@ -290,6 +290,18 @@
         }
         #contact-fab:hover { background: var(--accent-hover); transform: translateY(-1px); }
 
+        /* The page body correctly flips to a dark surface in dark mode,
+           but #sidebar and the mobile header both have a hardcoded
+           `bg-white` Tailwind class, which never responds to dark mode -
+           a dark page with a stuck-white sidebar/header. */
+        #sidebar.bg-white, header.bg-white {
+            background-color: var(--surface-0) !important;
+            border-color: var(--border-hairline) !important;
+        }
+        #sidebar.bg-white .text-gray-800, header.bg-white .text-gray-800 {
+            color: var(--text-primary) !important;
+        }
+
         @media print {
             #sidebar, #sidebar-overlay, header, #cookie-banner, #contact-fab,
             #back-to-top-btn, #theme-toggle-btn, .no-print, #ai-assistant-btn,

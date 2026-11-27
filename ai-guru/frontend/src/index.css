@@ -262,3 +262,12 @@ code {
     box-shadow: var(--shadow-soft);
   }
 }
+
+/* The page body correctly flips to a dark surface in dark mode, but the
+   sidebar has a hardcoded `bg-white text-gray-800` className, which never
+   responds to dark mode - a dark page with a stuck-white sidebar. */
+.app-sidebar.bg-white {
+  background-color: var(--surface-0) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-hairline) !important;
+}
