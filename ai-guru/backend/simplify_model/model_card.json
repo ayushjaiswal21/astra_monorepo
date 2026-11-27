@@ -1,0 +1,16 @@
+{
+  "base_model": "google/t5-efficient-tiny",
+  "architecture_changes": [
+    "depth-pruned encoder 4->2 layers (kept indices 0,2)",
+    "depth-pruned decoder 4->2 layers (kept indices 0,2)",
+    "fine-tuned on real human-written simplification pairs from the ASSET corpus (facebook/asset on HF Hub, 880 train / 120 val examples sampled from its validation+test splits, 12 epochs, AdamW lr=3e-4, best-val-loss checkpoint kept); supersedes an earlier version fine-tuned on only 15 synthetic examples for 60 epochs, which badly overfit and regurgitated memorized training topics on novel input"
+  ],
+  "original_param_count": 15570688,
+  "pruned_param_count": 11898112,
+  "final_param_count": 11898112,
+  "training_val_loss_by_epoch": [3.9127, 3.6243, 3.4209, 3.2414, 3.0884, 2.9625, 2.8597, 2.7659, 2.6693, 2.5908, 2.5158, 2.4684],
+  "d_model": 256,
+  "num_heads": 4,
+  "d_ff": 1024,
+  "vocab_size": 32128
+}

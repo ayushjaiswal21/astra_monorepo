@@ -38,10 +38,12 @@ auth.json
 *.sqlite
 *.sqlite3
 
-# Local model checkpoints (build artifacts, not source - regenerate locally,
-# too large to sensibly version control; ~48MB for the small text-simplify
-# encoder-decoder transformer)
-backend/simplify_model/
+# Local model checkpoints: the small text-simplify encoder-decoder
+# transformer (~48MB) IS committed (see backend/simplify_model/) so it
+# works out of the box on a fresh deploy without a retraining step - this
+# line intentionally does NOT exclude it. Nothing currently needs excluding
+# here, left as a placeholder in case a future, larger model shouldn't be
+# committed.
 
 # Large files and media
 *.wav
