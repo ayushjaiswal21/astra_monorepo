@@ -1,7 +1,18 @@
 import logging
+import sys
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 import config
+
+# This module prints emoji status messages (e.g. "✅ MongoDB connection
+# successful"). Fixed in main.py's entry point earlier, but any OTHER
+# script that imports this module directly (e.g. services/rag_service.py's
+# own __main__ self-test) hits the same UnicodeEncodeError on a non-UTF-8
+# console, before main.py ever runs. Fixing it here, at the actual shared
+# import point, instead of in every individual entry script.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, 'reconfigure'):
+        _stream.reconfigure(encoding='utf-8', errors='replace')
 
 logger = logging.getLogger(__name__)
 

@@ -1134,11 +1134,14 @@ async def rag_index(request: RagIndexRequest):
     """
     if not database.is_db_available():
         raise HTTPException(status_code=503, detail="Database unavailable")
-    if not rag_service.embeddings_available():
-        raise HTTPException(status_code=503, detail="Embedding service unavailable (no GEMINI_API_KEY / mock mode)")
     try:
         chunk_count = rag_service.index_document(request.document_id, request.text)
-        return {"success": True, "document_id": request.document_id, "chunks_indexed": chunk_count}
+        return {
+            "success": True,
+            "document_id": request.document_id,
+            "chunks_indexed": chunk_count,
+            "embedding_mode": "gemini" if rag_service.embeddings_available() else "lexical_fallback",
+        }
     except Exception as e:
         print(f"RAG index error: {e}")
         raise HTTPException(status_code=500, detail="Failed to index document")
@@ -1152,8 +1155,6 @@ async def rag_query(request: RagQueryRequest):
     """
     if not database.is_db_available():
         raise HTTPException(status_code=503, detail="Database unavailable")
-    if not rag_service.embeddings_available():
-        raise HTTPException(status_code=503, detail="Embedding service unavailable (no GEMINI_API_KEY / mock mode)")
     try:
         result = rag_service.answer_from_document(request.document_id, request.question)
     except Exception as e:
