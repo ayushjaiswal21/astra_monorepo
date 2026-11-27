@@ -533,6 +533,15 @@ a:hover { text-decoration-thickness: 2px; }
 .back-to-top-btn.is-visible { opacity: 1; pointer-events: auto; }
 .fab-contact-btn { left: var(--space-5); bottom: var(--space-5); background: var(--accent); color: var(--text-on-accent); border: none; text-decoration: none; }
 
+/* On short pages, the fixed FAB/back-to-top/theme buttons - and, for first-time
+   visitors, the full-width cookie banner - can land right on top of a form's
+   submit button and silently eat the click. Reserve space below the main content
+   so the last element never renders inside that fixed-chrome strip.
+   shortcut: fixed px value, not measured against the cookie banner's actual
+   (variable, wraps on narrow screens) height; bump further if a very narrow
+   viewport still shows an overlap. */
+#main-content { padding-bottom: 220px; }
+
 .save-item-btn {
   width: 38px;
   height: 38px;
