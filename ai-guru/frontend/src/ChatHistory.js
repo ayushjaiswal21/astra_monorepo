@@ -57,7 +57,7 @@ const ChatHistory = ({
         overflowY: "auto",
         padding: "0 16px",
         scrollbarWidth: "thin",
-        scrollbarColor: "#374151 transparent",
+        scrollbarColor: "var(--text-secondary) transparent",
       }}
     >
       {!sidebarCollapsed && (
@@ -72,7 +72,7 @@ const ChatHistory = ({
           <div
             style={{
               fontSize: "12px",
-              color: "#9ca3af",
+              color: "var(--text-secondary)",
               fontWeight: "600",
               textTransform: "uppercase",
               letterSpacing: "0.8px",
@@ -86,9 +86,9 @@ const ChatHistory = ({
               onClick={deleteAllChatHistory}
               style={{
                 background: "transparent",
-                border: "1px solid #4b5563",
+                border: "1px solid var(--text-secondary)",
                 borderRadius: "4px",
-                color: "#9ca3af",
+                color: "var(--text-secondary)",
                 fontSize: "10px",
                 padding: "3px 6px",
                 cursor: "pointer",
@@ -101,8 +101,8 @@ const ChatHistory = ({
               }}
               onMouseLeave={(e) => {
                 e.target.style.backgroundColor = "transparent";
-                e.target.style.borderColor = "#4b5563";
-                e.target.style.color = "#9ca3af";
+                e.target.style.borderColor = "var(--text-secondary)";
+                e.target.style.color = "var(--text-secondary)";
               }}
               title="Delete all chat history"
             >
@@ -150,7 +150,7 @@ const ChatHistory = ({
       ) : chatSessions.length === 0 ? (
         <div
           style={{
-            color: "#6b7280",
+            color: "var(--text-secondary)",
             fontSize: "13px",
             fontStyle: "italic",
             textAlign: sidebarCollapsed ? "center" : "left",
@@ -162,7 +162,7 @@ const ChatHistory = ({
       ) : filteredSessions.length === 0 ? (
         <div
           style={{
-            color: "#6b7280",
+            color: "var(--text-secondary)",
             fontSize: "13px",
             fontStyle: "italic",
             padding: "8px 0",
@@ -184,10 +184,10 @@ const ChatHistory = ({
               backgroundColor:
                 selectedSession &&
                 selectedSession.session_id === session.session_id
-                  ? "#2d2d2d"
+                  ? "var(--surface-2)"
                   : "transparent",
               fontSize: "14px",
-              color: "#ccc",
+              color: "var(--text-primary)",
               transition: "background-color 0.2s ease",
               position: "relative",
             }}
@@ -206,7 +206,7 @@ const ChatHistory = ({
               <div
                 style={{
                   fontSize: "12px",
-                  color: "#888",
+                  color: "var(--text-secondary)",
                   marginBottom: "2px",
                   display: "flex",
                   alignItems: "center",

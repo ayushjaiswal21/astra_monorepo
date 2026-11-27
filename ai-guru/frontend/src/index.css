@@ -199,7 +199,9 @@ code {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-4);
-  z-index: 900;
+  /* Must outrank .app-sidebar's mobile overlay (z-index 950) or its "Got it"
+     button becomes unclickable behind the sidebar drawer at narrow widths. */
+  z-index: var(--z-chrome);
 }
 
 .modal-backdrop {

@@ -18,7 +18,13 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // On narrow screens the sidebar is a fixed-position overlay (see
+  // index.css's max-width:640px rule) that sits on top of the chat column,
+  // not beside it — left open by default it covers most of the message
+  // input, making the chat unusable until the user manually collapses it.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => typeof window !== "undefined" && window.innerWidth <= 640
+  );
   const [isConverting, setIsConverting] = useState(false);
   const [processingMessages, setProcessingMessages] = useState(new Set());
 
