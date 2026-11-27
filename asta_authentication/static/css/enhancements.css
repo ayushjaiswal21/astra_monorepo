@@ -548,6 +548,21 @@ a:hover { text-decoration-thickness: 2px; }
 }
 .save-item-btn:hover { color: var(--accent); border-color: var(--accent); }
 .save-item-btn.is-saved { color: var(--accent); border-color: var(--accent); }
+
+.nav-icon { transition: all 0.2s; }
+.nav-icon:hover { color: var(--accent); }
+.nav-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
 .btn-action.is-liked { color: var(--accent); }
 
 .comments-panel {
