@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import random
 import httpx
 import jwt
@@ -131,8 +132,19 @@ def create_course(request):
             created_by=request.user if request.user.is_authenticated else None
         )
 
-        # --- Step 2: Dispatch the background task to do all the work ---
-        generate_course_content.delay(course.id, topic, request.session.session_key)
+        # --- Step 2: Generate the course content ---
+        # Free-tier hosts (e.g. Render) typically don't offer a free
+        # background-worker service, so there's nowhere to run a Celery
+        # worker for CELERY_BROKER_URL to actually reach. CELERY_ENABLED=False
+        # (set this in .env on such a host) runs the same task function
+        # directly in the request instead of via .delay() - slower per
+        # request (blocks until generation finishes) but needs no broker/
+        # worker process at all. Default stays True (the normal .delay()
+        # path) so nothing changes for a real Celery-backed deployment.
+        if os.environ.get('CELERY_ENABLED', 'True').lower() == 'true':
+            generate_course_content.delay(course.id, topic, request.session.session_key)
+        else:
+            generate_course_content(course.id, topic, request.session.session_key)
 
         # --- Step 3: Return an immediate response ---
         return JsonResponse({'success': True, 'course_id': course.id})
