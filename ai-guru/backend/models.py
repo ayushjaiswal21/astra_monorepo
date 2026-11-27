@@ -32,6 +32,14 @@ class RagQueryRequest(BaseModel):
     document_id: str
     question: str
 
+class CareerGPSRequest(BaseModel):
+    interests: list[str] = []
+    skills: list[str] = []
+    goal: str = ""
+    motivation: str = ""
+    learning_style: str = ""
+    user_profile: Optional[dict] = None
+
 class FeedbackRequest(BaseModel):
     interaction_id: str
     session_id: str

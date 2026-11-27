@@ -31,7 +31,7 @@ import uuid
 import re
 import hashlib
 import jwt
-from models import ChatRequest, FeedbackRequest, RagIndexRequest, RagQueryRequest
+from models import ChatRequest, FeedbackRequest, RagIndexRequest, RagQueryRequest, CareerGPSRequest
 from collections import defaultdict
 from datetime import timedelta
 import langdetect
@@ -1105,17 +1105,18 @@ import services.career_gps_service as career_gps_service
 
 # Career GPS API Endpoints
 @app.post("/career-gps/recommendations")
-async def get_career_recommendations(
-    interests: list[str] = [],
-    skills: list[str] = [],
-    goal: str = "",
-    motivation: str = "",
-    learning_style: str = "",
-    user_profile: Optional[dict] = None
-):
+async def get_career_recommendations(req: CareerGPSRequest):
     """
-    Generate career recommendations based on user preferences and comprehensive profile data
+    Generate career recommendations based on user preferences and comprehensive profile data.
+
+    Takes a single JSON body (CareerGPSRequest) instead of separate params - mixing plain
+    list[str]/str params with a dict param used to make FastAPI treat the list/str ones as
+    query params while only `user_profile` came from the body, so a client sending one JSON
+    body (the only sane way to call this) silently got empty interests/skills.
     """
+    interests, skills, goal, motivation, learning_style, user_profile = (
+        req.interests, req.skills, req.goal, req.motivation, req.learning_style, req.user_profile
+    )
     try:
         recommendations = career_gps_service.analyze_career_preferences(
             interests, skills, goal, motivation, learning_style, user_profile
