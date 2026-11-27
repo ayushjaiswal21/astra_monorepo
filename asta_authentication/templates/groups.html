@@ -61,31 +61,64 @@
 
     <!-- Main Content -->
     <main id="main-content" class="max-w-7xl mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-6">Groups</h1>
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold text-gray-900">Groups</h1>
+            <button type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg" data-modal-target="#createGroupModal">
+                <i class="fas fa-plus mr-1"></i> Create Group
+            </button>
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-3 rounded text-sm {% if category == 'danger' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Group Card 1 -->
+            {% for group in groups %}
             <div class="card p-6">
-                <h2 class="text-xl font-bold text-gray-900">Python Developers</h2>
-                <p class="text-gray-600 mb-4">A community for Python enthusiasts and professionals.</p>
-                <p class="text-gray-500 text-sm mb-4">12,345 members</p>
-                <a href="#" class="w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg inline-block">View Group</a>
+                <h2 class="text-xl font-bold text-gray-900">{{ group.name }}</h2>
+                <p class="text-gray-600 mb-4">{{ group.description or 'No description yet.' }}</p>
+                <p class="text-gray-500 text-sm mb-4">{{ group.member_count }} member{{ 's' if group.member_count != 1 else '' }}</p>
+                <a href="{{ url_for('main.view_group', group_id=group.id) }}" class="w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg inline-block">
+                    {{ 'View Group' if group.id in my_group_ids else 'View & Join' }}
+                </a>
             </div>
-            <!-- Group Card 2 -->
-            <div class="card p-6">
-                <h2 class="text-xl font-bold text-gray-900">Flask Fanatics</h2>
-                <p class="text-gray-600 mb-4">Discuss all things related to the Flask web framework.</p>
-                <p class="text-gray-500 text-sm mb-4">5,678 members</p>
-                <a href="#" class="w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg inline-block">View Group</a>
+            {% else %}
+            <div class="card p-6 text-center text-gray-500 md:col-span-2 lg:col-span-3">
+                No groups yet. Be the first to create one.
             </div>
-            <!-- Group Card 3 -->
-            <div class="card p-6">
-                <h2 class="text-xl font-bold text-gray-900">Tailwind CSS Designers</h2>
-                <p class="text-gray-600 mb-4">Share your designs and get feedback from fellow Tailwind users.</p>
-                <p class="text-gray-500 text-sm mb-4">8,910 members</p>
-                <a href="#" class="w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg inline-block">View Group</a>
-            </div>
+            {% endfor %}
         </div>
     </main>
+
+    <div class="modal fade" id="createGroupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create a Group</h5>
+                    <button type="button" class="text-lg leading-none opacity-60 hover:opacity-100" data-modal-dismiss aria-label="Close">&times;</button>
+                </div>
+                <form method="POST" action="{{ url_for('main.create_group') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Group name</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" name="description" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <script src="{{ url_for('static', filename='js/site-chrome.js') }}" defer></script>
 </body>
 </html>

@@ -4,10 +4,10 @@ import os
 import sys
 try:
     from .utils import api_login_required as login_required
-    from .models import db, User, Post, PostLike, PostComment, PostRepost, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News, Notification, SavedItem
+    from .models import db, User, Post, PostLike, PostComment, PostRepost, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News, Notification, SavedItem, Group, GroupMembership, GroupPost
 except ImportError:
     from utils import api_login_required as login_required
-    from models import db, User, Post, PostLike, PostComment, PostRepost, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News, Notification, SavedItem
+    from models import db, User, Post, PostLike, PostComment, PostRepost, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News, Notification, SavedItem, Group, GroupMembership, GroupPost
 from werkzeug.utils import secure_filename
 import os
 from sqlalchemy import or_, func
@@ -742,7 +742,68 @@ def enrollments():
 @main_bp.route('/groups')
 @login_required
 def groups():
-    return render_template('groups.html', current_user=current_user)
+    all_groups = Group.query.order_by(Group.created_at.desc()).all()
+    my_group_ids = {m.group_id for m in GroupMembership.query.filter_by(user_id=current_user.id).all()}
+    return render_template('groups.html', current_user=current_user, groups=all_groups, my_group_ids=my_group_ids)
+
+@main_bp.route('/groups/create', methods=['POST'])
+@login_required
+def create_group():
+    name = (request.form.get('name') or '').strip()
+    description = (request.form.get('description') or '').strip()
+    if not name:
+        flash('Group name is required.', 'danger')
+        return redirect(url_for('main.groups'))
+
+    group = Group(name=name, description=description, created_by=current_user.id)
+    db.session.add(group)
+    db.session.commit()
+    db.session.add(GroupMembership(group_id=group.id, user_id=current_user.id))
+    db.session.commit()
+    flash(f'Group "{name}" created.', 'success')
+    return redirect(url_for('main.view_group', group_id=group.id))
+
+@main_bp.route('/groups/<int:group_id>')
+@login_required
+def view_group(group_id):
+    group = Group.query.get_or_404(group_id)
+    is_member = GroupMembership.query.filter_by(group_id=group_id, user_id=current_user.id).first() is not None
+    members = GroupMembership.query.filter_by(group_id=group_id).order_by(GroupMembership.joined_at.asc()).all()
+    posts = GroupPost.query.filter_by(group_id=group_id).order_by(GroupPost.created_at.desc()).all()
+    return render_template('group_detail.html', group=group, is_member=is_member, members=members, posts=posts, current_user=current_user)
+
+@main_bp.route('/groups/<int:group_id>/join', methods=['POST'])
+@login_required
+def join_group(group_id):
+    Group.query.get_or_404(group_id)
+    existing = GroupMembership.query.filter_by(group_id=group_id, user_id=current_user.id).first()
+    if not existing:
+        db.session.add(GroupMembership(group_id=group_id, user_id=current_user.id))
+        db.session.commit()
+    return redirect(url_for('main.view_group', group_id=group_id))
+
+@main_bp.route('/groups/<int:group_id>/leave', methods=['POST'])
+@login_required
+def leave_group(group_id):
+    membership = GroupMembership.query.filter_by(group_id=group_id, user_id=current_user.id).first()
+    if membership:
+        db.session.delete(membership)
+        db.session.commit()
+    return redirect(url_for('main.view_group', group_id=group_id))
+
+@main_bp.route('/groups/<int:group_id>/post', methods=['POST'])
+@login_required
+def create_group_post(group_id):
+    Group.query.get_or_404(group_id)
+    is_member = GroupMembership.query.filter_by(group_id=group_id, user_id=current_user.id).first() is not None
+    if not is_member:
+        flash('Join the group to post.', 'danger')
+        return redirect(url_for('main.view_group', group_id=group_id))
+    content = (request.form.get('content') or '').strip()
+    if content:
+        db.session.add(GroupPost(group_id=group_id, user_id=current_user.id, content=content))
+        db.session.commit()
+    return redirect(url_for('main.view_group', group_id=group_id))
 
 
 @main_bp.route('/provider/create_internship', methods=['GET', 'POST'])
