@@ -426,7 +426,7 @@ function App() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8001/chat", {
+      const response = await fetch("http://localhost:8001/chat/stream", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -442,34 +442,61 @@ function App() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullBuffer = "";
+      // Trailing sentinel the backend appends once the stream ends, carrying
+      // what used to be plain JSON fields (session_id/interaction_id) that a
+      // chunked text/plain body can't send as headers mid-stream.
+      const metaPattern = /\n\n__META__(\{.*\})$/s;
 
-      if (data.session_id && !currentSessionId) {
-        setCurrentSessionId(data.session_id);
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullBuffer += decoder.decode(value, { stream: true });
+
+        const visibleText = fullBuffer.replace(metaPattern, "");
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === loadingMessageId
+              ? { ...msg, text: visibleText, isLoading: false }
+              : msg
+          )
+        );
       }
 
-      setTimeout(() => {
-        const aiMessage = {
-          text: data.response,
-          sender: "ai",
-          id: loadingMessageId,
-          detectedLanguage: data.detected_language,
-          languageName: data.language_name,
-          confidence: data.confidence,
-          sessionId: data.session_id || currentSessionId,
-          interactionId: data.interaction_id,
-        };
-        setMessages((prev) =>
-          prev.map((msg) => (msg.id === loadingMessageId ? aiMessage : msg))
-        );
-        setProcessingMessages((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(messageId);
-          return newSet;
-        });
-        activeRequestsRef.current.delete(messageId);
-        refreshChatSessions();
-      }, 800);
+      const metaMatch = fullBuffer.match(metaPattern);
+      const meta = metaMatch ? JSON.parse(metaMatch[1]) : {};
+      const finalText = fullBuffer.replace(metaPattern, "");
+
+      if (meta.session_id && !currentSessionId) {
+        setCurrentSessionId(meta.session_id);
+      }
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === loadingMessageId
+            ? {
+                text: finalText,
+                sender: "ai",
+                id: loadingMessageId,
+                detectedLanguage: meta.detected_language,
+                languageName: meta.language_name,
+                confidence: meta.confidence,
+                sessionId: meta.session_id || currentSessionId,
+                interactionId: meta.interaction_id,
+              }
+            : msg
+        )
+      );
+      setProcessingMessages((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(messageId);
+        return newSet;
+      });
+      activeRequestsRef.current.delete(messageId);
+      refreshChatSessions();
     } catch (error) {
       if (error.name === "AbortError") {
         console.log("Request was cancelled");

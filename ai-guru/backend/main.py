@@ -19,7 +19,9 @@ from pymongo import MongoClient
 import tempfile
 import os
 import base64
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+import json
+import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 import google.generativeai as genai
@@ -31,7 +33,7 @@ import uuid
 import re
 import hashlib
 import jwt
-from models import ChatRequest, FeedbackRequest, RagIndexRequest, RagQueryRequest, CareerGPSRequest
+from models import ChatRequest, FeedbackRequest, RagIndexRequest, RagQueryRequest, CareerGPSRequest, SimplifyTextRequest
 from collections import defaultdict
 from datetime import timedelta
 import langdetect
@@ -40,6 +42,7 @@ from langdetect.lang_detect_exception import LangDetectException
 
 import services.gemini_service as gemini_service
 import services.rag_service as rag_service
+import services.simplify_service as simplify_service
 import utils
 import database
 import config
@@ -550,6 +553,89 @@ async def chat_endpoint(request: ChatRequest, http_request: Request):
         print(traceback.format_exc())
         status_code, error_detail = _map_gemini_error(e)
         raise HTTPException(status_code=status_code, detail=error_detail)
+
+@app.post("/chat/stream")
+async def chat_stream_endpoint(request: ChatRequest, http_request: Request):
+    """Streaming counterpart to /chat: same request/preprocessing, but the
+    response body is plain text sent progressively (real Gemini stream
+    chunks, or chunked mock text - see gemini_service.generate_text_response_stream)
+    instead of one JSON payload. Since a streaming body can't carry
+    session_id/interaction_id in headers reliably, they're sent as a final
+    sentinel line: "\\n\\n__META__{...}" for the frontend to parse and strip.
+    """
+    # Security: Rate limiting - checked before the stream starts so a 429
+    # is a normal HTTP error response, not something buried in the stream.
+    await rate_limiter.check_rate_limit(http_request.client.host)
+
+    text = request.message
+    detected_lang, confidence, should_display = utils.detect_language(text)
+    language_name = utils.LANGUAGE_NAMES.get(detected_lang, 'Unknown')
+    session_id = request.session_id
+    learned_prefs = get_learned_preferences(session_id) if session_id else {}
+
+    recent_context = ""
+    if session_id and database.is_db_available():
+        try:
+            recent_messages = list(database.get_chat_collection().find({
+                "session_id": session_id
+            }).sort("timestamp", -1).limit(3))
+            if recent_messages:
+                context_parts = []
+                for msg in reversed(recent_messages):
+                    context_parts.append(f"User: {msg.get('user_input', '')}")
+                    context_parts.append(f"AI: {msg.get('bot_response', '')}")
+                recent_context = "\n".join(context_parts[-4:])
+        except Exception as e:
+            print(f"Error getting conversation context: {e}")
+
+    rag_context = ""
+    try:
+        relevant_chunks = rag_service.retrieve_relevant_chunks_any(text)
+        if relevant_chunks:
+            rag_context = "\n\n---\n\n".join(c["chunk_text"] for c in relevant_chunks)
+    except Exception as e:
+        print(f"RAG retrieval for /chat/stream failed (continuing without it): {e}")
+
+    meta_extra = {}
+    if should_display:
+        meta_extra = {
+            "detected_language": detected_lang,
+            "language_name": language_name,
+            "confidence": confidence,
+        }
+
+    async def body():
+        full_response = ""
+        try:
+            async for piece in gemini_service.generate_text_response_stream(
+                text, recent_context, learned_prefs, detected_lang, language_name, should_display,
+                rag_context=rag_context
+            ):
+                full_response += piece
+                yield piece
+        except Exception as e:
+            print(f"An unexpected error occurred in chat_stream_endpoint: {str(e)}")
+            _, error_detail = _map_gemini_error(e)
+            if not full_response:
+                yield error_detail
+            session_id_out, interaction_id_out = store_interaction(
+                'text', text, full_response or error_detail, session_id, detected_lang if should_display else None
+            )
+            yield "\n\n__META__" + json.dumps({**meta_extra, "session_id": session_id_out, "interaction_id": interaction_id_out, "error": True})
+            return
+
+        # Same side effect as the non-streaming /chat endpoint, run once the
+        # full text is assembled.
+        session_id_out, interaction_id_out = store_interaction(
+            'text', text, full_response, session_id, detected_lang if should_display else None
+        )
+        yield "\n\n__META__" + json.dumps({**meta_extra, "session_id": session_id_out, "interaction_id": interaction_id_out})
+
+    # Content-Encoding: identity tells the global GZipMiddleware to pass each
+    # chunk straight through - without it, gzip buffers/re-chunks the stream
+    # (confirmed by testing: raw chunks arrive gzip-compressed and batched),
+    # which defeats the whole point of progressive, visibly-typed delivery.
+    return StreamingResponse(body(), media_type="text/plain", headers={"Content-Encoding": "identity"})
 
 # Test endpoint to verify Gemini API connection
 @app.get("/test-gemini")
@@ -1205,6 +1291,30 @@ async def rag_query(request: RagQueryRequest):
     if result is None:
         raise HTTPException(status_code=404, detail="No indexed chunks found for this document_id")
     return result
+
+@app.post("/simplify-text")
+async def simplify_text(request: SimplifyTextRequest):
+    """
+    Free, local text simplification using a small (~12M param) encoder-
+    decoder Transformer that runs entirely on CPU with no API key/quota.
+    Intended as a fallback for the astra lesson page's "Simplify" tab when
+    Gemini is unavailable (quota exceeded, no key, offline, etc) - it does
+    NOT replace the Gemini-based simplify flow, callers choose when to use
+    it. See services/simplify_service.py for the model/architecture.
+    """
+    try:
+        simplified, latency = simplify_service.simplify(request.text)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        print(f"Simplify-text error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to simplify text")
+    return {
+        "simplified_text": simplified,
+        "model": "small-transformer",
+        "param_count": simplify_service.get_param_count(),
+        "latency_seconds": round(latency, 3),
+    }
 
 if __name__ == "__main__":
     import uvicorn, signal, threading, time

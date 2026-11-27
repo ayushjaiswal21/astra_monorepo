@@ -1,6 +1,7 @@
 import google.generativeai as genai
 import sys
 import os
+import asyncio
 import httpx # Async HTTP client; used instead of requests so mock calls don't block the event loop
 import json # Import json for handling mock responses
 
@@ -38,6 +39,50 @@ async def generate_text_response(text, recent_context, learned_prefs, detected_l
         full_prompt = system_prompt + text.strip()
         response = text_model.generate_content(full_prompt)
         return response.text if response.text else "Sorry, I couldn't generate a response."
+
+# Chunk size/delay for simulated typing (mock mode, or splitting any already-
+# complete text). Not used for real Gemini streaming - that yields the SDK's
+# own chunks as they arrive.
+_SIM_CHUNK_WORDS = 4
+_SIM_CHUNK_DELAY_S = 0.05
+
+
+async def generate_text_response_stream(text, recent_context, learned_prefs, detected_lang, language_name, should_display, rag_context=""):
+    """Async generator yielding text chunks for /chat/stream.
+
+    Real Gemini streaming (verified against the installed google-generativeai
+    0.3.0: GenerativeModel.generate_content(..., stream=True) is supported and
+    returns an iterable of chunks) is used whenever a real model is configured.
+    In mock mode (no API key / USE_MOCK / local mock server), there's no
+    token-by-token generation to stream, so the complete mock reply is instead
+    chunked word-by-word with a tiny delay to produce the same visible typing
+    effect client-side.
+    """
+    gemini_api_base_url = os.getenv('GEMINI_API_BASE_URL')
+    if gemini_api_base_url or config.USE_MOCK or text_model is None:
+        full_text = await generate_text_response(
+            text, recent_context, learned_prefs, detected_lang, language_name, should_display, rag_context
+        )
+        words = full_text.split(' ')
+        for i in range(0, len(words), _SIM_CHUNK_WORDS):
+            chunk = ' '.join(words[i:i + _SIM_CHUNK_WORDS])
+            if i + _SIM_CHUNK_WORDS < len(words):
+                chunk += ' '
+            yield chunk
+            await asyncio.sleep(_SIM_CHUNK_DELAY_S)
+    else:
+        system_prompt = _build_system_prompt(text, recent_context, learned_prefs, detected_lang, language_name, should_display, rag_context)
+        full_prompt = system_prompt + text.strip()
+        response = text_model.generate_content(full_prompt, stream=True)
+        got_any = False
+        for chunk in response:
+            if chunk.text:
+                got_any = True
+                yield chunk.text
+            await asyncio.sleep(0)  # yield control back to the event loop between chunks
+        if not got_any:
+            yield "Sorry, I couldn't generate a response."
+
 
 @trace_llm_call(call_type="vision")
 async def generate_image_response(pil_image, text, detected_lang, language_name, should_display):
