@@ -495,10 +495,25 @@ async def chat_endpoint(request: ChatRequest, http_request: Request):
                 print(f"🧠 Using learned preferences: {learned_prefs}")
             print(f"API Key loaded: {'Yes' if os.getenv('GEMINI_API_KEY') else 'No'}")
         
+        # Optional RAG grounding: pull relevant chunks from anything indexed
+        # via /rag/index. Safe no-op when nothing is indexed or nothing is
+        # relevant - returns [] rather than raising, so a plain chat with no
+        # indexed documents behaves exactly as before.
+        rag_context = ""
+        try:
+            relevant_chunks = rag_service.retrieve_relevant_chunks_any(text)
+            if relevant_chunks:
+                rag_context = "\n\n---\n\n".join(c["chunk_text"] for c in relevant_chunks)
+                print(f"RAG: grounding /chat with {len(relevant_chunks)} chunk(s) "
+                      f"from document(s) {sorted(set(c['document_id'] for c in relevant_chunks))}")
+        except Exception as e:
+            print(f"RAG retrieval for /chat failed (continuing without it): {e}")
+
         # Generate response using the Gemini service
         print("Calling Gemini service...")
         bot_response = await gemini_service.generate_text_response(
-            text, recent_context, learned_prefs, detected_lang, language_name, should_display
+            text, recent_context, learned_prefs, detected_lang, language_name, should_display,
+            rag_context=rag_context
         )
         print(f"Gemini response: {bot_response[:100]}...")
         
@@ -1108,8 +1123,14 @@ async def get_career_recommendations(
         return {"recommendations": recommendations}
     except Exception as e:
         print(f"Career GPS error: {e}")
-        # Return fallback recommendations
+        # Return fallback recommendations, still with a real embedding-derived match %
         fallback = career_gps_service.generate_relevant_defaults(interests, skills, goal)
+        profile_text = career_gps_service._build_user_profile_text(interests, skills, goal)
+        ranked = career_gps_service.rank_career_profiles(profile_text)
+        scores = [s for s, _ in ranked]
+        score_range = (min(scores), max(scores)) if scores else (0.0, 1.0)
+        for rec in fallback:
+            rec['match'] = career_gps_service.compute_match_percentage(rec['name'], profile_text, score_range)
         return {"recommendations": fallback[:3]}
 
 @app.get("/career-gps/roadmap/{career_name}")
@@ -1152,12 +1173,10 @@ async def generate_learning_path(
 async def rag_index(request: RagIndexRequest):
     """
     Index a document's text for grounded retrieval: chunk it, embed each
-    chunk with Gemini embeddings, and store it in MongoDB under
-    document_id. Re-indexing the same document_id replaces its old chunks.
-    Additive endpoint; does not affect /chat.
+    chunk with Gemini embeddings, and store it in the local vector store
+    (services/vector_store.py, SQLite-backed). Re-indexing the same
+    document_id replaces its old chunks. Does not require MongoDB.
     """
-    if not database.is_db_available():
-        raise HTTPException(status_code=503, detail="Database unavailable")
     try:
         chunk_count = rag_service.index_document(request.document_id, request.text)
         return {
@@ -1175,10 +1194,8 @@ async def rag_query(request: RagQueryRequest):
     """
     Answer a question grounded ONLY in the previously-indexed document's
     content. Returns {"answer": str, "sources": [chunk_text, ...]}.
-    Additive endpoint; does not affect /chat.
+    Does not require MongoDB.
     """
-    if not database.is_db_available():
-        raise HTTPException(status_code=503, detail="Database unavailable")
     try:
         result = rag_service.answer_from_document(request.document_id, request.question)
     except Exception as e:

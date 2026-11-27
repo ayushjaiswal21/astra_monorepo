@@ -1,0 +1,126 @@
+[
+  {
+    "name": "Software Engineer",
+    "description": "Designs, builds, and maintains software applications and systems. Requires strong skills in programming languages like Python, Java, or JavaScript, problem solving, algorithms, data structures, debugging, and version control with Git. Day-to-day work includes writing code, reviewing pull requests, writing tests, and collaborating with product managers and designers. Suits people who enjoy logical thinking, building things, and continuous learning about new technologies."
+  },
+  {
+    "name": "Data Analyst",
+    "description": "Collects, cleans, and analyzes data to find patterns and support business decisions. Requires skills in SQL, Excel, statistics, data visualization tools like Tableau or Power BI, and basic Python or R. Day-to-day work includes building dashboards, running queries, and presenting insights to stakeholders. Good fit for detail-oriented, curious people who like working with numbers and telling stories with data."
+  },
+  {
+    "name": "Data Scientist",
+    "description": "Builds predictive models and applies statistics and machine learning to solve business problems. Requires strong math and statistics background, Python or R, machine learning libraries, SQL, and experimentation design. Day-to-day work includes feature engineering, model training and evaluation, and communicating findings to non-technical stakeholders. Suits analytical, research-minded people comfortable with ambiguity."
+  },
+  {
+    "name": "UX Designer",
+    "description": "Researches user needs and designs intuitive, accessible interfaces for apps and websites. Requires skills in user research, wireframing, prototyping tools like Figma, usability testing, and visual design sensibility. Day-to-day work includes interviewing users, sketching flows, building prototypes, and iterating based on feedback. Good for empathetic, creative people who enjoy understanding how people think and behave."
+  },
+  {
+    "name": "UI Designer",
+    "description": "Focuses on the visual look and feel of digital products: layout, color, typography, iconography, and interaction details. Requires strong visual design skills, familiarity with design systems, and tools like Figma or Adobe XD. Day-to-day work includes creating mockups, maintaining design systems, and working closely with engineers on implementation. Suits visually oriented, detail-driven people."
+  },
+  {
+    "name": "Product Manager",
+    "description": "Defines product strategy and roadmap, gathers requirements, and coordinates between engineering, design, and business teams to ship features. Requires communication skills, prioritization, basic technical understanding, market research, and stakeholder management. Day-to-day work includes writing specs, running stand-ups, and making trade-off decisions. Good fit for organized people who enjoy leadership without being the one who writes all the code."
+  },
+  {
+    "name": "Project Manager",
+    "description": "Plans, schedules, and oversees projects to ensure they are delivered on time and within budget. Requires skills in planning, risk management, communication, and tools like Jira or MS Project. Day-to-day work includes tracking milestones, running meetings, and managing stakeholders. Suits organized, detail-oriented people who like keeping complex efforts on track."
+  },
+  {
+    "name": "Teacher",
+    "description": "Educates students in a specific subject area, plans lessons, assesses progress, and supports student development. Requires subject expertise, patience, communication, classroom management, and often a teaching certification. Day-to-day work includes lesson planning, grading, and parent communication. Good fit for people who are patient, enjoy explaining things, and care about helping others grow."
+  },
+  {
+    "name": "Nurse",
+    "description": "Provides direct patient care, administers medications, monitors vital signs, and supports doctors in clinical settings. Requires a nursing degree/license, clinical skills, empathy, attention to detail, and the ability to work under pressure. Day-to-day work includes patient assessments, charting, and coordinating with physicians. Suits compassionate, resilient people who want to directly help others' health."
+  },
+  {
+    "name": "Accountant",
+    "description": "Manages financial records, prepares statements, ensures tax compliance, and advises on budgeting. Requires strong skills in accounting principles, spreadsheets, attention to detail, and often a CPA certification. Day-to-day work includes reconciling accounts, preparing reports, and auditing transactions. Good fit for methodical, precise people who are comfortable with numbers and rules."
+  },
+  {
+    "name": "Marketing Specialist",
+    "description": "Plans and executes campaigns to promote products or services, manages social media, and analyzes campaign performance. Requires skills in content creation, SEO, analytics tools, copywriting, and social media platforms. Day-to-day work includes drafting campaigns, scheduling posts, and reviewing performance metrics. Suits creative, communicative people who like persuasion and storytelling."
+  },
+  {
+    "name": "Sales Representative",
+    "description": "Builds relationships with prospective customers, presents products or services, and closes deals to generate revenue. Requires strong communication, persuasion, negotiation, and resilience in the face of rejection. Day-to-day work includes cold outreach, demos, and pipeline management in a CRM. Good fit for outgoing, goal-driven, persistent people."
+  },
+  {
+    "name": "Human Resources Manager",
+    "description": "Oversees recruitment, employee relations, benefits administration, and workplace policies. Requires interpersonal skills, conflict resolution, knowledge of labor law, and organizational skills. Day-to-day work includes interviewing candidates, mediating disputes, and running onboarding programs. Suits empathetic people who enjoy supporting employees and organizational systems."
+  },
+  {
+    "name": "Graphic Designer",
+    "description": "Creates visual content such as logos, branding materials, illustrations, and marketing graphics. Requires skills in tools like Adobe Illustrator and Photoshop, typography, color theory, and creativity. Day-to-day work includes client briefs, concept sketches, and revisions. Good fit for artistic, detail-oriented people who enjoy visual storytelling."
+  },
+  {
+    "name": "Mechanical Engineer",
+    "description": "Designs, analyzes, and tests mechanical systems and devices such as engines, machines, and tools. Requires strong physics and math background, CAD software skills, and problem-solving ability. Day-to-day work includes designing components, running simulations, and testing prototypes. Suits hands-on, analytical people who like understanding how things work physically."
+  },
+  {
+    "name": "Civil Engineer",
+    "description": "Plans, designs, and oversees construction of infrastructure such as roads, bridges, and buildings. Requires knowledge of structural principles, CAD/BIM software, project management, and regulatory codes. Day-to-day work includes site visits, drafting plans, and coordinating with contractors. Good fit for practical, detail-oriented people interested in the built environment."
+  },
+  {
+    "name": "Electrical Engineer",
+    "description": "Designs and develops electrical systems and equipment, from power grids to consumer electronics. Requires strong physics/math background, circuit design skills, and familiarity with simulation tools. Day-to-day work includes designing circuits, testing prototypes, and troubleshooting systems. Suits analytical people fascinated by electronics and power systems."
+  },
+  {
+    "name": "Pharmacist",
+    "description": "Dispenses medications, advises patients on proper use, and checks for drug interactions. Requires a pharmacy degree/license, attention to detail, chemistry knowledge, and strong communication skills. Day-to-day work includes filling prescriptions, consulting patients, and managing inventory. Good fit for precise, caring people interested in medicine without being a physician."
+  },
+  {
+    "name": "Physical Therapist",
+    "description": "Helps patients recover movement and manage pain through exercise and hands-on treatment after injury or surgery. Requires a physical therapy degree/license, anatomy knowledge, patience, and interpersonal skills. Day-to-day work includes assessing patients, designing treatment plans, and tracking progress. Suits people who enjoy hands-on care and seeing tangible patient improvement."
+  },
+  {
+    "name": "Social Worker",
+    "description": "Supports individuals and families facing challenges such as poverty, abuse, or mental illness, connecting them with resources. Requires a social work degree, empathy, active listening, and knowledge of community services. Day-to-day work includes case management, counseling, and advocacy. Good fit for compassionate, resilient people committed to social good."
+  },
+  {
+    "name": "Financial Analyst",
+    "description": "Evaluates financial data to guide investment decisions, budgeting, and forecasting for companies or clients. Requires strong skills in Excel, financial modeling, accounting principles, and analytical thinking. Day-to-day work includes building models, analyzing trends, and preparing reports for leadership. Suits numerate, detail-oriented people interested in markets and business performance."
+  },
+  {
+    "name": "Content Writer",
+    "description": "Produces written content such as blog posts, articles, and marketing copy for websites and brands. Requires strong writing and editing skills, research ability, SEO knowledge, and adaptability in tone. Day-to-day work includes drafting articles, editing, and collaborating with marketing teams. Good fit for people who enjoy writing, research, and clear communication."
+  },
+  {
+    "name": "DevOps Engineer",
+    "description": "Builds and maintains infrastructure, CI/CD pipelines, and deployment systems that keep software running reliably. Requires skills in cloud platforms (AWS/Azure/GCP), containerization (Docker/Kubernetes), scripting, and monitoring tools. Day-to-day work includes automating deployments, managing servers, and responding to incidents. Suits systematic, problem-solving people who like infrastructure and automation."
+  },
+  {
+    "name": "Cybersecurity Analyst",
+    "description": "Protects organizations from security threats by monitoring systems, investigating incidents, and implementing defenses. Requires knowledge of networking, security tools, threat analysis, and often certifications like Security+ or CISSP. Day-to-day work includes monitoring alerts, conducting audits, and responding to breaches. Good fit for vigilant, detail-oriented people who enjoy solving security puzzles."
+  },
+  {
+    "name": "Business Analyst",
+    "description": "Bridges business needs and technical solutions by gathering requirements, mapping processes, and recommending improvements. Requires analytical thinking, communication, documentation skills, and basic data analysis. Day-to-day work includes stakeholder interviews, process diagrams, and writing requirement documents. Suits people who like translating between business goals and technical execution."
+  },
+  {
+    "name": "Veterinarian",
+    "description": "Diagnoses and treats illnesses and injuries in animals, performs surgeries, and advises pet owners on animal care. Requires a veterinary degree/license, strong science background, manual dexterity, and compassion for animals. Day-to-day work includes examinations, surgery, and client communication. Good fit for animal-loving, scientifically minded, steady-handed people."
+  },
+  {
+    "name": "Architect",
+    "description": "Designs buildings and structures balancing aesthetics, functionality, safety, and budget. Requires architecture degree/license, CAD/BIM software skills, spatial reasoning, and creativity. Day-to-day work includes drafting designs, client meetings, and coordinating with engineers and contractors. Suits creative people with strong spatial and technical reasoning."
+  },
+  {
+    "name": "Supply Chain Manager",
+    "description": "Oversees the flow of goods from suppliers to customers, optimizing logistics, inventory, and procurement. Requires analytical skills, negotiation, knowledge of logistics software, and process optimization. Day-to-day work includes vendor management, demand forecasting, and resolving shipment issues. Good fit for organized, process-oriented people who enjoy optimizing complex systems."
+  },
+  {
+    "name": "Chef",
+    "description": "Plans menus, prepares food, and manages kitchen operations in restaurants or catering businesses. Requires culinary skills, creativity, time management, and the ability to work under pressure in a fast-paced environment. Day-to-day work includes food prep, recipe development, and managing kitchen staff. Suits creative, hands-on people who love food and thrive under pressure."
+  },
+  {
+    "name": "Journalist",
+    "description": "Researches, investigates, and reports news stories across print, broadcast, or digital media. Requires strong writing, interviewing, research, and fact-checking skills, plus comfort meeting deadlines. Day-to-day work includes interviewing sources, writing stories, and verifying facts. Good fit for curious, communicative people who care about informing the public."
+  },
+  {
+    "name": "Customer Success Manager",
+    "description": "Builds long-term relationships with customers to ensure they get value from a product and renew their subscriptions. Requires strong communication, empathy, problem-solving, and basic product knowledge. Day-to-day work includes onboarding calls, check-ins, and resolving customer issues. Suits relationship-oriented people who enjoy helping customers succeed."
+  }
+]

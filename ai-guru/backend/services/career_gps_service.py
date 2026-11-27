@@ -2,6 +2,97 @@ import google.generativeai as genai
 import config
 import json
 import re
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from services import embedding_utils
+
+_CAREER_PROFILES_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "career_profiles.json"
+)
+with open(_CAREER_PROFILES_PATH, "r", encoding="utf-8") as _f:
+    _CAREER_PROFILES = json.load(_f)
+
+
+def _build_user_profile_text(interests, skills, goal):
+    return f"Interests: {', '.join(interests)}. Skills: {', '.join(skills)}. Goal: {goal}"
+
+
+def _find_career_profile(name):
+    """Fuzzy-match a career name to one of our curated profiles (exact,
+    then substring, either direction)."""
+    name_lower = (name or "").strip().lower()
+    for p in _CAREER_PROFILES:
+        if p["name"].lower() == name_lower:
+            return p
+    for p in _CAREER_PROFILES:
+        if p["name"].lower() in name_lower or name_lower in p["name"].lower():
+            return p
+    return None
+
+
+def rank_career_profiles(profile_text, top_n=8):
+    """Embed the user's profile text and every curated career profile
+    (same embedding approach as rag_service.py - real Gemini embeddings if
+    available, else the lexical bag-of-words fallback, via the shared
+    embedding_utils module) and rank by cosine similarity. Returns the
+    full sorted (score, profile) list; callers slice [:top_n] themselves."""
+    scored = embedding_utils.rank_by_similarity(
+        profile_text,
+        _CAREER_PROFILES,
+        get_embedding_type=lambda c: c.get("_embedding_type"),
+        get_vector=lambda c: c.get("_embedding"),
+        get_tokens=lambda c: c.get("_tokens"),
+    )
+    return scored
+
+
+# Precompute each profile's embedding once at import time rather than on
+# every request (cheap for ~30 short paragraphs either way, but no reason
+# to redo it every call).
+for _profile in _CAREER_PROFILES:
+    _embedded = embedding_utils.embed_text(_profile["description"], task_type="retrieval_document")
+    _profile["_embedding_type"] = _embedded["type"]
+    _profile["_embedding"] = _embedded.get("vector")
+    _profile["_tokens"] = _embedded.get("tokens")
+
+
+def compute_match_percentage(career_name, profile_text, score_range):
+    """Real, reproducible match % for `career_name` against the user's
+    `profile_text`, via cosine similarity (not an LLM-hallucinated number,
+    not keyword substring matching). If `career_name` matches one of our
+    curated profiles, its written description is used as the comparison
+    text; otherwise the bare career name itself is embedded and compared,
+    so even a career Gemini invented still gets a real computed score
+    rather than a placeholder.
+
+    score_range = (min_score, max_score) across the full ranked profile
+    list for this request, used to scale the raw cosine score into the
+    60-95 UI range consistently.
+    """
+    profile = _find_career_profile(career_name)
+    comparison_text = profile["description"] if profile else career_name
+
+    if embedding_utils.embeddings_available():
+        query_vec = embedding_utils.embed_text(profile_text, task_type="retrieval_query")["vector"]
+        doc_vec = embedding_utils.embed_text(comparison_text, task_type="retrieval_document")["vector"]
+        score = embedding_utils.cosine_similarity(query_vec, doc_vec)
+    else:
+        tokens_a = embedding_utils._tokenize(profile_text)
+        tokens_b = embedding_utils._tokenize(comparison_text)
+        vocabulary = sorted(set(tokens_a) | set(tokens_b))
+        vec_a = embedding_utils._lexical_vector(profile_text, vocabulary)
+        vec_b = embedding_utils._lexical_vector(comparison_text, vocabulary)
+        score = embedding_utils.cosine_similarity(vec_a, vec_b)
+
+    min_score, max_score = score_range
+    normalized = (score - min_score) / (max_score - min_score) if max_score > min_score else 0.5
+    normalized = max(0.0, min(1.0, normalized))
+    match_pct = round(60 + normalized * 35)
+    print(f"🧮 Computed match for '{career_name}': raw_cosine_similarity={score:.4f}, "
+          f"normalized={normalized:.4f}, match%={match_pct} (matched_profile={profile['name'] if profile else None})")
+    return match_pct
 
 # Configure Gemini API only when usable
 if not config.USE_MOCK and config.GEMINI_API_KEY:
@@ -143,7 +234,19 @@ def analyze_career_preferences(interests, skills, goal, motivation, learning_sty
     profile_context = ""
     if user_profile:
         profile_context = build_profile_context(user_profile)
-    
+
+    # Embedding-based ranking against our curated career profiles, computed
+    # alongside the Gemini narrative call (not replacing it) - this is what
+    # drives the real "match" percentage below instead of an LLM-hallucinated
+    # number or keyword substring matching.
+    profile_text = _build_user_profile_text(interests, skills, goal)
+    ranked_profiles = rank_career_profiles(profile_text)
+    scores = [s for s, _ in ranked_profiles]
+    score_range = (min(scores), max(scores)) if scores else (0.0, 1.0)
+    top_ranked_names = [p["name"] for _, p in ranked_profiles[:8]]
+    print(f"📐 Embedding-based career ranking (top 8 of {len(ranked_profiles)}): "
+          f"{[(p['name'], round(s, 4)) for s, p in ranked_profiles[:8]]}")
+
     # Create a comprehensive prompt for personalized career recommendations
     prompt = f"""
     You are an expert career counselor with extensive knowledge of diverse career fields. Analyze this user's comprehensive profile and provide 5 highly personalized career recommendations from different industries.
@@ -156,6 +259,11 @@ def analyze_career_preferences(interests, skills, goal, motivation, learning_sty
     Learning Style: {learning_style if learning_style else 'Not specified'}
 
     {profile_context}
+
+    An embedding-based similarity search over our curated career database ranks these as the
+    closest fits for this profile (highest first): {', '.join(top_ranked_names)}.
+    Prefer recommending careers from this list when they fit; you may include others if clearly
+    a better fit, but keep recommendations realistic.
 
     REQUIREMENTS:
     - Provide exactly 5 diverse career recommendations from COMPLETELY DIFFERENT industries
@@ -181,10 +289,20 @@ def analyze_career_preferences(interests, skills, goal, motivation, learning_sty
     IMPORTANT: Make each recommendation from a different industry sector and highly personalized to their profile.
     """
     
-    # If model is unavailable (mock/no-key), return defaults immediately
+    def _defaults_with_real_match():
+        """generate_relevant_defaults(), but with each hardcoded match %
+        replaced by a real cosine-similarity-derived one."""
+        defaults = generate_relevant_defaults(interests, skills, goal)
+        for d in defaults:
+            d['match'] = compute_match_percentage(d['name'], profile_text, score_range)
+        return defaults
+
+    # If model is unavailable (mock/no-key), return defaults immediately -
+    # still with a real, embedding-derived match % rather than the hardcoded
+    # per-category numbers generate_relevant_defaults used to bake in.
     if model is None:
-        return generate_relevant_defaults(interests, skills, goal)
-    
+        return _defaults_with_real_match()
+
     try:
         # Generate response from AI with enhanced parameters
         print(f"🚀 Calling Gemini API with prompt length: {len(prompt)} characters")
@@ -204,7 +322,7 @@ def analyze_career_preferences(interests, skills, goal, motivation, learning_sty
         # Handle blocked/empty responses
         if not getattr(response, 'candidates', None):
             print("⚠️ No candidates in response; likely blocked by safety filters.")
-            return generate_relevant_defaults(interests, skills, goal)
+            return _defaults_with_real_match()
 
         cand = response.candidates[0]
         parts = getattr(cand, 'content', None).parts if getattr(cand, 'content', None) else []
@@ -212,7 +330,7 @@ def analyze_career_preferences(interests, skills, goal, motivation, learning_sty
             print("⚠️ Response had no content parts; safety or empty.")
             print(f"Safety ratings: {getattr(cand, 'safety_ratings', None)}")
             print(f"Finish reason: {getattr(cand, 'finish_reason', None)}")
-            return generate_relevant_defaults(interests, skills, goal)
+            return _defaults_with_real_match()
 
         # Extract text from parts safely
         text_chunks = []
@@ -237,12 +355,12 @@ def analyze_career_preferences(interests, skills, goal, motivation, learning_sty
         except json.JSONDecodeError as json_error:
             print(f"❌ JSON parsing failed: {json_error}")
             print(f"Response text: {response_text}")
-            return generate_relevant_defaults(interests, skills, goal)
+            return _defaults_with_real_match()
 
         # Validate structure
         if not isinstance(career_recommendations, list):
             print("⚠️ Response is not a list; using defaults")
-            return generate_relevant_defaults(interests, skills, goal)
+            return _defaults_with_real_match()
 
         # Normalize and ensure fields
         validated = []
@@ -256,6 +374,9 @@ def analyze_career_preferences(interests, skills, goal, motivation, learning_sty
             seen_names.add(name.lower())
             validated.append({
                 'name': name,
+                # Overridden below with a real cosine-similarity match; the
+                # raw Gemini value (often just plausible-looking/hallucinated)
+                # is discarded.
                 'match': int(rec.get('match', 75)),
                 'summary': str(rec.get('summary', ''))[:400] or 'Personalized rationale unavailable.',
                 'skills': rec.get('skills', []) or [],
@@ -263,10 +384,14 @@ def analyze_career_preferences(interests, skills, goal, motivation, learning_sty
                 'learning_path': rec.get('learning_path', 'general-path')
             })
 
+        # Replace Gemini's match numbers with real embedding-derived ones.
+        for rec in validated:
+            rec['match'] = compute_match_percentage(rec['name'], profile_text, score_range)
+
         # Keep up to 5, ensure at least 3
         validated = validated[:5]
         if len(validated) < 3:
-            defaults = generate_relevant_defaults(interests, skills, goal)
+            defaults = _defaults_with_real_match()
             for d in defaults:
                 if len(validated) >= 3:
                     break
@@ -281,7 +406,7 @@ def analyze_career_preferences(interests, skills, goal, motivation, learning_sty
         print(f"❌ Error type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
-        return generate_relevant_defaults(interests, skills, goal)
+        return _defaults_with_real_match()
 
 def generate_relevant_defaults(interests, skills, goal):
     """Generate relevant default recommendations based on user profile"""
