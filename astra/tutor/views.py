@@ -2,8 +2,11 @@ import json
 import logging
 import random
 import httpx
+import jwt
+from django.contrib.auth.models import User
 from datetime import timedelta
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
@@ -605,6 +608,34 @@ def register(request):
         form = UserCreationForm()
 
     return render(request, 'registration/register.html', {'form': form})
+
+
+def sso_login(request):
+    """Cross-app SSO handoff from Astra Auth (Flask hub): verifies the JWT the
+    hub signed, logs the matching Django user in (the signature IS the auth
+    proof - no password needed), and creates the user on first visit."""
+    token = request.GET.get('token', '')
+    try:
+        payload = jwt.decode(token, settings.SSO_SHARED_SECRET, algorithms=['HS256'])
+    except jwt.ExpiredSignatureError:
+        return redirect(f"{reverse('tutor:dashboard')}?sso_error=Your+sign-in+link+expired.+Please+try+again.")
+    except jwt.InvalidTokenError:
+        return redirect(f"{reverse('tutor:dashboard')}?sso_error=Invalid+sign-in+link.")
+
+    email = payload.get('email')
+    username = payload.get('username') or email
+    # username is unique on Django's User model - if it already belongs to a
+    # *different* account (matched by email instead), disambiguate up front
+    # rather than letting get_or_create's INSERT crash on the constraint.
+    if User.objects.filter(username=username).exclude(email=email).exists():
+        username = f"{username}-sso-{payload.get('sub', '')}"
+    user, created = User.objects.get_or_create(
+        email=email,
+        defaults={'username': username},
+    )
+
+    login(request, user)
+    return redirect('tutor:dashboard')
 
 
 @require_http_methods(["POST"])

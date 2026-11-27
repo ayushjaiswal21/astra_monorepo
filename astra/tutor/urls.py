@@ -15,6 +15,7 @@ urlpatterns = [
 
     # Registration (login/logout/password reset come from django.contrib.auth.urls)
     path('register/', views.register, name='register'),
+    path('sso/login/', views.sso_login, name='sso_login'),
 
     path('courses/<int:course_id>/', views.course_detail, name='course_detail'),
     path('course/<int:course_id>/module/<int:module_id>/lesson/<int:lesson_id>/', views.lesson_detail, name='lesson_detail'),

@@ -12,6 +12,7 @@ function App() {
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState(null);
   const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [ssoUsername, setSsoUsername] = useState(null);
   const [messages, setMessages] = useState([]);
   const [currentInput, setCurrentInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -173,6 +174,58 @@ function App() {
       .finally(() => setIsHistoryLoading(false));
 
     return () => controller.abort();
+  }, []);
+
+  // SSO handoff from Astra Auth: bind this session to the user's real
+  // identity (via a server-derived, email-hashed session_id) instead of a
+  // throwaway browser session, so personalization in MongoDB follows the
+  // actual person across visits.
+  useEffect(() => {
+    try {
+      const storedSessionId = localStorage.getItem("aiguru_sso_session_id");
+      const storedUsername = localStorage.getItem("aiguru_sso_username");
+      if (storedSessionId) {
+        setCurrentSessionId(storedSessionId);
+        setSsoUsername(storedUsername || null);
+      }
+    } catch {
+      // storage unavailable — falls back to a normal anonymous session
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const ssoToken = params.get("sso_token");
+    if (!ssoToken) return;
+
+    fetch("http://localhost:8001/sso/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: ssoToken }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.valid) {
+          setCurrentSessionId(data.session_id);
+          setSsoUsername(data.username || null);
+          try {
+            localStorage.setItem("aiguru_sso_session_id", data.session_id);
+            localStorage.setItem("aiguru_sso_username", data.username || "");
+          } catch {
+            // storage unavailable — identity won't persist past this visit
+          }
+        } else {
+          console.error("SSO verification failed:", data.error);
+        }
+      })
+      .catch((err) => console.error("SSO verification error:", err))
+      .finally(() => {
+        // Strip sso_token from the address bar so it never lingers,
+        // gets bookmarked, or gets shared.
+        params.delete("sso_token");
+        const query = params.toString();
+        const newUrl =
+          window.location.pathname + (query ? `?${query}` : "") + window.location.hash;
+        window.history.replaceState({}, "", newUrl);
+      });
   }, []);
 
   useEffect(() => {
@@ -632,6 +685,7 @@ function App() {
       <Sidebar
         sidebarCollapsed={sidebarCollapsed}
         setSidebarCollapsed={setSidebarCollapsed}
+        ssoUsername={ssoUsername}
         startNewChat={startNewChat}
         chatSessions={chatSessions}
         isHistoryLoading={isHistoryLoading}

@@ -29,7 +29,7 @@
 
     <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for module in modules %}
-        <div class="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-6 rounded-xl shadow-lg flex flex-col transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+        <div class="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-6 rounded-2xl shadow-lg flex flex-col transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
             <div class="flex items-center justify-between mb-4">
                 <span class="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">Module {{ forloop.counter }}</span>
                 <span class="text-sm font-medium">{{ module.lessons.count }} Lessons</span>

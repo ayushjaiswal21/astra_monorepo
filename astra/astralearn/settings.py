@@ -67,6 +67,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'tutor.context_processors.astra_auth_base_url',
             ],
         },
     },
@@ -156,6 +157,11 @@ OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'phi3:mini')
 # AI Guru (ai-guru/backend) base URL, for the embedded-tutor RAG integration
 # on a lesson page — a separate FastAPI service/process, not a shared DB.
 AI_GURU_BASE_URL = os.getenv('AI_GURU_BASE_URL', 'http://localhost:8001')
+
+# Cross-app SSO handoff from Astra Auth (Flask hub) - shared JWT secret and the
+# hub's own base URL, used by the "Back to Astra Auth" sidebar link.
+SSO_SHARED_SECRET = os.getenv('SSO_SHARED_SECRET', 'dev-sso-shared-secret-change-in-production')
+ASTRA_AUTH_BASE_URL = os.getenv('ASTRA_AUTH_BASE_URL', 'http://localhost:5000')
 
 
 # Authentication Settings

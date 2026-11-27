@@ -7,10 +7,12 @@
    ============================================================ */
 :root {
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
-  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-12: 48px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px;
 
   --accent: #4F46E5;        /* one accent color for this app */
   --accent-hover: #4338CA;
+  --accent-contrast: #FFFFFF;
   --text-on-accent: #FFFFFF;
 
   --text-primary: #1E293B;   /* ~13.6:1 on white */
@@ -32,6 +34,9 @@
   --measure: 70ch;
 
   --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.35);
+
+  /* z-index scale for site-wide chrome (toggle, banner, progress bar, fab) */
+  --z-chrome: 1040;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -55,6 +60,14 @@
   --surface-1: #1E293B;
   --surface-2: #273449;
   --border-hairline: 1px solid rgba(255, 255, 255, 0.12);
+}
+:root[data-theme="light"] {
+  --text-primary: #1E293B;
+  --text-secondary: #475569;
+  --surface-0: #FFFFFF;
+  --surface-1: #F8FAFC;
+  --surface-2: #F1F5F9;
+  --border-hairline: 1px solid rgba(15, 23, 42, 0.10);
 }
 
 html { color-scheme: light dark; }
@@ -119,6 +132,8 @@ label { font-weight: 700; color: var(--text-primary); }
   padding: var(--space-6);
 }
 .card-surface:hover { box-shadow: var(--shadow-soft); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.card-surface { animation: fadeUp .25s ease both; }
 
 .empty-state {
   text-align: center;

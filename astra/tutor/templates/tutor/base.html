@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AstraLearn{% endblock %}</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%234F46E5'/%3E%3Ctext x='32' y='40' font-size='28' text-anchor='middle' fill='%23ffffff' font-family='Arial, sans-serif'%3EA%3C/text%3E%3C/svg%3E">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231f2937'/%3E%3Ctext x='32' y='40' font-size='28' text-anchor='middle' fill='%23ffffff' font-family='Arial, sans-serif'%3EA%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" href="{% static 'dist/tailwind-built.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -14,10 +14,12 @@
            ============================================================ */
         :root {
             --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
-            --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-12: 48px;
+            --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+            --space-12: 48px; --space-16: 64px;
 
             --accent: #4F46E5;        /* one accent color for this app */
             --accent-hover: #4338CA;
+            --accent-contrast: #FFFFFF;
             --text-on-accent: #FFFFFF;
 
             --text-primary: #1E293B;   /* ~13.6:1 on white */
@@ -39,6 +41,9 @@
             --measure: 70ch; /* ~60-75 characters per line */
 
             --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.35);
+
+            /* z-index scale for site-wide chrome (toggle, banner, progress bar, fab) */
+            --z-chrome: 1040;
         }
         @media (prefers-color-scheme: dark) {
             :root:not([data-theme="light"]) {
@@ -123,8 +128,10 @@
             border-radius: var(--radius-sm);
             font-weight: 600;
             padding: var(--space-2) var(--space-4);
+            transform: translateY(0);
+            transition: background-color .2s ease, box-shadow .2s ease, transform .2s ease;
         }
-        .btn-outline:hover { background: var(--surface-1); }
+        .btn-outline:hover { background: var(--surface-1); box-shadow: var(--shadow-soft-sm); transform: translateY(-1px); }
 
         /* Cards: hairline border, soft big-blur shadow, inner radius = outer minus padding */
         .card-surface {
@@ -132,8 +139,16 @@
             border: var(--border-hairline);
             border-radius: var(--radius-outer);
             padding: var(--space-6);
+            animation: fadeUp .25s ease both;
         }
         .card-surface:hover { box-shadow: var(--shadow-soft); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Tailwind's default shadow scale is heavier/tighter than Astra Auth's
+           soft, low-opacity, big-blur shadow language — realign app-wide so
+           every page (not just .card-surface) gets the same shadow feel. */
+        .shadow-sm { box-shadow: var(--shadow-soft-sm) !important; }
+        .shadow, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl { box-shadow: var(--shadow-soft) !important; }
 
         .empty-state {
             text-align: center;
@@ -340,6 +355,9 @@
                             <a href="{% url 'tutor:register' %}" class="btn-filled text-sm flex-1 text-center">Sign up</a>
                         </div>
                     {% endif %}
+                    <div class="px-2 mt-2">
+                        <a href="{{ ASTRA_AUTH_BASE_URL }}/dashboard" class="btn-outline text-sm w-full text-center block">Back to Astra Auth</a>
+                    </div>
                 </div>
             </div>
         </div>

@@ -19,6 +19,7 @@ from pymongo import MongoClient
 import tempfile
 import os
 import base64
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 import google.generativeai as genai
@@ -28,6 +29,8 @@ import io
 from datetime import datetime
 import uuid
 import re
+import hashlib
+import jwt
 from models import ChatRequest, FeedbackRequest, RagIndexRequest, RagQueryRequest
 from collections import defaultdict
 from datetime import timedelta
@@ -404,6 +407,29 @@ app.add_middleware(
 )
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+@app.post("/sso/verify")
+async def sso_verify(token: str = Body(..., embed=True)):
+    """
+    Verify an SSO handoff token issued by Astra Auth (Flask) and bind the
+    user's real identity to a stable, email-derived session_id instead of a
+    random browser session - so chat history/personalization in MongoDB
+    tracks the real person. Returns a hash of the email, never the raw
+    email, since session_id is used client-side and logged elsewhere.
+    """
+    try:
+        payload = jwt.decode(token, config.SSO_SHARED_SECRET, algorithms=['HS256'])
+    except jwt.ExpiredSignatureError:
+        return JSONResponse(status_code=401, content={"valid": False, "error": "SSO token expired"})
+    except jwt.InvalidTokenError:
+        return JSONResponse(status_code=401, content={"valid": False, "error": "Invalid SSO token"})
+
+    email = (payload.get("email") or "").strip().lower()
+    if not email:
+        return JSONResponse(status_code=401, content={"valid": False, "error": "Invalid SSO token"})
+
+    session_id = "sso_" + hashlib.sha256(email.encode()).hexdigest()[:16]
+    return {"valid": True, "session_id": session_id, "username": payload.get("username")}
 
 @app.get("/health")
 def health_check():

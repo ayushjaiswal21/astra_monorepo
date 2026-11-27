@@ -67,7 +67,7 @@ const MessageInput = ({
           <button
             type="submit"
             disabled={!currentInput.trim() || isLoading || isConverting}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+            className="btn-filled disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin"></div>

@@ -14,6 +14,10 @@ RATE_LIMIT_TIME_WINDOW = int(os.getenv('RATE_LIMIT_TIME_WINDOW', 60))
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')  # Default MongoDB URI
 
+# --- SSO (cross-app handoff from Astra Auth) ---
+# Must match the Flask Astra Auth app's SSO_SHARED_SECRET exactly (same dev default).
+SSO_SHARED_SECRET = os.getenv('SSO_SHARED_SECRET', 'dev-sso-shared-secret-change-in-production')
+
 # --- Validation / Mode Selection ---
 # Prefer mock mode when a mock base URL is provided OR when no API key is set.
 USE_MOCK = bool(os.getenv('GEMINI_API_BASE_URL')) or not GEMINI_API_KEY

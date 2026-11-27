@@ -4,6 +4,7 @@ import ChatHistory from './ChatHistory';
 const Sidebar = ({
     sidebarCollapsed,
     setSidebarCollapsed,
+    ssoUsername,
     startNewChat,
     chatSessions,
     isHistoryLoading,
@@ -68,6 +69,19 @@ const Sidebar = ({
         </div>
       </div>
 
+      {!sidebarCollapsed && ssoUsername && (
+        <div
+          style={{
+            margin: "0 var(--space-4, 1rem)",
+            padding: "var(--space-2, 0.5rem) var(--space-3, 0.75rem)",
+            fontSize: "13px",
+            color: "var(--text-secondary)",
+          }}
+        >
+          Signed in as {ssoUsername}
+        </div>
+      )}
+
       {/* New Chat Button */}
       <div className="p-4">
         <button
@@ -90,6 +104,16 @@ const Sidebar = ({
         setCurrentSessionId={setCurrentSessionId}
         setMessages={setMessages}
       />
+
+      <div className="p-4 border-t border-gray-200">
+        <a
+          href="http://localhost:5000/dashboard"
+          className="btn-outline"
+          style={{ width: "100%", display: "block", textAlign: "center", textDecoration: "none" }}
+        >
+          {sidebarCollapsed ? "←" : "Back to Astra Auth"}
+        </a>
+      </div>
     </div>
   );
 };

@@ -28,7 +28,7 @@ const WelcomeScreen = ({ setCurrentInput, fileInputRef }) => {
             <div
               key={index}
               onClick={() => setCurrentInput(prompt)}
-              className="bg-white p-4 rounded-lg text-left cursor-pointer border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-200"
+              className="card-surface text-left cursor-pointer transition-all duration-200"
             >
               <p className="text-gray-700">{prompt}</p>
             </div>
@@ -49,7 +49,7 @@ const WelcomeScreen = ({ setCurrentInput, fileInputRef }) => {
                 <div
                   key={index}
                   onClick={() => setCurrentInput(prompt)}
-                  className="bg-white p-4 rounded-lg text-left cursor-pointer border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-200"
+                  className="card-surface text-left cursor-pointer transition-all duration-200"
                 >
                   <p className="text-gray-700">{prompt}</p>
                 </div>
