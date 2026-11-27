@@ -64,20 +64,25 @@
             --surface-2: #273449;
             --border-hairline: 1px solid rgba(255, 255, 255, 0.12);
         }
-        :root:not([data-theme="light"]) body.bg-white,
-        :root:not([data-theme="light"]) .bg-white,
-        :root[data-theme="dark"] body.bg-white,
-        :root[data-theme="dark"] .bg-white {
-            background: var(--surface-0) !important; color: var(--text-primary);
-        }
+        /* Dark mode remaps the light-only Tailwind neutrals used across every
+           template onto the surface/text tokens in one place, so the whole
+           chrome flips in one state change (same block in all three apps). */
         @media (prefers-color-scheme: dark) {
-            :root:not([data-theme="light"]) .bg-gray-50 { background: var(--surface-1) !important; }
-            :root:not([data-theme="light"]) #sidebar.bg-white { background: var(--surface-0) !important; }
+            :root:not([data-theme="light"]) .bg-white { background-color: var(--surface-0) !important; }
+            :root:not([data-theme="light"]) .bg-gray-50, :root:not([data-theme="light"]) .bg-gray-100 { background-color: var(--surface-1) !important; }
+            :root:not([data-theme="light"]) .bg-gray-200, :root:not([data-theme="light"]) .hover\:bg-gray-50:hover, :root:not([data-theme="light"]) .hover\:bg-gray-100:hover { background-color: var(--surface-2) !important; }
+            :root:not([data-theme="light"]) .text-gray-900, :root:not([data-theme="light"]) .text-gray-800, :root:not([data-theme="light"]) .text-gray-700 { color: var(--text-primary) !important; }
+            :root:not([data-theme="light"]) .text-gray-600, :root:not([data-theme="light"]) .text-gray-500 { color: var(--text-secondary) !important; }
+            :root:not([data-theme="light"]) .border-gray-100, :root:not([data-theme="light"]) .border-gray-200, :root:not([data-theme="light"]) .border-gray-300 { border-color: rgba(255, 255, 255, 0.12) !important; }
         }
-        :root[data-theme="dark"] .bg-gray-50 { background: var(--surface-1) !important; }
-        :root[data-theme="dark"] #sidebar.bg-white { background: var(--surface-0) !important; }
+        :root[data-theme="dark"] .bg-white { background-color: var(--surface-0) !important; }
+        :root[data-theme="dark"] .bg-gray-50, :root[data-theme="dark"] .bg-gray-100 { background-color: var(--surface-1) !important; }
+        :root[data-theme="dark"] .bg-gray-200, :root[data-theme="dark"] .hover\:bg-gray-50:hover, :root[data-theme="dark"] .hover\:bg-gray-100:hover { background-color: var(--surface-2) !important; }
+        :root[data-theme="dark"] .text-gray-900, :root[data-theme="dark"] .text-gray-800, :root[data-theme="dark"] .text-gray-700 { color: var(--text-primary) !important; }
+        :root[data-theme="dark"] .text-gray-600, :root[data-theme="dark"] .text-gray-500 { color: var(--text-secondary) !important; }
+        :root[data-theme="dark"] .border-gray-100, :root[data-theme="dark"] .border-gray-200, :root[data-theme="dark"] .border-gray-300 { border-color: rgba(255, 255, 255, 0.12) !important; }
 
-        body { font-size: var(--font-size-body); line-height: var(--line-height-body); }
+        body { color: var(--text-primary); font-size: var(--font-size-body); line-height: var(--line-height-body); }
         p, li { max-width: var(--measure); }
 
         label, .form-label { font-weight: 700; color: var(--text-primary); }
@@ -296,7 +301,6 @@
            a dark page with a stuck-white sidebar/header. */
         #sidebar.bg-white, header.bg-white {
             background-color: var(--surface-0) !important;
-            border-color: var(--border-hairline) !important;
         }
         #sidebar.bg-white .text-gray-800, header.bg-white .text-gray-800 {
             color: var(--text-primary) !important;

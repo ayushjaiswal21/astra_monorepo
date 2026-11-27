@@ -49,12 +49,28 @@
                 </ul>
                 <ul class="flex flex-col lg:flex-row lg:items-center">
                     {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link block py-2 lg:py-4 lg:px-3" href="{{ url_for('main.messages') }}" title="Messages">
+                                <i class="fas fa-envelope"></i>
+                                <span id="messages-badge" class="hidden" style="background: var(--accent); color: var(--text-on-accent); border-radius: 9999px; font-size: 11px; padding: 1px 6px; margin-left: 2px;"></span>
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link block py-2 lg:py-4 lg:px-3" href="#" id="notificationsDropdown" role="button" data-dropdown-toggle aria-expanded="false" title="Notifications">
+                                <i class="fas fa-bell"></i>
+                                <span id="notifications-badge" class="hidden" style="background: var(--accent); color: var(--text-on-accent); border-radius: 9999px; font-size: 11px; padding: 1px 6px; margin-left: 2px;"></span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" id="notifications-list" aria-labelledby="notificationsDropdown" style="min-width: 320px; max-height: 360px; overflow-y: auto;">
+                                <li class="px-3 py-3 text-sm" style="color: var(--text-secondary);">No notifications yet.</li>
+                            </ul>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link block py-2 lg:py-4 lg:px-3" href="#" id="navbarDropdown" role="button" data-dropdown-toggle aria-expanded="false">
                                 {{ current_user.name or current_user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                 <li><a class="dropdown-item" href="{{ url_for('profile.view_profile', username=current_user.username) }}">Profile</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.saved_items') }}">Saved Items</a></li>
                                 {% if current_user.role == 'provider' %}
                                     <li><hr class="dropdown-divider"></li>
                                     <li class="px-3 py-2 mt-4 text-gray-500 text-xs">Provider tools</li>
@@ -80,7 +96,7 @@
         </div>
     </nav>
 
-    <main id="main-content" class="max-w-7xl mx-auto px-4 my-5">
+    <main id="main-content" class="max-w-7xl mx-auto px-4 py-8">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -115,6 +131,79 @@
             setTimeout(() => toast.remove(), 500);
         }, 2000);
     }
+
+    {% if current_user.is_authenticated %}
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function timeAgo(isoString) {
+        const seconds = Math.floor((Date.now() - new Date(isoString)) / 1000);
+        if (seconds < 60) return 'just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return minutes + 'm ago';
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return hours + 'h ago';
+        return Math.floor(hours / 24) + 'd ago';
+    }
+
+    function loadNotifications() {
+        fetch('/api/notifications')
+            .then(r => r.json())
+            .then(data => {
+                const badge = document.getElementById('notifications-badge');
+                if (data.unread_count > 0) {
+                    badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+
+                const list = document.getElementById('notifications-list');
+                if (!data.notifications.length) {
+                    list.innerHTML = '<li class="px-3 py-3 text-sm" style="color: var(--text-secondary);">No notifications yet.</li>';
+                    return;
+                }
+                list.innerHTML = data.notifications.map(n => {
+                    const text = (n.payload && (n.payload.text || n.payload.message)) || 'New notification';
+                    const unreadDot = n.is_read ? '' : '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:6px;"></span>';
+                    return `<li class="dropdown-item" style="cursor:pointer;" onclick="markNotificationRead(${n.id})">${unreadDot}<span>${escapeHtml(text)}</span><div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${timeAgo(n.created_at)}</div></li>`;
+                }).join('');
+            })
+            .catch(() => {}); // network error: badge/list just stay at their last known state
+    }
+
+    function markNotificationRead(id) {
+        fetch(`/api/notifications/${id}/read`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content }
+        }).then(() => loadNotifications());
+    }
+
+    function loadRecentMessageCount() {
+        fetch('/api/messages/recent-count')
+            .then(r => r.json())
+            .then(data => {
+                const badge = document.getElementById('messages-badge');
+                if (data.recent_count > 0) {
+                    badge.textContent = data.recent_count > 9 ? '9+' : data.recent_count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            })
+            .catch(() => {});
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        loadNotifications();
+        loadRecentMessageCount();
+        setInterval(loadNotifications, 60000);
+        setInterval(loadRecentMessageCount, 60000);
+    });
+    {% endif %}
     </script>
     {% block scripts %}{% endblock %}
     <script src="{{ url_for('static', filename='js/site-chrome.js') }}" defer></script>

@@ -106,6 +106,152 @@
     } catch (e) { /* localStorage unavailable */ }
   });
 
+  // --- Save / unsave a job, internship, workshop or event ---
+  window.toggleSaveItem = function (button, itemType, itemId) {
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    fetch('/api/saved-items/toggle', {
+      method: 'POST',
+      headers: Object.assign(
+        { 'Content-Type': 'application/json' },
+        csrfMeta ? { 'X-CSRFToken': csrfMeta.content } : {}
+      ),
+      body: JSON.stringify({ item_type: itemType, item_id: itemId }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success) return;
+        button.classList.toggle('is-saved', data.saved);
+        button.setAttribute('aria-pressed', data.saved ? 'true' : 'false');
+        button.title = data.saved ? 'Unsave' : 'Save';
+        var icon = button.querySelector('i');
+        if (icon) icon.className = data.saved ? 'fas fa-bookmark' : 'far fa-bookmark';
+      })
+      .catch(function () {});
+  };
+
+  // --- Like / unlike a post ---
+  window.togglePostLike = function (button, postId) {
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    fetch('/api/posts/' + postId + '/like', {
+      method: 'POST',
+      headers: csrfMeta ? { 'X-CSRFToken': csrfMeta.content } : {},
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success) return;
+        button.classList.toggle('is-liked', data.liked);
+        var icon = button.querySelector('i');
+        if (icon) icon.className = data.liked ? 'fas fa-thumbs-up' : 'far fa-thumbs-up';
+        var countEl = button.closest('[data-post-id]').querySelector('.like-count');
+        if (countEl) countEl.textContent = data.like_count;
+      })
+      .catch(function () {});
+  };
+
+  // --- Repost / un-repost a post ---
+  window.togglePostRepost = function (button, postId) {
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    fetch('/api/posts/' + postId + '/repost', {
+      method: 'POST',
+      headers: csrfMeta ? { 'X-CSRFToken': csrfMeta.content } : {},
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success) return;
+        button.classList.toggle('is-liked', data.reposted);
+        var countEl = button.closest('[data-post-id]').querySelector('.repost-count');
+        if (countEl) countEl.textContent = data.repost_count;
+      })
+      .catch(function () {});
+  };
+
+  // --- Post comments: load, show/hide, submit ---
+  function escapeHtmlText(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  window.togglePostComments = function (postId) {
+    var panel = document.getElementById('comments-panel-' + postId);
+    if (!panel) return;
+    var showing = panel.style.display !== 'none';
+    if (showing) {
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = 'block';
+    fetch('/api/posts/' + postId + '/comments')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var list = document.getElementById('comments-list-' + postId);
+        if (!list) return;
+        if (!data.comments || !data.comments.length) {
+          list.innerHTML = '<p class="text-xs text-gray-500">No comments yet.</p>';
+          return;
+        }
+        list.innerHTML = data.comments.map(function (c) {
+          return '<div class="comment-item"><strong>' + escapeHtmlText(c.author_username) + '</strong> ' + escapeHtmlText(c.content) + '</div>';
+        }).join('');
+      })
+      .catch(function () {});
+  };
+
+  window.submitPostComment = function (event, postId) {
+    event.preventDefault();
+    var form = event.target;
+    var input = form.querySelector('input');
+    var content = input.value.trim();
+    if (!content) return;
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    fetch('/api/posts/' + postId + '/comments', {
+      method: 'POST',
+      headers: Object.assign(
+        { 'Content-Type': 'application/json' },
+        csrfMeta ? { 'X-CSRFToken': csrfMeta.content } : {}
+      ),
+      body: JSON.stringify({ content: content }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success) return;
+        input.value = '';
+        var countEl = form.closest('[data-post-id]').querySelector('.comment-count');
+        if (countEl) countEl.textContent = data.comment_count;
+        togglePostComments(postId); // hide
+        togglePostComments(postId); // reopen to refresh list
+      })
+      .catch(function () {});
+  };
+
+  // --- Send a post to a connection as a direct message ---
+  window.sendPostToUser = function (postId) {
+    var username = window.prompt('Send this post to (enter their username):');
+    if (!username) return;
+    username = username.trim();
+    if (!username) return;
+    var card = document.querySelector('[data-post-id="' + postId + '"]');
+    var snippet = card ? card.querySelector('p').textContent.trim() : '';
+    if (snippet.length > 200) snippet = snippet.slice(0, 200) + '...';
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    fetch('/api/messages/' + encodeURIComponent(username), {
+      method: 'POST',
+      headers: Object.assign(
+        { 'Content-Type': 'application/json' },
+        csrfMeta ? { 'X-CSRFToken': csrfMeta.content } : {}
+      ),
+      body: JSON.stringify({ content: 'Shared a post with you: "' + snippet + '"' }),
+    })
+      .then(function (r) {
+        if (r.status === 404) { window.alert('No user found with that username.'); return null; }
+        return r.json();
+      })
+      .then(function (data) {
+        if (data) window.alert('Sent to ' + username + '.');
+      })
+      .catch(function () { window.alert('Could not send - please try again.'); });
+  };
+
   // --- Minimal modal / dropdown / collapse behavior ---
   // Vanilla replacement for bootstrap.bundle.min.js, now that Bootstrap is
   // being removed. Markup uses data-modal-target / data-modal-dismiss,

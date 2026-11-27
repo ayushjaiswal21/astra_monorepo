@@ -144,6 +144,43 @@ class Post(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
+class PostLike(db.Model):
+    __tablename__ = 'post_likes'
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('post_id', 'user_id', name='uq_post_like'),)
+
+class PostComment(db.Model):
+    __tablename__ = 'post_comments'
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    author = db.relationship('User')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'post_id': self.post_id,
+            'author_username': self.author.username if self.author else None,
+            'content': self.content,
+            'created_at': self.created_at.isoformat(),
+        }
+
+class PostRepost(db.Model):
+    __tablename__ = 'post_reposts'
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('post_id', 'user_id', name='uq_post_repost'),)
+
 class Article(db.Model):
     __tablename__ = 'articles'
     id = db.Column(db.Integer, primary_key=True)
@@ -307,6 +344,16 @@ class Notification(db.Model):
             'created_at': self.created_at.isoformat(),
             'is_read': self.is_read
         }
+
+class SavedItem(db.Model):
+    __tablename__ = 'saved_items'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    item_type = db.Column(db.String(20), nullable=False)  # 'job', 'internship', 'workshop', 'event'
+    item_id = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'item_type', 'item_id', name='uq_saved_item'),)
 
 class CareerGPS(db.Model):
     id = db.Column(db.Integer, primary_key=True)

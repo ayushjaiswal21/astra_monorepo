@@ -15,11 +15,19 @@
         <p class="text-gray-600 mb-4">{{ item.description | safe }}</p>
         <div class="flex justify-between items-center">
           <span class="text-sm text-gray-500">Posted by: {{ item.provider.username }} on {{ item.date_posted.strftime('%b %d, %Y') }}</span>
-          {% if item.apply_link %}
-            <button onclick="applyForInternship({{ item.id }}, '{{ item.apply_link }}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm">
-              Apply Now
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="toggleSaveItem(this, 'internship', {{ item.id }})"
+                    class="save-item-btn {% if item.id in saved_ids %}is-saved{% endif %}"
+                    aria-pressed="{{ 'true' if item.id in saved_ids else 'false' }}"
+                    title="{{ 'Unsave' if item.id in saved_ids else 'Save' }}">
+              <i class="{{ 'fas' if item.id in saved_ids else 'far' }} fa-bookmark"></i>
             </button>
-          {% endif %}
+            {% if item.apply_link %}
+              <button onclick="applyForInternship({{ item.id }}, '{{ item.apply_link }}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm">
+                Apply Now
+              </button>
+            {% endif %}
+          </div>
         </div>
       </div>
     {% else %}

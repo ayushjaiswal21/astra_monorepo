@@ -313,7 +313,7 @@ input[type="number"]:focus, input[type="date"]:focus, textarea:focus, select:foc
    ============================================================ */
 .btn-secondary {
   background: var(--surface-2);
-  border-color: var(--border-hairline);
+  border: var(--border-hairline);
   color: var(--text-primary);
 }
 .btn-secondary:hover, .btn-secondary:focus { background: var(--surface-1); }
@@ -444,7 +444,7 @@ input[type="number"]:focus, input[type="date"]:focus, textarea:focus, select:foc
 .profile-picture { transition: box-shadow .25s ease, transform .25s ease; }
 .profile-picture:hover { box-shadow: var(--shadow-soft); transform: translateY(-2px); }
 
-.list-unstyled li, .list-group-item { transition: background-color .15s ease; border-color: rgba(15, 23, 42, 0.10); }
+.list-unstyled li, .list-group-item { transition: background-color .15s ease; }
 .list-unstyled li:hover, .list-group-item:hover { background-color: var(--surface-1); }
 
 .badge { transform: translateY(0); font-weight: 600; }
@@ -532,6 +532,35 @@ a:hover { text-decoration-thickness: 2px; }
 .back-to-top-btn { right: var(--space-5); bottom: calc(var(--space-5) + 56px); opacity: 0; pointer-events: none; }
 .back-to-top-btn.is-visible { opacity: 1; pointer-events: auto; }
 .fab-contact-btn { left: var(--space-5); bottom: var(--space-5); background: var(--accent); color: var(--text-on-accent); border: none; text-decoration: none; }
+
+.save-item-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  border: var(--border-hairline);
+  background: var(--surface-0);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease;
+}
+.save-item-btn:hover { color: var(--accent); border-color: var(--accent); }
+.save-item-btn.is-saved { color: var(--accent); border-color: var(--accent); }
+.btn-action.is-liked { color: var(--accent); }
+
+.comments-panel {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: var(--border-hairline);
+}
+.comment-item {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  padding: 6px 0;
+}
+.comment-item strong { color: var(--text-primary); margin-right: 4px; }
 .fab-contact-btn:hover { color: var(--text-on-accent); }
 
 .cookie-banner {
@@ -571,11 +600,29 @@ a:hover { text-decoration-thickness: 2px; }
    without their text changing too). */
 .navbar.bg-white, header.bg-white, nav.bg-white {
   background-color: var(--surface-0) !important;
-  border-color: var(--border-hairline);
 }
 .navbar.bg-white .navbar-brand, .navbar.bg-white a:not(.btn):not(.btn-primary) {
   color: var(--text-primary);
 }
+
+/* Cards, footers, modals and page wrappers use the same light-only
+   Tailwind neutrals, so dark mode remaps background AND text AND border
+   together (never background alone) - the whole chrome flips in one state
+   change. Same block in astra base.html and ai-guru index.css. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .bg-white { background-color: var(--surface-0) !important; }
+  :root:not([data-theme="light"]) .bg-gray-50, :root:not([data-theme="light"]) .bg-gray-100 { background-color: var(--surface-1) !important; }
+  :root:not([data-theme="light"]) .bg-gray-200, :root:not([data-theme="light"]) .hover\:bg-gray-50:hover, :root:not([data-theme="light"]) .hover\:bg-gray-100:hover { background-color: var(--surface-2) !important; }
+  :root:not([data-theme="light"]) .text-gray-900, :root:not([data-theme="light"]) .text-gray-800, :root:not([data-theme="light"]) .text-gray-700 { color: var(--text-primary) !important; }
+  :root:not([data-theme="light"]) .text-gray-600, :root:not([data-theme="light"]) .text-gray-500 { color: var(--text-secondary) !important; }
+  :root:not([data-theme="light"]) .border-gray-100, :root:not([data-theme="light"]) .border-gray-200, :root:not([data-theme="light"]) .border-gray-300 { border-color: rgba(255, 255, 255, 0.12) !important; }
+}
+:root[data-theme="dark"] .bg-white { background-color: var(--surface-0) !important; }
+:root[data-theme="dark"] .bg-gray-50, :root[data-theme="dark"] .bg-gray-100 { background-color: var(--surface-1) !important; }
+:root[data-theme="dark"] .bg-gray-200, :root[data-theme="dark"] .hover\:bg-gray-50:hover, :root[data-theme="dark"] .hover\:bg-gray-100:hover { background-color: var(--surface-2) !important; }
+:root[data-theme="dark"] .text-gray-900, :root[data-theme="dark"] .text-gray-800, :root[data-theme="dark"] .text-gray-700 { color: var(--text-primary) !important; }
+:root[data-theme="dark"] .text-gray-600, :root[data-theme="dark"] .text-gray-500 { color: var(--text-secondary) !important; }
+:root[data-theme="dark"] .border-gray-100, :root[data-theme="dark"] .border-gray-200, :root[data-theme="dark"] .border-gray-300 { border-color: rgba(255, 255, 255, 0.12) !important; }
 
 @media print {
   .navbar, nav, .skip-link, .scroll-progress-bar, .theme-toggle-btn,

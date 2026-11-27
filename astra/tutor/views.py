@@ -19,11 +19,6 @@ from django.conf import settings
 from django.utils import timezone
 import google.generativeai as genai
 
-# Dummy function to resolve F821 error until proper AI service is integrated
-def call_ollama(prompt):
-    print(f"--- DUMMY AI CALL ---\nPrompt: {prompt}\n--- END DUMMY AI CALL ---")
-    return {"response": "This is a placeholder response from the dummy call_ollama function."}
-
 from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress, UserQuizAttempt, ModuleProgress, CourseTestSession, CourseTestQuestion, CourseTestAttempt, SkillMastery
 from .prompts import get_test_generation_prompt
 from .tasks import generate_course_content

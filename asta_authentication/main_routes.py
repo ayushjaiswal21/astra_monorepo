@@ -4,10 +4,10 @@ import os
 import sys
 try:
     from .utils import api_login_required as login_required
-    from .models import db, User, Post, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News, Notification
+    from .models import db, User, Post, PostLike, PostComment, PostRepost, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News, Notification, SavedItem
 except ImportError:
     from utils import api_login_required as login_required
-    from models import db, User, Post, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News, Notification
+    from models import db, User, Post, PostLike, PostComment, PostRepost, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News, Notification, SavedItem
 from werkzeug.utils import secure_filename
 import os
 from sqlalchemy import or_, func
@@ -326,7 +326,20 @@ def dashboard():
     # Take top 5 for dashboard
     recent_news = all_news[:5]
 
-    return render_template('dashboard.html', user=current_user, all_users=all_users, recent_news=recent_news)
+    recent_posts = Post.query.order_by(Post.created_at.desc()).limit(10).all()
+    liked_post_ids = {l.post_id for l in PostLike.query.filter_by(user_id=current_user.id).all()}
+    reposted_post_ids = {r.post_id for r in PostRepost.query.filter_by(user_id=current_user.id).all()}
+    post_like_counts = {}
+    post_repost_counts = {}
+    post_comment_counts = {}
+    for post in recent_posts:
+        post_like_counts[post.id] = PostLike.query.filter_by(post_id=post.id).count()
+        post_repost_counts[post.id] = PostRepost.query.filter_by(post_id=post.id).count()
+        post_comment_counts[post.id] = PostComment.query.filter_by(post_id=post.id).count()
+
+    return render_template('dashboard.html', user=current_user, all_users=all_users, recent_news=recent_news,
+                            recent_posts=recent_posts, liked_post_ids=liked_post_ids, reposted_post_ids=reposted_post_ids,
+                            post_like_counts=post_like_counts, post_repost_counts=post_repost_counts, post_comment_counts=post_comment_counts)
 
 @main_bp.route('/analytics')
 @login_required
@@ -482,10 +495,17 @@ def post_message(username):
         'timestamp': msg.timestamp.isoformat() if hasattr(msg, 'timestamp') else None
     }
 
-    # Emit via socketio namespace '/chat' to recipient's room
+    # Emit via socketio namespace '/chat' to recipient's room.
+    # `from app import socketio` (the old code here) re-executes app.py as a
+    # second module when this process was started with `python app.py`
+    # (sys.modules has no 'app' entry yet, only '__main__'), creating a
+    # brand-new, never-run SocketIO instance with no connected clients - the
+    # emit succeeded silently but reached nobody. The instance Flask-SocketIO
+    # actually serves is registered on the live app via app.extensions.
+    socketio = current_app.extensions.get('socketio')
     try:
-        from app import socketio
-        socketio.emit('new_message', payload, room=f'user_{other_user.id}', namespace='/chat')
+        if socketio:
+            socketio.emit('new_message', payload, room=f'user_{other_user.id}', namespace='/chat')
     except Exception as e:
         current_app.logger.debug("socketio emit failed: %s", e)
 
@@ -496,7 +516,8 @@ def post_message(username):
         db.session.commit()
         # Emit notification
         try:
-            socketio.emit('notification', {'id': notif.id, 'payload': notif.payload}, room=f'user_{other_user.id}', namespace='/chat')
+            if socketio:
+                socketio.emit('notification', {'id': notif.id, 'payload': notif.payload}, room=f'user_{other_user.id}', namespace='/chat')
         except Exception:
             pass
     except Exception as e:
@@ -532,33 +553,37 @@ def create_post():
     
     return redirect(url_for('profile.view_profile', username=current_user.username))
 
+def _saved_ids_for(item_type):
+    rows = SavedItem.query.filter_by(user_id=current_user.id, item_type=item_type).all()
+    return {r.item_id for r in rows}
+
 @main_bp.route('/internships')
 @login_required
 def internships():
     page = request.args.get('page', 1, type=int)
     pagination = Internship.query.order_by(Internship.date_posted.desc()).paginate(page=page, per_page=20, error_out=False)
-    return render_template('internships.html', internships=pagination.items, pagination=pagination)
+    return render_template('internships.html', internships=pagination.items, pagination=pagination, saved_ids=_saved_ids_for('internship'))
 
 @main_bp.route('/workshops')
 @login_required
 def workshops():
     page = request.args.get('page', 1, type=int)
     pagination = Workshop.query.order_by(Workshop.date_posted.desc()).paginate(page=page, per_page=20, error_out=False)
-    return render_template('workshops.html', workshops=pagination.items, pagination=pagination)
+    return render_template('workshops.html', workshops=pagination.items, pagination=pagination, saved_ids=_saved_ids_for('workshop'))
 
 @main_bp.route('/events')
 @login_required
 def events():
     page = request.args.get('page', 1, type=int)
     pagination = Event.query.order_by(Event.date_posted.desc()).paginate(page=page, per_page=20, error_out=False)
-    return render_template('events.html', events=pagination.items, pagination=pagination)
+    return render_template('events.html', events=pagination.items, pagination=pagination, saved_ids=_saved_ids_for('event'))
 
 @main_bp.route('/jobs')
 @login_required
 def jobs():
     page = request.args.get('page', 1, type=int)
     pagination = JobPost.query.order_by(JobPost.date_posted.desc()).paginate(page=page, per_page=20, error_out=False)
-    return render_template('jobs.html', jobs=pagination.items, pagination=pagination)
+    return render_template('jobs.html', jobs=pagination.items, pagination=pagination, saved_ids=_saved_ids_for('job'))
 
 @main_bp.route('/announcements')
 @login_required
@@ -582,6 +607,126 @@ def announcements():
 @login_required
 def messages():
     return render_template('messages.html', current_user=current_user)
+
+
+@main_bp.route('/api/notifications')
+@login_required
+def api_notifications():
+    """Recent notifications + unread count for the header bell icon."""
+    recent = Notification.query.filter_by(user_id=current_user.id) \
+        .order_by(Notification.created_at.desc()).limit(10).all()
+    unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+    return jsonify({
+        'notifications': [n.to_dict() for n in recent],
+        'unread_count': unread_count,
+    })
+
+
+@main_bp.route('/api/notifications/<int:notification_id>/read', methods=['POST'])
+@login_required
+def api_mark_notification_read(notification_id):
+    notification = Notification.query.filter_by(id=notification_id, user_id=current_user.id).first()
+    if not notification:
+        return jsonify({'success': False, 'error': 'Notification not found.'}), 404
+    notification.is_read = True
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@main_bp.route('/api/messages/recent-count')
+@login_required
+def api_recent_messages_count():
+    """This app's Message model has no is_read flag, so this is an honest
+    'messages received in the last 24h' count, not a true unread count -
+    the header badge/dropdown must not claim it's "unread"."""
+    since = datetime.utcnow() - timedelta(hours=24)
+    count = Message.query.filter_by(recipient_id=current_user.id) \
+        .filter(Message.timestamp >= since).count()
+    return jsonify({'recent_count': count})
+
+@main_bp.route('/api/posts/<int:post_id>/like', methods=['POST'])
+@login_required
+def api_toggle_post_like(post_id):
+    post = Post.query.get_or_404(post_id)
+    existing = PostLike.query.filter_by(post_id=post.id, user_id=current_user.id).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        liked = False
+    else:
+        db.session.add(PostLike(post_id=post.id, user_id=current_user.id))
+        db.session.commit()
+        liked = True
+    return jsonify({'success': True, 'liked': liked, 'like_count': PostLike.query.filter_by(post_id=post.id).count()})
+
+@main_bp.route('/api/posts/<int:post_id>/repost', methods=['POST'])
+@login_required
+def api_toggle_post_repost(post_id):
+    post = Post.query.get_or_404(post_id)
+    existing = PostRepost.query.filter_by(post_id=post.id, user_id=current_user.id).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        reposted = False
+    else:
+        db.session.add(PostRepost(post_id=post.id, user_id=current_user.id))
+        db.session.commit()
+        reposted = True
+    return jsonify({'success': True, 'reposted': reposted, 'repost_count': PostRepost.query.filter_by(post_id=post.id).count()})
+
+@main_bp.route('/api/posts/<int:post_id>/comments', methods=['GET'])
+@login_required
+def api_list_post_comments(post_id):
+    Post.query.get_or_404(post_id)
+    comments = PostComment.query.filter_by(post_id=post_id).order_by(PostComment.created_at.asc()).all()
+    return jsonify({'comments': [c.to_dict() for c in comments]})
+
+@main_bp.route('/api/posts/<int:post_id>/comments', methods=['POST'])
+@login_required
+def api_add_post_comment(post_id):
+    post = Post.query.get_or_404(post_id)
+    data = request.get_json(silent=True) or {}
+    content = (data.get('content') or '').strip()
+    if not content:
+        return jsonify({'success': False, 'error': 'Comment cannot be empty.'}), 400
+
+    comment = PostComment(post_id=post.id, user_id=current_user.id, content=content)
+    db.session.add(comment)
+    db.session.commit()
+    return jsonify({'success': True, 'comment': comment.to_dict(), 'comment_count': PostComment.query.filter_by(post_id=post.id).count()})
+
+SAVED_ITEM_MODELS = {'job': JobPost, 'internship': Internship, 'workshop': Workshop, 'event': Event}
+
+@main_bp.route('/api/saved-items/toggle', methods=['POST'])
+@login_required
+def api_toggle_saved_item():
+    data = request.get_json(silent=True) or {}
+    item_type = data.get('item_type')
+    item_id = data.get('item_id')
+    if item_type not in SAVED_ITEM_MODELS or not item_id:
+        return jsonify({'success': False, 'error': 'Invalid item.'}), 400
+
+    existing = SavedItem.query.filter_by(user_id=current_user.id, item_type=item_type, item_id=item_id).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({'success': True, 'saved': False})
+
+    db.session.add(SavedItem(user_id=current_user.id, item_type=item_type, item_id=item_id))
+    db.session.commit()
+    return jsonify({'success': True, 'saved': True})
+
+@main_bp.route('/saved-items')
+@login_required
+def saved_items():
+    saved = SavedItem.query.filter_by(user_id=current_user.id).order_by(SavedItem.created_at.desc()).all()
+    items = []
+    for s in saved:
+        model = SAVED_ITEM_MODELS.get(s.item_type)
+        obj = model.query.get(s.item_id) if model else None
+        if obj:
+            items.append({'type': s.item_type, 'obj': obj, 'saved_at': s.created_at})
+    return render_template('saved_items.html', items=items)
 
 @main_bp.route('/enrollments')
 @login_required

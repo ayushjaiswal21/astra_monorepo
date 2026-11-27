@@ -4,15 +4,8 @@ No topic/skill taxonomy exists yet in this app's data model (Lesson/Quiz have
 no topic field), so the skill identifier is the Lesson's title -- the
 simplest real thing that works with the current schema.
 
-Not wired into any view yet, to avoid colliding with the parallel agent
-editing tutor/views.py. Wiring point: in tutor/views.py's submit_quiz(),
-call this right after the UserQuizAttempt.objects.create(...) call (currently
-around line 269-273):
-
-    update_mastery(request.session.session_key or 'anonymous', quiz.lesson.title, score >= 70)
-
-That one line is all that's needed -- it reads session_key/quiz the same way
-the surrounding code already does.
+Wired into tutor/views.py's submit_quiz(), right after the
+UserQuizAttempt.objects.create(...) call.
 """
 K = 0.1
 

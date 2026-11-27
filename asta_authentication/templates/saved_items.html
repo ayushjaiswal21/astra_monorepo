@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4">
+  <h2 class="text-3xl font-bold text-gray-800 mb-6">Saved Items</h2>
+  <div class="space-y-6">
+    {% for entry in items %}
+      {% set item = entry.obj %}
+      <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-200">
+        <span class="badge bg-light mb-2">{{ entry.type | capitalize }}</span>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ item.title }}</h3>
+        <div class="flex flex-wrap items-center text-gray-700 mb-2">
+          <span class="font-semibold mr-2">{{ item.company_name or item.host_name }}</span>
+          {% if item.location %}<span class="text-gray-500">| {{ item.location }}</span>{% endif %}
+        </div>
+        <p class="text-gray-600 mb-4">{{ item.description | safe }}</p>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-500">Saved on {{ entry.saved_at.strftime('%b %d, %Y') }}</span>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="toggleSaveItem(this, '{{ entry.type }}', {{ item.id }}); this.closest('.bg-white').remove();"
+                    class="save-item-btn is-saved" aria-pressed="true" title="Unsave">
+              <i class="fas fa-bookmark"></i>
+            </button>
+            {% set link = item.apply_link or item.register_link %}
+            {% if link %}
+              <a href="{{ link }}" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm">
+                View Details
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="bg-white p-6 rounded-lg shadow-md text-center">
+        <p class="text-gray-600">You haven't saved anything yet. Use the bookmark icon on any job, internship, workshop or event to save it here.</p>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock content %}

@@ -11,6 +11,8 @@
         .nav-icon:hover { color: #0a66c2; }
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/enhancements.css') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -60,57 +62,113 @@
     <!-- Main Content -->
     <main id="main-content" class="max-w-7xl mx-auto px-4 py-8">
         <div class="flex h-[calc(100vh-10rem)] bg-white rounded-lg shadow-lg">
-            <!-- Recent Conversations -->
+            <!-- Start / switch chat -->
             <div class="w-1/3 border-r border-gray-200">
                 <div class="p-4 border-b border-gray-200">
-                    <h2 class="text-xl font-bold text-gray-900">Recent Chats</h2>
+                    <h2 class="text-xl font-bold text-gray-900">Chats</h2>
                 </div>
-                <ul class="overflow-y-auto p-2">
-                    <li class="flex items-center p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
-                        <img src="{{ url_for('static', filename='images/image1.jpeg') }}" alt="User" class="w-10 h-10 rounded-full mr-3">
-                        <div>
-                            <p class="font-bold text-gray-900">John Smith</p>
-                            <p class="text-sm text-gray-600">Hey, how are you?</p>
-                        </div>
-                    </li>
-                    <li class="flex items-center p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
-                        <img src="{{ url_for('static', filename='images/image2.jpeg') }}" alt="User" class="w-10 h-10 rounded-full mr-3">
-                        <div>
-                            <p class="font-bold text-gray-900">Emily White</p>
-                            <p class="text-sm text-gray-600">Let's catch up later.</p>
-                        </div>
-                    </li>
-                </ul>
+                <div class="p-4">
+                    <label class="text-sm text-gray-600 block mb-2">Chat with (username)</label>
+                    <div class="flex">
+                        <input id="chat-target-input" type="text" placeholder="username"
+                               class="flex-1 bg-gray-100 border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="openConversation()" class="text-white font-bold py-2 px-4 rounded-r-lg" style="background: var(--accent);">Open</button>
+                    </div>
+                    <p id="chat-target-error" class="text-sm text-red-600 mt-2"></p>
+                </div>
             </div>
 
             <!-- Active Chat -->
             <div class="w-2/3 flex flex-col">
                 <div class="p-4 border-b border-gray-200">
-                    <h2 class="text-xl font-bold text-gray-900">John Smith</h2>
+                    <h2 class="text-xl font-bold text-gray-900" id="active-chat-title">Select a chat</h2>
                 </div>
-                <div class="flex-1 p-4 overflow-y-auto bg-gray-50">
-                    <!-- Received Message -->
-                    <div class="flex mb-4">
-                        <div class="bg-gray-200 p-3 rounded-lg max-w-xs">
-                            <p class="text-gray-800">Hey, how are you?</p>
-                        </div>
-                    </div>
-                    <!-- Sent Message -->
-                    <div class="flex justify-end mb-4">
-                        <div class="text-white p-3 rounded-lg max-w-xs" style="background: var(--accent);">
-                            <p>I'm good, thanks! How about you?</p>
-                        </div>
-                    </div>
-                </div>
+                <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col space-y-2"></div>
                 <div class="p-4 border-t border-gray-200">
                     <div class="flex">
-                        <input type="text" placeholder="Type a message..." class="flex-1 bg-gray-100 border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button class="text-white font-bold py-2 px-4 rounded-r-lg" style="background: var(--accent);">Send</button>
+                        <input id="message-input" type="text" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendMessage();"
+                               class="flex-1 bg-gray-100 border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="sendMessage()" class="text-white font-bold py-2 px-4 rounded-r-lg" style="background: var(--accent);">Send</button>
                     </div>
                 </div>
             </div>
         </div>
     </main>
+    <script>
+      // Mirrors the chat wiring in dashboard.html: connect to the '/chat'
+      // namespace (chat_socket.py), persist via the existing
+      // /api/messages/<username> HTTP API (which already emits
+      // 'new_message' over that namespace), and render whatever lands.
+      const socket = io("/chat");
+      const currentUsername = "{{ current_user.username }}";
+      let currentRecipient = null;
+
+      function openConversation() {
+        const input = document.getElementById("chat-target-input");
+        const username = input.value.trim();
+        const errorEl = document.getElementById("chat-target-error");
+        errorEl.textContent = "";
+        if (!username) return;
+
+        fetch(`/api/messages/${encodeURIComponent(username)}`)
+          .then((r) => {
+            if (r.status === 404) { throw new Error("No user found with that username."); }
+            return r.json();
+          })
+          .then((history) => {
+            currentRecipient = username;
+            document.getElementById("active-chat-title").textContent = username;
+            const box = document.getElementById("chat-messages");
+            box.innerHTML = "";
+            history.forEach(displayMessage);
+          })
+          .catch((e) => { errorEl.textContent = e.message || "Could not open chat."; });
+      }
+
+      function sendMessage() {
+        const input = document.getElementById("message-input");
+        const content = input.value.trim();
+        if (!content || !currentRecipient) return;
+        input.value = "";
+        displayMessage({ sender: currentUsername, content: content }); // optimistic
+
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        fetch(`/api/messages/${encodeURIComponent(currentRecipient)}`, {
+          method: "POST",
+          headers: Object.assign(
+            { "Content-Type": "application/json" },
+            csrfMeta ? { "X-CSRFToken": csrfMeta.content } : {}
+          ),
+          body: JSON.stringify({ content: content }),
+        }).catch(() => {});
+      }
+
+      // Real-time delivery: server emits 'new_message' with sender_username.
+      socket.on("new_message", function (data) {
+        if (data.sender_username === currentRecipient) {
+          displayMessage({ sender: data.sender_username, content: data.content });
+        }
+      });
+
+      function displayMessage(message) {
+        const box = document.getElementById("chat-messages");
+        const isSent = message.sender === currentUsername;
+        const row = document.createElement("div");
+        row.className = isSent ? "flex justify-end" : "flex";
+        const bubble = document.createElement("div");
+        bubble.className = isSent
+          ? "text-white p-3 rounded-lg max-w-xs"
+          : "bg-gray-200 p-3 rounded-lg max-w-xs";
+        if (isSent) bubble.style.background = "var(--accent)";
+        const p = document.createElement("p");
+        p.className = isSent ? "" : "text-gray-800";
+        p.textContent = message.content;
+        bubble.appendChild(p);
+        row.appendChild(bubble);
+        box.appendChild(row);
+        box.scrollTop = box.scrollHeight;
+      }
+    </script>
     <script src="{{ url_for('static', filename='js/site-chrome.js') }}" defer></script>
 </body>
 </html>
