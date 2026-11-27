@@ -16,6 +16,7 @@
             cursor: pointer;
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/enhancements.css') }}">
 </head>
 <body class="bg-gray-50">
     <header class="bg-white shadow-sm">
@@ -27,7 +28,7 @@
         </nav>
     </header>
 
-    <main class="container mx-auto px-6 py-12 flex justify-center">
+    <main id="main-content" class="container mx-auto px-6 py-12 flex justify-center">
         <div class="w-full max-w-md">
              <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">Launch Your Journey to Success.</h1>
             <div class="bg-white rounded-lg shadow-lg p-8">
@@ -41,7 +42,10 @@
                   {% endif %}
                 {% endwith %}
 
-                <form action="{{ url_for('auth.join_form') }}" method="POST">
+                <form action="{{ url_for('auth.join_form') }}" method="POST" id="joinForm">
+                    <input type="hidden" name="utm_source" id="utm_source">
+                    <input type="hidden" name="utm_medium" id="utm_medium">
+                    <input type="hidden" name="utm_campaign" id="utm_campaign">
                     <div class="mb-4">
                         <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email or phone number</label>
                         <input type="text" id="email" name="email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
@@ -83,7 +87,16 @@
             password.setAttribute('type', type);
             this.textContent = this.textContent === 'Show' ? 'Hide' : 'Show';
         });
-    </script>
 
+        // Capture UTM params from the URL so campaign attribution survives signup.
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            ['utm_source', 'utm_medium', 'utm_campaign'].forEach(function (key) {
+                const value = params.get(key);
+                if (value) document.getElementById(key).value = value;
+            });
+        })();
+    </script>
+    <script src="{{ url_for('static', filename='js/site-chrome.js') }}" defer></script>
 </body>
 </html>

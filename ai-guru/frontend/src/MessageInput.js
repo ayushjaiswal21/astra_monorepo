@@ -38,6 +38,7 @@ const MessageInput = ({
             📎
           </button>
           <input
+            id="message-input-textbox"
             type="text"
             value={speechInterimResult || currentInput}
             onChange={(e) => !isConverting && !isListening && setCurrentInput(e.target.value)}

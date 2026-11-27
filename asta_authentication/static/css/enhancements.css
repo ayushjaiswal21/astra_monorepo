@@ -47,6 +47,9 @@
 
   /* Focus ring: always visible, same shape everywhere */
   --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.35);
+
+  /* z-index scale for site-wide chrome (toggle, banner, progress bar, fab) */
+  --z-chrome: 1040;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -60,6 +63,26 @@
     --surface-2: #273449;
     --border-hairline: 1px solid rgba(255, 255, 255, 0.12);
   }
+}
+
+/* Manual dark-mode override (data-theme attribute on <html>), same values
+   as the prefers-color-scheme block above, so the toggle can win over OS
+   preference in either direction. */
+:root[data-theme="dark"] {
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --surface-0: #0F172A;
+  --surface-1: #1E293B;
+  --surface-2: #273449;
+  --border-hairline: 1px solid rgba(255, 255, 255, 0.12);
+}
+:root[data-theme="light"] {
+  --text-primary: #1E293B;
+  --text-secondary: #475569;
+  --surface-0: #FFFFFF;
+  --surface-1: #F8FAFC;
+  --surface-2: #F1F5F9;
+  --border-hairline: 1px solid rgba(15, 23, 42, 0.10);
 }
 
 /* ============================================================
@@ -181,7 +204,7 @@ i.fas, i.far, i.fab, svg.icon {
 /* ============================================================
    Navbar / misc, reusing the same tokens
    ============================================================ */
-.navbar { border-bottom: var(--border-hairline); box-shadow: none; }
+.navbar { border-bottom: var(--border-hairline); box-shadow: none; position: sticky; top: 0; z-index: var(--z-chrome); background: var(--surface-0); }
 .navbar .nav-link { position: relative; color: var(--text-secondary); }
 .navbar .nav-link::after {
   content: "";
@@ -215,3 +238,94 @@ a:hover { text-decoration-thickness: 2px; }
 .skeleton-row:nth-child(2) { width: 70%; }
 .skeleton-row:nth-child(3) { width: 85%; }
 @keyframes skeletonShimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+/* ============================================================
+   Site chrome: skip link, scroll progress, dark-mode toggle,
+   back-to-top, cookie banner, floating contact button.
+   Injected by static/js/site-chrome.js on every page.
+   ============================================================ */
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: -48px;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  z-index: 2000;
+  transition: top .15s ease;
+}
+.skip-link:focus { top: var(--space-4); }
+
+.scroll-progress-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  width: 0%;
+  background: var(--accent);
+  z-index: 2000;
+  transition: width .1s linear;
+}
+
+.theme-toggle-btn, .back-to-top-btn, .fab-contact-btn {
+  position: fixed;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: var(--border-hairline);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-soft-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: var(--z-chrome);
+  transition: box-shadow .2s ease, transform .2s ease, background-color .2s ease;
+}
+.theme-toggle-btn:hover, .back-to-top-btn:hover, .fab-contact-btn:hover {
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-2px);
+}
+.theme-toggle-btn { right: var(--space-5); bottom: var(--space-5); }
+.back-to-top-btn { right: var(--space-5); bottom: calc(var(--space-5) + 56px); opacity: 0; pointer-events: none; }
+.back-to-top-btn.is-visible { opacity: 1; pointer-events: auto; }
+.fab-contact-btn { left: var(--space-5); bottom: var(--space-5); background: var(--accent); color: var(--text-on-accent); border: none; text-decoration: none; }
+.fab-contact-btn:hover { color: var(--text-on-accent); }
+
+.cookie-banner {
+  position: fixed;
+  left: var(--space-4);
+  right: var(--space-4);
+  bottom: var(--space-4);
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--surface-1);
+  border: var(--border-hairline);
+  border-radius: var(--radius-outer);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-5);
+  z-index: var(--z-chrome);
+  color: var(--text-primary);
+}
+.cookie-banner p { color: var(--text-secondary); margin-bottom: var(--space-4); }
+.cookie-banner .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--text-on-accent); border-radius: var(--radius-sm); border: none; padding: var(--space-2) var(--space-4); font-weight: 600; cursor: pointer; }
+.cookie-banner .btn-primary:hover { background: var(--accent-hover); }
+
+/* Shareable-link copy button feedback */
+.copy-btn.is-copied { background: var(--accent); color: var(--text-on-accent); border-color: var(--accent); }
+
+/* Listing cards on jobs/internships/workshops/events (plain Tailwind
+   markup, not the .card component) get the same token-based hover lift. */
+.listing-card { transition: box-shadow .2s ease, transform .2s ease; }
+.listing-card:hover { box-shadow: var(--shadow-soft); transform: translateY(-2px); }
+
+@media print {
+  .navbar, nav, .skip-link, .scroll-progress-bar, .theme-toggle-btn,
+  .back-to-top-btn, .fab-contact-btn, .cookie-banner, .btn, button,
+  .modal, footer {
+    display: none !important;
+  }
+  main, .card, article { box-shadow: none !important; border: none !important; }
+  body { background: #fff !important; color: #000 !important; }
+}

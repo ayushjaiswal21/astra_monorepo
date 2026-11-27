@@ -38,11 +38,13 @@
 {% endblock %}
 
 {% block content %}
+<div id="scroll-progress-bar" style="position:fixed; top:0; left:0; height:3px; width:0%; background: var(--accent); z-index:60; transition: width .1s linear;"></div>
 <div class="flex h-screen">
-    <div class="flex-1 p-8 overflow-y-auto">
+    <div id="lesson-scroll" class="flex-1 p-8 overflow-y-auto">
+        <div style="position: sticky; top: 0; z-index: 10; background: var(--surface-1); padding-top: var(--space-2); margin: calc(var(--space-2) * -1) calc(var(--space-8) * -1) 0; padding-left: var(--space-8); padding-right: var(--space-8);">
         <p class="text-gray-500">Module {{ lesson.module.order|add:1 }}: {{ lesson.module.title }}</p>
         <h1 class="text-3xl font-bold mt-1">{{ lesson.title }}</h1>
-        
+
         <div class="mt-6 border-b border-gray-200">
             <nav class="-mb-px flex space-x-8" id="lesson-tabs">
                 <button data-tab="content" class="tab-button py-4 px-1 border-b-2 border-indigo-500 font-medium text-indigo-600">Content</button>
@@ -57,7 +59,8 @@
                 <button data-tab="example" class="tab-button py-4 px-1 border-b-2 border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">Example</button>
             </nav>
         </div>
-        
+        </div>
+
         <div class="mt-6">
             <div id="tab-content-panel" class="prose max-w-none tab-panel">
                 {{ lesson.content|convert_markdown|safe }}
@@ -113,8 +116,14 @@
         </div>
     </div>
 
-    <button id="ai-assistant-btn" class="absolute bottom-8 right-8 mr-4 bg-purple-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-700">
+    <button id="ai-assistant-btn" class="absolute bottom-8 right-8 mr-4 bg-purple-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-700 transition-colors duration-200">
         <i class="fas fa-shield-alt text-2xl"></i>
+    </button>
+
+    <button id="back-to-top-btn" onclick="document.getElementById('lesson-scroll').scrollTo({top: 0, behavior: 'smooth'})"
+            class="absolute bottom-24 right-8 w-11 h-11 rounded-full shadow-lg items-center justify-center hidden"
+            style="background: var(--accent); color: var(--text-on-accent);" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
     </button>
 </div>
 {% endblock %}
@@ -125,6 +134,45 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Scroll progress bar + back-to-top, tracked against the lesson's own scroll container
+    const lessonScroll = document.getElementById('lesson-scroll');
+    const progressBar = document.getElementById('scroll-progress-bar');
+    const backToTopBtn = document.getElementById('back-to-top-btn');
+    if (lessonScroll && progressBar) {
+        lessonScroll.addEventListener('scroll', function () {
+            const max = lessonScroll.scrollHeight - lessonScroll.clientHeight;
+            const pct = max > 0 ? (lessonScroll.scrollTop / max) * 100 : 0;
+            progressBar.style.width = pct + '%';
+            if (backToTopBtn) {
+                const show = lessonScroll.scrollTop > 400;
+                backToTopBtn.classList.toggle('hidden', !show);
+                backToTopBtn.classList.toggle('flex', show);
+            }
+        });
+    }
+
+    // Add a copy button to any code blocks in the rendered lesson content
+    function addCodeCopyButtons() {
+        document.querySelectorAll('.prose pre').forEach(function (pre) {
+            if (pre.querySelector('.code-copy-btn')) return;
+            pre.style.position = 'relative';
+            const btn = document.createElement('button');
+            btn.className = 'code-copy-btn';
+            btn.setAttribute('aria-label', 'Copy code');
+            btn.style.cssText = 'position:absolute;top:8px;right:8px;background:var(--surface-2);border:var(--border-hairline);border-radius:var(--radius-sm);padding:4px 8px;font-size:12px;color:var(--text-secondary);';
+            btn.innerHTML = '<i class="fas fa-copy"></i>';
+            btn.addEventListener('click', function () {
+                const code = pre.querySelector('code') || pre;
+                navigator.clipboard.writeText(code.innerText).then(function () {
+                    btn.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(function () { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 1200);
+                });
+            });
+            pre.appendChild(btn);
+        });
+    }
+    addCodeCopyButtons();
+
     const tabsContainer = document.getElementById('lesson-tabs');
     const tabButtons = tabsContainer.querySelectorAll('.tab-button');
     const tabPanels = document.querySelectorAll('.tab-panel');
@@ -180,6 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (data.content) {
                 panelElement.innerHTML = marked.parse(data.content); // Use marked.js to render markdown
+                addCodeCopyButtons();
             } else {
                 panelElement.innerHTML = `<p class="text-red-500">${data.error || 'Failed to load content.'}</p>`;
             }

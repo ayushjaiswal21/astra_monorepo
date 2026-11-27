@@ -73,9 +73,13 @@
                 </div>
                 {% endif %}
                 {% if current_user.id == user.id %}
-                <div class="mt-3">
+                <div class="mt-3 d-flex gap-2 justify-content-end">
                     <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editBasicModal">
                         <i class="far fa-id-card me-1"></i> Edit Profile
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm copy-btn" id="copyProfileLinkBtn"
+                            data-copy-text="{{ url_for('profile.view_profile', username=user.username, _external=True) }}">
+                        <i class="fas fa-link me-1"></i> <span>Copy profile link</span>
                     </button>
                 </div>
                 {% endif %}
@@ -711,6 +715,22 @@ function sendConnectionRequest(userId) {
         }
     });
 }
+// Copy profile link, with a brief "Copied!" confirmation.
+document.getElementById('copyProfileLinkBtn')?.addEventListener('click', function () {
+    const btn = this;
+    const text = btn.dataset.copyText;
+    const label = btn.querySelector('span');
+    const original = label.textContent;
+    navigator.clipboard.writeText(text).then(function () {
+        label.textContent = 'Copied!';
+        btn.classList.add('is-copied');
+        setTimeout(function () {
+            label.textContent = original;
+            btn.classList.remove('is-copied');
+        }, 1500);
+    });
+});
+
 // Initialize tooltips (wrapped: bootstrap.bundle.min.js now loads with `defer`, so it is not yet
 // executed when this inline script runs during parsing; DOMContentLoaded guarantees it has run)
 document.addEventListener('DOMContentLoaded', function () {

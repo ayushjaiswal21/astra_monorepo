@@ -27,11 +27,57 @@ function App() {
   const [speechInterimResult, setSpeechInterimResult] = useState("");
   const [speechError, setSpeechError] = useState(null);
   const [feedbackLoading, setFeedbackLoading] = useState(new Set());
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
+  const [confirmState, setConfirmState] = useState(null);
+  const [showConsent, setShowConsent] = useState(() => {
+    try {
+      return !localStorage.getItem("aiguru_consent_ack");
+    } catch {
+      return true;
+    }
+  });
 
   const mediaRecorderRef = useRef(null);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const activeRequestsRef = useRef(new Map());
+  const chatScrollRef = useRef(null);
+
+  const dismissConsent = () => {
+    try {
+      localStorage.setItem("aiguru_consent_ack", "1");
+    } catch {
+      // storage unavailable — banner will just reappear next visit
+    }
+    setShowConsent(false);
+  };
+
+  const handleChatScroll = () => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowJumpToLatest(distanceFromBottom > 200);
+  };
+
+  const requestDeleteSession = (sessionId) => {
+    setConfirmState({
+      message: "Delete this conversation? This cannot be undone.",
+      onConfirm: () => {
+        deleteSession(sessionId);
+        setConfirmState(null);
+      },
+    });
+  };
+
+  const requestDeleteAllChatHistory = () => {
+    setConfirmState({
+      message: "Delete all chat history? This action cannot be undone.",
+      onConfirm: () => {
+        deleteAllChatHistory();
+        setConfirmState(null);
+      },
+    });
+  };
 
   const submitFeedback = async (
     interactionId,
@@ -302,6 +348,7 @@ function App() {
 
     const abortController = new AbortController();
     activeRequestsRef.current.set(messageId, abortController);
+    setIsLoading(true);
 
     try {
       const response = await fetch("http://localhost:8001/chat", {
@@ -384,6 +431,8 @@ function App() {
         });
         activeRequestsRef.current.delete(messageId);
       }, 500);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -430,13 +479,8 @@ function App() {
   };
 
   const deleteAllChatHistory = async () => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete all chat history? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
+    // Confirmation now happens via the styled modal (requestDeleteAllChatHistory)
+    // before this is ever called.
     try {
       const response = await fetch("http://localhost:8001/chat-history", {
         method: "DELETE",
@@ -514,6 +558,7 @@ function App() {
 
     const abortController = new AbortController();
     activeRequestsRef.current.set(messageId, abortController);
+    setIsLoading(true);
 
     try {
       const response = await fetch("http://localhost:8001/image-chat", {
@@ -572,6 +617,7 @@ function App() {
         return newSet;
       });
       activeRequestsRef.current.delete(messageId);
+      setIsLoading(false);
     }
 
     e.target.value = "";
@@ -579,6 +625,10 @@ function App() {
 
   return (
     <div className="flex h-screen bg-gray-100 text-gray-800 font-sans">
+      <a href="#message-input-textbox" className="skip-link">
+        Skip to chat input
+      </a>
+
       <Sidebar
         sidebarCollapsed={sidebarCollapsed}
         setSidebarCollapsed={setSidebarCollapsed}
@@ -589,12 +639,16 @@ function App() {
         setSelectedSession={setSelectedSession}
         setCurrentSessionId={setCurrentSessionId}
         setMessages={setMessages}
-        deleteAllChatHistory={deleteAllChatHistory}
-        deleteSession={deleteSession}
+        deleteAllChatHistory={requestDeleteAllChatHistory}
+        deleteSession={requestDeleteSession}
       />
 
       <div className="flex-1 flex flex-col bg-white">
-        <div className="flex-1 overflow-y-auto p-6">
+        <div
+          ref={chatScrollRef}
+          onScroll={handleChatScroll}
+          className="flex-1 overflow-y-auto p-6"
+        >
           {!selectedSession && messages.length === 0 ? (
             <WelcomeScreen
               isLoading={isLoading}
@@ -609,6 +663,8 @@ function App() {
                 submitFeedback={submitFeedback}
                 feedbackLoading={feedbackLoading}
                 processingMessages={processingMessages}
+                showJumpToLatest={showJumpToLatest}
+                scrollToBottom={scrollToBottom}
               />
             </Suspense>
           )}
@@ -631,6 +687,35 @@ function App() {
           setSpeechError={setSpeechError}
         />
       </div>
+
+      {confirmState && (
+        <div className="modal-backdrop" onClick={() => setConfirmState(null)}>
+          <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <p style={{ margin: "0 0 var(--space-5)", color: "var(--text-primary)" }}>
+              {confirmState.message}
+            </p>
+            <div style={{ display: "flex", gap: "var(--space-3)", justifyContent: "flex-end" }}>
+              <button className="btn-outline" onClick={() => setConfirmState(null)}>
+                Cancel
+              </button>
+              <button className="btn-filled" onClick={confirmState.onConfirm}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConsent && (
+        <div className="consent-banner">
+          <p style={{ margin: 0, fontSize: "14px", color: "var(--text-secondary)" }}>
+            AI Guru stores your chat history locally so you can revisit past conversations. Continuing means you're okay with that.
+          </p>
+          <button className="btn-filled" onClick={dismissConsent}>
+            Got it
+          </button>
+        </div>
+      )}
     </div>
   );
 }

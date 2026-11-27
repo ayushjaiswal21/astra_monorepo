@@ -35,7 +35,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --text-primary: #F1F5F9;
     --text-secondary: #CBD5E1;
     /* Lifted surfaces (each layer lighter than the one below), never an
@@ -45,6 +45,16 @@
     --surface-2: #273449;
     --border-hairline: 1px solid rgba(255, 255, 255, 0.12);
   }
+}
+
+/* Explicit user choice (dark-mode toggle in Sidebar.js) overrides system preference. */
+:root[data-theme="dark"] {
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --surface-0: #0F172A;
+  --surface-1: #1E293B;
+  --surface-2: #273449;
+  --border-hairline: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 html { color-scheme: light dark; }
@@ -128,4 +138,112 @@ code {
 }
 .sidebar-item:hover {
   background-color: var(--surface-1);
+}
+
+/* Per-session delete button: hidden until the row is hovered/focused. */
+.delete-btn { opacity: 0; transition: opacity .15s ease, background-color .15s ease, color .15s ease; }
+.sidebar-item:hover .delete-btn,
+.sidebar-item:focus-within .delete-btn {
+  opacity: 1;
+}
+.delete-btn:hover {
+  background-color: #dc2626;
+  color: #fff;
+}
+
+/* Visually hidden until focused, for keyboard/screen-reader users. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  z-index: 1000;
+  font-weight: 600;
+}
+.skip-link:focus {
+  left: var(--space-4);
+  top: var(--space-4);
+}
+
+.consent-banner {
+  position: fixed;
+  bottom: var(--space-4);
+  left: var(--space-4);
+  right: var(--space-4);
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--surface-0);
+  border: var(--border-hairline);
+  border-radius: var(--radius-outer);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  z-index: 900;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+.modal-dialog {
+  background: var(--surface-0);
+  border-radius: var(--radius-outer);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-6);
+  max-width: 400px;
+  width: 90%;
+}
+
+.copy-btn {
+  background: transparent;
+  border: var(--border-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  padding: var(--space-1) var(--space-2);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.copy-btn:hover {
+  background: var(--surface-1);
+  color: var(--text-primary);
+}
+
+.theme-toggle-btn {
+  background: transparent;
+  border: var(--border-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  padding: var(--space-2);
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.theme-toggle-btn:hover {
+  background: var(--surface-1);
+  color: var(--text-primary);
+}
+
+/* Sidebar becomes an overlay drawer on small screens instead of squeezing
+   the chat column; the existing collapse/expand arrow doubles as the
+   hamburger toggle (see Sidebar.js), so no second control is added. */
+@media (max-width: 640px) {
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 950;
+    box-shadow: var(--shadow-soft);
+  }
 }

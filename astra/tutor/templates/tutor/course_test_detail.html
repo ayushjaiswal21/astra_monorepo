@@ -34,6 +34,7 @@
         </div>
     </div>
 
+    <div id="test-error-banner" class="hidden mt-6 p-4 text-sm" style="border: var(--border-hairline); border-radius: var(--radius-sm); background: #FEF2F2; color: #B91C1C;"></div>
 </div>
 
 <script>
@@ -212,7 +213,9 @@
 
             } catch (error) {
                 console.error('Error submitting test:', error);
-                alert('An error occurred while submitting your test. Please try again.');
+                const banner = document.getElementById('test-error-banner');
+                banner.textContent = 'An error occurred while submitting your test. Please try again.';
+                banner.classList.remove('hidden');
             }
         }
 

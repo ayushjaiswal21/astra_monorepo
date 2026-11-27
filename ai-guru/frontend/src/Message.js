@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { marked } from 'marked';
 
 const Message = ({ msg, index, submitFeedback, feedbackLoading, processingMessages }) => {
   const isUser = msg.sender === "user";
   const isProcessing = processingMessages.has(msg.id);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(msg.text || "").then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }).catch(() => {
+      setCopied(false);
+    });
+  };
 
   return (
     <div className={`flex items-start gap-4 mb-6`}>
@@ -37,6 +47,17 @@ const Message = ({ msg, index, submitFeedback, feedbackLoading, processingMessag
                 dangerouslySetInnerHTML={{ __html: marked.parse(msg.text || "") }}
                 className="prose max-w-none"
               />
+              {!isUser && (
+                <button
+                  onClick={handleCopy}
+                  className="copy-btn"
+                  style={{ marginTop: "var(--space-3)" }}
+                  title="Copy response"
+                >
+                  {copied ? "Copied!" : "📋 Copy"}
+                </button>
+              )}
+
               {!isUser && msg.detectedLanguage && msg.languageName !== "Unknown" && msg.detectedLanguage !== "en" && (
                 <div className="mt-3 inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full border border-gray-200">
                   🌐 {msg.languageName} {msg.confidence && `(${Math.round(msg.confidence * 100)}%)`}

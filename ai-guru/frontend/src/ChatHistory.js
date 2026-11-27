@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 
 const ChatHistory = ({
     chatSessions,
@@ -11,6 +11,20 @@ const ChatHistory = ({
     setCurrentSessionId,
     setMessages
 }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredSessions = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return chatSessions;
+    return chatSessions.filter((session) => {
+      if ((session.session_title || '').toLowerCase().includes(term)) return true;
+      return (session.messages || []).some(
+        (msg) =>
+          (msg.user_input || '').toLowerCase().includes(term) ||
+          (msg.bot_response || '').toLowerCase().includes(term)
+      );
+    });
+  }, [chatSessions, searchTerm]);
 
   const handleSessionClick = (session) => {
     setSelectedSession(session);
@@ -98,6 +112,28 @@ const ChatHistory = ({
         </div>
       )}
 
+      {!sidebarCollapsed && !isHistoryLoading && chatSessions.length > 0 && (
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search chats..."
+          aria-label="Search chat history"
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "6px 10px",
+            marginBottom: "10px",
+            fontSize: "13px",
+            borderRadius: "6px",
+            border: "var(--border-hairline)",
+            background: "var(--surface-1)",
+            color: "var(--text-primary)",
+            outline: "none",
+          }}
+        />
+      )}
+
       {isHistoryLoading ? (
         [0, 1, 2].map((i) => (
           <div
@@ -123,8 +159,19 @@ const ChatHistory = ({
         >
           {sidebarCollapsed ? "📝" : "No conversations yet"}
         </div>
+      ) : filteredSessions.length === 0 ? (
+        <div
+          style={{
+            color: "#6b7280",
+            fontSize: "13px",
+            fontStyle: "italic",
+            padding: "8px 0",
+          }}
+        >
+          No chats match "{searchTerm}"
+        </div>
       ) : (
-        chatSessions.map((session) => (
+        filteredSessions.map((session) => (
           <div
             key={session.session_id}
             className="sidebar-item"
@@ -192,8 +239,6 @@ const ChatHistory = ({
                   cursor: "pointer",
                   padding: "4px",
                   borderRadius: "3px",
-                  opacity: "0",
-                  transition: "all 0.2s ease",
                   minWidth: "24px",
                   height: "24px",
                   display: "flex",

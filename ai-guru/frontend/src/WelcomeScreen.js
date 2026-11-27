@@ -1,12 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const WelcomeScreen = ({ setCurrentInput, fileInputRef }) => {
+  const [showMore, setShowMore] = useState(false);
 
   const prompts = [
     "Help me draft a professional email",
     "Explain a complex topic in simple terms",
     "Brainstorm ideas for a new project",
     "Summarize a long article for me"
+  ];
+
+  const morePrompts = [
+    "What are some good study habits?",
+    "Help me plan my week",
+    "Give me feedback on this idea",
+    "Translate a sentence for me"
   ];
 
   return (
@@ -27,7 +35,30 @@ const WelcomeScreen = ({ setCurrentInput, fileInputRef }) => {
           ))}
         </div>
 
-        <div 
+        <div className="mb-12">
+          <button
+            type="button"
+            onClick={() => setShowMore((v) => !v)}
+            className="btn-outline"
+          >
+            {showMore ? "Hide more examples ▲" : "More things you can ask ▼"}
+          </button>
+          {showMore && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {morePrompts.map((prompt, index) => (
+                <div
+                  key={index}
+                  onClick={() => setCurrentInput(prompt)}
+                  className="bg-white p-4 rounded-lg text-left cursor-pointer border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-200"
+                >
+                  <p className="text-gray-700">{prompt}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div
           onClick={() => fileInputRef.current?.click()}
           className="relative border-2 border-dashed border-gray-300 rounded-lg p-8 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-gray-50 transition-all duration-200"
         >

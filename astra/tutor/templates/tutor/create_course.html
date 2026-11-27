@@ -11,6 +11,7 @@
             <input type="text" id="course-topic-input" placeholder="Search any topic to create a custom course..." class="flex-1 p-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <button id="create-course-btn" class="bg-indigo-600 text-white px-6 py-3 rounded-r-md hover:bg-indigo-700 font-semibold">Create Course</button>
         </div>
+        <div id="create-course-feedback" class="mt-4 hidden rounded-md p-3 text-sm" style="border: var(--border-hairline); border-radius: var(--radius-sm);"></div>
         <div class="mt-4 flex items-center space-x-2">
             <span class="text-sm text-gray-500">Suggested Topics:</span>
             <button class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm hover:bg-gray-300">Productivity</button>
@@ -68,10 +69,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('personalization-modal');
     const form = document.getElementById('personalization-form');
     const topicInput = document.getElementById('course-topic-input');
+    const feedbackEl = document.getElementById('create-course-feedback');
+
+    function showFeedback(message, kind) {
+        feedbackEl.textContent = message;
+        feedbackEl.classList.remove('hidden');
+        if (kind === 'error') {
+            feedbackEl.style.background = '#FEF2F2';
+            feedbackEl.style.color = '#B91C1C';
+        } else if (kind === 'warning') {
+            feedbackEl.style.background = '#FFFBEB';
+            feedbackEl.style.color = '#B45309';
+        } else {
+            feedbackEl.style.background = '#F0FDF4';
+            feedbackEl.style.color = '#15803D';
+        }
+    }
 
     createCourseBtn.addEventListener('click', () => {
+        feedbackEl.classList.add('hidden');
         if (!topicInput.value.trim()) {
-            alert('Please enter a topic to create a course.');
+            showFeedback('Please enter a topic to create a course.', 'error');
             return;
         }
         modal.classList.remove('hidden');
@@ -97,18 +115,16 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.warning) {
-                alert('Warning:\n' + data.warning);
-            }
             if (data.success) {
+                showFeedback('Course created! Redirecting...', 'success');
                 window.location.href = `/courses/${data.course_id}/`;
             } else {
-                alert('Error: ' + data.error);
+                showFeedback('Error: ' + (data.warning ? data.warning + ' ' : '') + (data.error || 'Could not create course.'), 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An unexpected error occurred.');
+            showFeedback('An unexpected error occurred. Please try again.', 'error');
         })
         .finally(() => {
             submitBtn.disabled = false;

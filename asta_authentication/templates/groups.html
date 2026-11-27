@@ -12,6 +12,7 @@
         .card { background: white; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s; }
         .card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #d1d5db; }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/enhancements.css') }}">
 </head>
 <body>
     <!-- Header -->
@@ -59,7 +60,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 py-8">
+    <main id="main-content" class="max-w-7xl mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-6">Groups</h1>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <!-- Group Card 1 -->
@@ -85,5 +86,6 @@
             </div>
         </div>
     </main>
+    <script src="{{ url_for('static', filename='js/site-chrome.js') }}" defer></script>
 </body>
 </html>

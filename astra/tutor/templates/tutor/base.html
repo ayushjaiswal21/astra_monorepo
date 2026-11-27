@@ -40,7 +40,7 @@
             --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.35);
         }
         @media (prefers-color-scheme: dark) {
-            :root {
+            :root:not([data-theme="light"]) {
                 --text-primary: #F1F5F9;
                 --text-secondary: #CBD5E1;
                 /* Lifted surfaces, not an inverted light theme */
@@ -49,10 +49,27 @@
                 --surface-2: #273449;
                 --border-hairline: 1px solid rgba(255, 255, 255, 0.12);
             }
-            body.bg-white, .bg-white { background: var(--surface-0) !important; color: var(--text-primary); }
-            .bg-gray-50 { background: var(--surface-1) !important; }
-            #sidebar.bg-white { background: var(--surface-0) !important; }
         }
+        :root[data-theme="dark"] {
+            --text-primary: #F1F5F9;
+            --text-secondary: #CBD5E1;
+            --surface-0: #0F172A;
+            --surface-1: #1E293B;
+            --surface-2: #273449;
+            --border-hairline: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        :root:not([data-theme="light"]) body.bg-white,
+        :root:not([data-theme="light"]) .bg-white,
+        :root[data-theme="dark"] body.bg-white,
+        :root[data-theme="dark"] .bg-white {
+            background: var(--surface-0) !important; color: var(--text-primary);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .bg-gray-50 { background: var(--surface-1) !important; }
+            :root:not([data-theme="light"]) #sidebar.bg-white { background: var(--surface-0) !important; }
+        }
+        :root[data-theme="dark"] .bg-gray-50 { background: var(--surface-1) !important; }
+        :root[data-theme="dark"] #sidebar.bg-white { background: var(--surface-0) !important; }
 
         body { font-size: var(--font-size-body); line-height: var(--line-height-body); }
         p, li { max-width: var(--measure); }
@@ -196,9 +213,80 @@
         .sidebar-overlay.active {
             display: block;
         }
+
+        /* Skip-to-content: visually hidden until focused */
+        .skip-link {
+            position: absolute;
+            left: -9999px;
+            top: var(--space-2);
+            z-index: 100;
+            background: var(--accent);
+            color: var(--text-on-accent);
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-sm);
+        }
+        .skip-link:focus { left: var(--space-2); }
+
+        /* Dark mode toggle */
+        #theme-toggle-btn {
+            background: transparent;
+            border: var(--border-hairline);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            padding: var(--space-1) var(--space-2);
+            transition: background-color .2s ease;
+        }
+        #theme-toggle-btn:hover { background: var(--surface-1); }
+
+        /* Cookie consent banner */
+        #cookie-banner {
+            position: fixed;
+            bottom: var(--space-4);
+            left: var(--space-4);
+            right: var(--space-4);
+            z-index: 60;
+            background: var(--surface-0);
+            border: var(--border-hairline);
+            border-radius: var(--radius-outer);
+            box-shadow: var(--shadow-soft);
+            padding: var(--space-4) var(--space-6);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-4);
+            color: var(--text-secondary);
+        }
+
+        /* Floating contact button */
+        #contact-fab {
+            position: fixed;
+            bottom: var(--space-6);
+            left: var(--space-6);
+            z-index: 45;
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: var(--text-on-accent);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: var(--shadow-soft-sm);
+            transition: background-color .2s ease, transform .2s ease;
+        }
+        #contact-fab:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+        @media print {
+            #sidebar, #sidebar-overlay, header, #cookie-banner, #contact-fab,
+            #back-to-top-btn, #theme-toggle-btn, .no-print, #ai-assistant-btn,
+            #scroll-progress-bar {
+                display: none !important;
+            }
+            main { overflow: visible !important; height: auto !important; }
+            body, .flex, .flex-1 { display: block !important; height: auto !important; overflow: visible !important; }
+        }
     </style>
 </head>
 <body class="h-full bg-white">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <!-- Mobile sidebar overlay -->
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
@@ -210,10 +298,15 @@
                     <a href="{% url 'tutor:course_list' %}">
                         <h1 class="text-3xl font-bold" style="color: var(--accent);">AstraLearn</h1>
                     </a>
-                    <!-- Mobile close button -->
-                    <button onclick="toggleMobileSidebar()" class="md:hidden text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <!-- Mobile close button -->
+                        <button onclick="toggleMobileSidebar()" class="md:hidden text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="border rounded-lg p-2">
@@ -249,11 +342,56 @@
                 </div>
             </header>
 
-            <main class="flex-1 overflow-y-auto bg-gray-50">
+            <main id="main-content" class="flex-1 overflow-y-auto bg-gray-50">
                 {% block content %}{% endblock %}
             </main>
         </div>
     </div>
+
+    <!-- Floating contact button: no dedicated support page exists yet, mailto is the sensible placeholder -->
+    <a id="contact-fab" href="mailto:support@astralearn.app" title="Contact support" aria-label="Contact support">
+        <i class="fas fa-envelope"></i>
+    </a>
+
+    <div id="cookie-banner" class="hidden">
+        <p class="text-sm" style="color: var(--text-secondary);">We use cookies to keep you signed in and improve AstraLearn. By using this site, you agree to our use of cookies.</p>
+        <button class="btn-filled text-sm" onclick="dismissCookieBanner()">Got it</button>
+    </div>
+
+    <script>
+        // Dark mode toggle, persisted in localStorage as 'theme' = 'dark' | 'light'
+        (function () {
+            try {
+                const saved = localStorage.getItem('theme');
+                if (saved === 'dark' || saved === 'light') {
+                    document.documentElement.setAttribute('data-theme', saved);
+                }
+            } catch (e) {}
+        })();
+        function toggleTheme() {
+            const root = document.documentElement;
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const current = root.getAttribute('data-theme') || (prefersDark ? 'dark' : 'light');
+            const next = current === 'dark' ? 'light' : 'dark';
+            root.setAttribute('data-theme', next);
+            try { localStorage.setItem('theme', next); } catch (e) {}
+        }
+
+        // Cookie consent banner, persisted in localStorage
+        (function () {
+            try {
+                if (!localStorage.getItem('cookieConsent')) {
+                    document.getElementById('cookie-banner').classList.remove('hidden');
+                }
+            } catch (e) {
+                document.getElementById('cookie-banner').classList.remove('hidden');
+            }
+        })();
+        function dismissCookieBanner() {
+            try { localStorage.setItem('cookieConsent', 'true'); } catch (e) {}
+            document.getElementById('cookie-banner').classList.add('hidden');
+        }
+    </script>
 
     <script>
         function toggleMobileSidebar() {

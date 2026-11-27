@@ -18,6 +18,7 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/enhancements.css') }}">
 </head>
 <body class="min-h-screen flex flex-col">
     <header class="bg-white">
@@ -26,7 +27,7 @@
         </nav>
     </header>
 
-    <main class="flex-grow container mx-auto px-6 py-12 flex flex-col items-center justify-center">
+    <main id="main-content" class="flex-grow container mx-auto px-6 py-12 flex flex-col items-center justify-center">
         <h1 class="text-3xl font-bold text-gray-800 mb-4">Welcome! What brings you here?</h1>
         <p class="text-gray-600 mb-12">Choose your role to get started.</p>
 
@@ -61,5 +62,6 @@
             {% endif %}
         {% endwith %}
     </main>
+    <script src="{{ url_for('static', filename='js/site-chrome.js') }}" defer></script>
 </body>
 </html>
