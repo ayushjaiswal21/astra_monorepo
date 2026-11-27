@@ -148,6 +148,10 @@ JUDGE0_API_KEY = os.getenv('JUDGE0_API_KEY') or 'your-judge0-api-key-placeholder
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434/api/generate')
 OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'phi3:mini')
 
+# AI Guru (ai-guru/backend) base URL, for the embedded-tutor RAG integration
+# on a lesson page — a separate FastAPI service/process, not a shared DB.
+AI_GURU_BASE_URL = os.getenv('AI_GURU_BASE_URL', 'http://localhost:8001')
+
 
 # Authentication Settings
 LOGIN_REDIRECT_URL = '/'

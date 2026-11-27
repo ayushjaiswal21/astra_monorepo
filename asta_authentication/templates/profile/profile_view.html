@@ -41,7 +41,7 @@
                 <div class="alert alert-success d-inline-flex align-items-center mt-2 py-2 px-3 rounded-pill">
                     <i class="fas fa-compass me-2"></i>
                     <span>Guided by Career GPS → {{ user.career_gps.selected_career }} | {{ user.career_gps.progress }}% Complete</span>
-                    <a href="#" class="ms-2" data-bs-toggle="tooltip" title="✨ Update or Explore New Directions">
+                    <a href="#" class="ms-2" title="✨ Update or Explore New Directions">
                         <i class="fas fa-sync-alt"></i>
                     </a>
                 </div>
@@ -74,7 +74,7 @@
                 {% endif %}
                 {% if current_user.id == user.id %}
                 <div class="mt-3 d-flex gap-2 justify-content-end">
-                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editBasicModal">
+                    <button class="btn btn-outline-primary btn-sm" data-modal-target="#editBasicModal">
                         <i class="far fa-id-card me-1"></i> Edit Profile
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-sm copy-btn" id="copyProfileLinkBtn"
@@ -184,7 +184,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title fw-bold mb-0">About</h5>
         {% if current_user.id == user.id %}
-        <a href="#" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editAboutModal">
+        <a href="#" class="btn btn-sm btn-outline-secondary" data-modal-target="#editAboutModal">
             <i class="fas fa-pencil-alt me-1"></i> Edit
         </a>
         {% endif %}
@@ -220,7 +220,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title fw-bold mb-0">Experience</h5>
         {% if current_user.id == user.id %}
-        <a href="#" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addExperienceModal">
+        <a href="#" class="btn btn-sm btn-outline-primary" data-modal-target="#addExperienceModal">
             <i class="fas fa-plus me-1"></i> Add
         </a>
         {% endif %}
@@ -254,12 +254,12 @@
                 </div>
                 {% if current_user.id == user.id %}
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-sm btn-link text-muted" type="button" data-dropdown-toggle aria-expanded="false">
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
-                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editExperienceModal-{{ exp.id }}">
+                            <a class="dropdown-item" href="#" data-modal-target="#editExperienceModal-{{ exp.id }}">
                                 <i class="far fa-edit me-2"></i>Edit
                             </a>
                         </li>
@@ -282,7 +282,7 @@
                 <h6 class="fw-bold">No experience added yet</h6>
                 <p class="text-muted mb-0">Share your work experience to showcase your professional journey</p>
                 {% if current_user.id == user.id %}
-                <a href="#" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addExperienceModal">
+                <a href="#" class="btn btn-primary mt-3" data-modal-target="#addExperienceModal">
                     <i class="fas fa-plus me-1"></i> Add Experience
                 </a>
                 {% endif %}
@@ -296,7 +296,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title fw-bold mb-0">Education</h5>
         {% if current_user.id == user.id %}
-        <a href="#" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addEducationModal">
+        <a href="#" class="btn btn-sm btn-outline-primary" data-modal-target="#addEducationModal">
             <i class="fas fa-plus me-1"></i> Add
         </a>
         {% endif %}
@@ -330,12 +330,12 @@
                 </div>
                 {% if current_user.id == user.id %}
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" data-bs-toggle="dropdown">
+                    <button class="btn btn-sm btn-link text-muted" type="button" data-dropdown-toggle>
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
-                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editEducationModal-{{ loop.index }}">
+                            <a class="dropdown-item" href="#" data-modal-target="#editEducationModal-{{ edu.id }}">
                                 <i class="far fa-edit me-2"></i>Edit
                             </a>
                         </li>
@@ -358,7 +358,7 @@
                 <h6 class="fw-bold">No education added yet</h6>
                 <p class="text-muted mb-0">Add your education to showcase your academic background</p>
                 {% if current_user.id == user.id %}
-                <a href="#" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addEducationModal">
+                <a href="#" class="btn btn-primary mt-3" data-modal-target="#addEducationModal">
                     <i class="fas fa-plus me-1"></i> Add Education
                 </a>
                 {% endif %}
@@ -372,7 +372,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title fw-bold mb-0">Skills</h5>
         {% if current_user.id == user.id %}
-        <a href="#" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addSkillModal">
+        <a href="#" class="btn btn-sm btn-outline-primary" data-modal-target="#addSkillModal">
             <i class="fas fa-plus me-1"></i> Add
         </a>
         {% endif %}
@@ -390,7 +390,7 @@
                         <span class="ms-2 text-muted">{{ skill.level }}/10</span>
                     {% endif %}
                     {% if current_user.id == user.id %}
-                    <a href="#" class="ms-2 text-muted" data-bs-toggle="modal" data-bs-target="#editSkillModal-{{ loop.index }}">
+                    <a href="#" class="ms-2 text-muted" data-modal-target="#editSkillModal-{{ loop.index }}">
                         <i class="far fa-edit"></i>
                     </a>
                     {% endif %}
@@ -405,7 +405,7 @@
                 <h6 class="fw-bold">No skills added yet</h6>
                 <p class="text-muted mb-0">Add your skills to showcase your expertise</p>
                 {% if current_user.id == user.id %}
-                <a href="#" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addSkillModal">
+                <a href="#" class="btn btn-primary mt-3" data-modal-target="#addSkillModal">
                     <i class="fas fa-plus me-1"></i> Add Skills
                 </a>
                 {% endif %}
@@ -419,7 +419,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title fw-bold mb-0">Licenses & Certifications</h5>
         {% if current_user.id == user.id %}
-        <a href="#" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCertificationModal">
+        <a href="#" class="btn btn-sm btn-outline-primary" data-modal-target="#addCertificationModal">
             <i class="fas fa-plus me-1"></i> Add
         </a>
         {% endif %}
@@ -459,12 +459,12 @@
                 </div>
                 {% if current_user.id == user.id %}
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" data-bs-toggle="dropdown">
+                    <button class="btn btn-sm btn-link text-muted" type="button" data-dropdown-toggle>
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
-                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editCertificationModal-{{ loop.index }}">
+                            <a class="dropdown-item" href="#" data-modal-target="#editCertificationModal-{{ loop.index }}">
                                 <i class="far fa-edit me-2"></i>Edit
                             </a>
                         </li>
@@ -487,7 +487,7 @@
                 <h6 class="fw-bold">No certifications added yet</h6>
                 <p class="text-muted mb-0">Add your certifications to showcase your qualifications</p>
                 {% if current_user.id == user.id %}
-                <a href="#" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addCertificationModal">
+                <a href="#" class="btn btn-primary mt-3" data-modal-target="#addCertificationModal">
                     <i class="fas fa-plus me-1"></i> Add Certification
                 </a>
                 {% endif %}
@@ -535,7 +535,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Edit Profile</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="text-lg leading-none opacity-60 hover:opacity-100" data-modal-dismiss aria-label="Close">&times;</button>
                 </div>
                 <div class="modal-body">
                     <form id="editBasicForm">
@@ -550,7 +550,7 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>Cancel</button>
                     <button type="button" class="btn btn-primary" id="saveBasicBtn">Save</button>
                 </div>
             </div>
@@ -623,7 +623,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Send Connection Request</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="text-lg leading-none opacity-60 hover:opacity-100" data-modal-dismiss aria-label="Close">&times;</button>
             </div>
             <div class="modal-body">
                 <p>Send a connection request to {{ user.name }} to connect on our platform.</p>
@@ -633,7 +633,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>Cancel</button>
                 <button type="button" class="btn btn-primary" id="confirmSendRequest">Send Request</button>
             </div>
         </div>
@@ -728,15 +728,6 @@ document.getElementById('copyProfileLinkBtn')?.addEventListener('click', functio
             label.textContent = original;
             btn.classList.remove('is-copied');
         }, 1500);
-    });
-});
-
-// Initialize tooltips (wrapped: bootstrap.bundle.min.js now loads with `defer`, so it is not yet
-// executed when this inline script runs during parsing; DOMContentLoaded guarantees it has run)
-document.addEventListener('DOMContentLoaded', function () {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 });
 </script>

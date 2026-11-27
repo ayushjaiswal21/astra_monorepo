@@ -1,6 +1,7 @@
 import json
 import logging
 import random
+import httpx
 from datetime import timedelta
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import login
@@ -20,7 +21,7 @@ def call_ollama(prompt):
     print(f"--- DUMMY AI CALL ---\nPrompt: {prompt}\n--- END DUMMY AI CALL ---")
     return {"response": "This is a placeholder response from the dummy call_ollama function."}
 
-from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress, UserQuizAttempt, ModuleProgress, CourseTestSession, CourseTestQuestion, CourseTestAttempt
+from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress, UserQuizAttempt, ModuleProgress, CourseTestSession, CourseTestQuestion, CourseTestAttempt, SkillMastery
 from .prompts import get_test_generation_prompt
 from .tasks import generate_course_content
 from .mastery import update_mastery
@@ -209,7 +210,9 @@ def lesson_detail(request, course_id, module_id, lesson_id):
         session_key=session_key,
         module__course_id=course_id
     ).values_list('module_id', flat=True)
-    
+
+    mastery = SkillMastery.objects.filter(session_key=session_key, skill_name=lesson.title).first()
+
     return render(request, 'tutor/lesson_detail.html', {
         'course': lesson.module.course,
         'module': lesson.module,
@@ -218,7 +221,8 @@ def lesson_detail(request, course_id, module_id, lesson_id):
         'next_lesson': next_lesson,
         'prev_lesson': prev_lesson,
         'has_quiz': hasattr(lesson, 'quiz'),
-        'module_progress': list(module_progress)
+        'module_progress': list(module_progress),
+        'mastery_score': round(mastery.score * 100) if mastery else None,
     })
 
 def quiz_detail(request, quiz_id):
@@ -597,3 +601,49 @@ def register(request):
         form = UserCreationForm()
 
     return render(request, 'registration/register.html', {'form': form})
+
+
+@require_http_methods(["POST"])
+def ask_ai_guru_about_lesson(request, lesson_id):
+    """Embedded-tutor integration: ground AI Guru's answer in this specific
+    lesson's content via its RAG endpoints, instead of general knowledge.
+    AI Guru is a separate FastAPI service/process (no shared DB), so this
+    is a real HTTP call, not a local function call."""
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+    try:
+        data = json.loads(request.body)
+        question = (data.get('question') or '').strip()
+        if not question:
+            return JsonResponse({'error': 'A question is required.'}, status=400)
+        if not lesson.content:
+            return JsonResponse({'error': 'This lesson has no content yet to ask about.'}, status=400)
+
+        document_id = f"astralearn-lesson-{lesson.id}"
+        base_url = settings.AI_GURU_BASE_URL
+
+        with httpx.Client(timeout=20) as client:
+            # Re-indexing is cheap and idempotent (the RAG service replaces
+            # a document's chunks on each index call), so there's no need
+            # to track "already indexed" state here.
+            index_resp = client.post(f"{base_url}/rag/index", json={
+                "document_id": document_id,
+                "text": lesson.content,
+            })
+            index_resp.raise_for_status()
+
+            query_resp = client.post(f"{base_url}/rag/query", json={
+                "document_id": document_id,
+                "question": question,
+            })
+            query_resp.raise_for_status()
+            result = query_resp.json()
+
+        return JsonResponse({
+            'answer': result.get('answer', ''),
+            'sources': result.get('sources', []),
+        })
+    except httpx.HTTPError as e:
+        logger.warning("AI Guru RAG call failed for lesson %s: %s", lesson_id, e)
+        return JsonResponse({'error': 'AI Guru is unavailable right now. Please try again later.'}, status=503)
+    except Exception as e:
+        return _safe_error_response(e)

@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/quiz/<int:quiz_id>/submit/', views.submit_quiz, name='submit_quiz'),
     path('api/lesson/<int:lesson_id>/simplify/', views.simplify_content, name='simplify_content'),
     path('api/lesson/<int:lesson_id>/example/', views.generate_example, name='generate_example'),
+    path('api/lesson/<int:lesson_id>/ask-ai-guru/', views.ask_ai_guru_about_lesson, name='ask_ai_guru_about_lesson'),
 
     path('api/lessons/<int:lesson_id>/complete/', views.mark_lesson_complete, name='mark_lesson_complete'),
     path('api/analytics/<str:user_id>/', views.analytics, name='analytics'),

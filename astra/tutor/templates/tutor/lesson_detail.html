@@ -43,7 +43,14 @@
     <div id="lesson-scroll" class="flex-1 p-8 overflow-y-auto">
         <div style="position: sticky; top: 0; z-index: 10; background: var(--surface-1); padding-top: var(--space-2); margin: calc(var(--space-2) * -1) calc(var(--space-8) * -1) 0; padding-left: var(--space-8); padding-right: var(--space-8);">
         <p class="text-gray-500">Module {{ lesson.module.order|add:1 }}: {{ lesson.module.title }}</p>
-        <h1 class="text-3xl font-bold mt-1">{{ lesson.title }}</h1>
+        <div class="flex items-center justify-between flex-wrap gap-2">
+            <h1 class="text-3xl font-bold mt-1">{{ lesson.title }}</h1>
+            {% if mastery_score is not None %}
+            <span class="text-sm px-3 py-1 rounded-full" style="background: var(--surface-2); color: var(--text-secondary);" title="Based on your past quiz attempts for this lesson">
+                Mastery: {{ mastery_score }}%
+            </span>
+            {% endif %}
+        </div>
 
         <div class="mt-6 border-b border-gray-200">
             <nav class="-mb-px flex space-x-8" id="lesson-tabs">
@@ -116,9 +123,23 @@
         </div>
     </div>
 
-    <button id="ai-assistant-btn" class="absolute bottom-8 right-8 mr-4 bg-purple-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-700 transition-colors duration-200">
+    <button id="ai-assistant-btn" class="absolute bottom-8 right-8 mr-4 bg-purple-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-700 transition-colors duration-200" aria-label="Ask AI Guru about this lesson">
         <i class="fas fa-shield-alt text-2xl"></i>
     </button>
+
+    <div id="ai-guru-panel" class="hidden" style="position: absolute; bottom: 80px; right: 32px; width: 340px; max-height: 420px; background: var(--surface-0); border: var(--border-hairline); border-radius: var(--radius-outer); box-shadow: var(--shadow-soft); display: flex; flex-direction: column; overflow: hidden; z-index: 50;">
+        <div style="padding: var(--space-3) var(--space-4); border-bottom: var(--border-hairline); font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
+            Ask AI Guru about this lesson
+            <button id="ai-guru-panel-close" aria-label="Close" style="background: none; border: none; cursor: pointer; color: var(--text-secondary);">&times;</button>
+        </div>
+        <div id="ai-guru-messages" style="flex: 1; overflow-y: auto; padding: var(--space-3) var(--space-4); font-size: 14px; color: var(--text-secondary);">
+            Ask a question grounded in this lesson's own content — not general knowledge.
+        </div>
+        <form id="ai-guru-form" style="display: flex; gap: var(--space-2); padding: var(--space-3); border-top: var(--border-hairline);">
+            <input id="ai-guru-input" type="text" placeholder="Ask about this lesson..." class="form-control" style="flex: 1; border: var(--border-hairline); border-radius: var(--radius-sm); padding: var(--space-2);">
+            <button type="submit" class="btn-filled">Ask</button>
+        </form>
+    </div>
 
     <button id="back-to-top-btn" onclick="document.getElementById('lesson-scroll').scrollTo({top: 0, behavior: 'smooth'})"
             class="absolute bottom-24 right-8 w-11 h-11 rounded-full shadow-lg items-center justify-center hidden"
@@ -172,6 +193,63 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     addCodeCopyButtons();
+
+    // AI Guru embedded tutor: ask a question grounded in this lesson's own
+    // content (calls AstraLearn's own API, which in turn calls the separate
+    // AI Guru service's RAG endpoints) instead of general knowledge.
+    const aiGuruBtn = document.getElementById('ai-assistant-btn');
+    const aiGuruPanel = document.getElementById('ai-guru-panel');
+    const aiGuruClose = document.getElementById('ai-guru-panel-close');
+    const aiGuruForm = document.getElementById('ai-guru-form');
+    const aiGuruInput = document.getElementById('ai-guru-input');
+    const aiGuruMessages = document.getElementById('ai-guru-messages');
+
+    if (aiGuruBtn && aiGuruPanel) {
+        aiGuruBtn.addEventListener('click', function () {
+            aiGuruPanel.classList.toggle('hidden');
+        });
+        if (aiGuruClose) {
+            aiGuruClose.addEventListener('click', function () {
+                aiGuruPanel.classList.add('hidden');
+            });
+        }
+    }
+
+    if (aiGuruForm) {
+        aiGuruForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const question = aiGuruInput.value.trim();
+            if (!question) return;
+
+            const askedP = document.createElement('p');
+            askedP.innerHTML = '<strong>You:</strong> ' + question;
+            aiGuruMessages.appendChild(askedP);
+            aiGuruInput.value = '';
+            aiGuruInput.disabled = true;
+
+            const pendingP = document.createElement('p');
+            pendingP.textContent = 'Thinking...';
+            aiGuruMessages.appendChild(pendingP);
+            aiGuruMessages.scrollTop = aiGuruMessages.scrollHeight;
+
+            fetch("{% url 'tutor:ask_ai_guru_about_lesson' lesson.id %}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ question: question })
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    pendingP.innerHTML = '<strong>AI Guru:</strong> ' + (data.answer || data.error || 'No answer.');
+                })
+                .catch(function () {
+                    pendingP.textContent = 'AI Guru is unavailable right now. Please try again later.';
+                })
+                .finally(function () {
+                    aiGuruInput.disabled = false;
+                    aiGuruMessages.scrollTop = aiGuruMessages.scrollHeight;
+                });
+        });
+    }
 
     const tabsContainer = document.getElementById('lesson-tabs');
     const tabButtons = tabsContainer.querySelectorAll('.tab-button');

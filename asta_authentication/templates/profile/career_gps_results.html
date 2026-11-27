@@ -74,10 +74,10 @@ block content %}
         <h5 class="modal-title" id="careerTitle">Career Details</h5>
         <button
           type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
+          class="text-lg leading-none opacity-60 hover:opacity-100"
+          data-modal-dismiss
           aria-label="Close"
-        ></button>
+        >&times;</button>
       </div>
       <div class="modal-body">
         <div id="careerDetailsContent"></div>
@@ -96,7 +96,7 @@ block content %}
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-secondary" data-modal-dismiss>
           Close
         </button>
       </div>
@@ -134,9 +134,9 @@ block content %}
       document.getElementById('askAiGuruBtn').href = `/ai-guru/chat?context=career:${career.name}`;
       document.getElementById('generateLearningPathBtn').href = `/profile/generate-learning-path/${index}`;
 
-      // Show modal
-      const modal = new bootstrap.Modal(document.getElementById('careerDetailsModal'));
-      modal.show();
+      // Show modal (vanilla replacement for the old Bootstrap JS modal API)
+      document.getElementById('careerDetailsModal').classList.add('show');
+      document.querySelector('.modal-backdrop').classList.add('show');
   }
 </script>
 {% endblock %}

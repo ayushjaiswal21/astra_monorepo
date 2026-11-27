@@ -1,0 +1,74 @@
+<!-- Edit Certification Modal -->
+<div class="modal fade" id="editCertificationModal-{{ index }}" tabindex="-1" aria-labelledby="editCertificationModalLabel-{{ index }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editCertificationModalLabel-{{ index }}">Edit license or certification</h5>
+                <button type="button" class="text-lg leading-none opacity-60 hover:opacity-100" data-modal-dismiss aria-label="Close">&times;</button>
+            </div>
+            <form class="edit-certification-form" action="{{ url_for('profile.edit_certification', cert_id=certification.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="certName-{{ index }}" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="certName-{{ index }}" name="name" value="{{ certification.name }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="issuingOrg-{{ index }}" class="form-label">Issuing organization</label>
+                            <input type="text" class="form-control" id="issuingOrg-{{ index }}" name="issuing_organization" value="{{ certification.issuing_organization or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="issueDate-{{ index }}" class="form-label">Issue Date</label>
+                            <input type="text" class="form-control" id="issueDate-{{ index }}" name="issue_date" value="{{ certification.issue_date or '' }}">
+                        </div>
+                        <div class="col-12">
+                            <label for="credentialUrl-{{ index }}" class="form-label">Credential URL</label>
+                            <input type="text" class="form-control" id="credentialUrl-{{ index }}" name="credential_url" value="{{ certification.credential_url or '' }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-modal-dismiss>Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('#editCertificationModal-{{ index }} .edit-certification-form');
+    if (form) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams(formData).toString()
+                });
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    showToast('Server returned invalid JSON', 'error');
+                    return;
+                }
+                if (response.ok && data && data.success) {
+                    window.location.reload();
+                } else {
+                    showToast((data && (data.message || data.error)) || 'Failed to update certification', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('An error occurred while updating certification', 'error');
+            }
+        });
+    }
+});
+</script>

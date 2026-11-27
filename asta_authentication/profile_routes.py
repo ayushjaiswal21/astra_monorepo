@@ -269,6 +269,25 @@ def add_skill():
             return jsonify({'success': True, 'id': new_skill.id})
         else:
             return jsonify({'success': False, 'error': 'Skill already exists'}), 400
+
+@profile_bp.route('/edit-skill/<int:skill_index>', methods=['POST'])
+@login_required
+def edit_skill(skill_index):
+    # Templates address a skill by its 1-based position in user.skills
+    # (loop.index), not its DB id — matching how the edit links are built.
+    skills = list(current_user.skills)
+    if skill_index < 1 or skill_index > len(skills):
+        return jsonify({'success': False, 'error': 'Skill not found.'}), 404
+    skill = skills[skill_index - 1]
+
+    new_name = request.form.get('name') or request.form.get('skill_name')
+    if not new_name:
+        return jsonify({'success': False, 'error': 'Skill name is required.'}), 400
+
+    skill.name = new_name
+    db.session.commit()
+    log_activity(current_user.id, 'edited_skill', f'{skill.name}')
+    return jsonify({'success': True})
     return jsonify({'success': False, 'error': 'Skill name is required'}), 400
 
 @profile_bp.route('/add-certification', methods=['POST'])

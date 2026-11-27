@@ -269,6 +269,117 @@ i.fas, i.far, i.fab, svg.icon {
 }
 
 /* ============================================================
+   Bootstrap component equivalents still used by career_gps.html,
+   career_gps_quiz.html, learning_path.html, my_learning_paths.html
+   (these pages use Bootstrap's component classes, not its JS, so
+   no markup changes are needed — only real CSS for these names).
+   ============================================================ */
+.btn-secondary {
+  background: var(--surface-2);
+  border-color: var(--border-hairline);
+  color: var(--text-primary);
+}
+.btn-secondary:hover, .btn-secondary:focus { background: var(--surface-1); }
+.btn-success {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #FFFFFF;
+}
+.btn-success:hover, .btn-success:focus { background: #15803d; border-color: #15803d; }
+.btn-outline-secondary {
+  background: transparent;
+  border: var(--border-hairline);
+  color: var(--text-secondary);
+}
+.btn-outline-secondary:hover { background: var(--surface-1); }
+.btn-outline-success {
+  background: transparent;
+  border: 1px solid #16a34a;
+  color: #16a34a;
+}
+.btn-outline-success:hover { background: rgba(22, 163, 74, 0.08); }
+.btn-outline-info {
+  background: transparent;
+  border: 1px solid #0284c7;
+  color: #0284c7;
+}
+.btn-outline-info:hover { background: rgba(2, 132, 199, 0.08); }
+
+.progress {
+  height: 1rem;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width .3s ease;
+}
+.progress-bar.bg-success { background: #16a34a; }
+.progress-bar.bg-info { background: #0284c7; }
+.progress-bar.bg-warning { background: #d97706; }
+
+.form-check {
+  display: block;
+  min-height: 1.5rem;
+  padding-left: 1.5em;
+  margin-bottom: var(--space-2);
+}
+.form-check-inline {
+  display: inline-block;
+  margin-right: var(--space-4);
+}
+.form-check-input {
+  width: 1em;
+  height: 1em;
+  margin-left: -1.5em;
+  margin-top: 0.2em;
+  float: left;
+  vertical-align: top;
+  accent-color: var(--accent);
+}
+.form-check-label { font-weight: 400; }
+
+.form-select {
+  display: block;
+  width: 100%;
+  border: var(--border-hairline);
+  border-radius: var(--radius-sm);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-0);
+  color: var(--text-primary);
+}
+.form-select:focus { box-shadow: var(--focus-ring); border-color: var(--accent); }
+
+.list-group { display: flex; flex-direction: column; border-radius: var(--radius-sm); overflow: hidden; }
+.list-group-item {
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-hairline);
+  border-top-width: 0;
+  background: var(--surface-0);
+  color: var(--text-primary);
+}
+.list-group-item:first-child { border-top-width: 1px; }
+.list-group-item-action { text-decoration: none; display: block; }
+.list-group-item-action:hover { background: var(--surface-1); }
+.list-group-flush .list-group-item { border-left: none; border-right: none; }
+
+.badge.bg-success { background: #16a34a; color: #FFFFFF; }
+.badge.bg-danger { background: #dc2626; color: #FFFFFF; }
+.badge.bg-warning { background: #d97706; color: #FFFFFF; }
+.badge.bg-info { background: #0284c7; color: #FFFFFF; }
+.badge.bg-primary { background: var(--accent); color: var(--text-on-accent); }
+.badge.bg-secondary { background: var(--surface-2); color: var(--text-primary); }
+.badge.bg-light { background: var(--surface-1); color: var(--text-primary); }
+
+/* ============================================================
    Empty states: say what to do next, not just "nothing here"
    ============================================================ */
 .empty-state {
