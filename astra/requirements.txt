@@ -1,13 +1,17 @@
 Django==5.0.3
 celery==5.3.6
-# kombu pinned below 5.5.0: kombu 5.5+'s redis transport added a binding-expiry
-# Lua script using `ZADD ... GT`, which requires Redis >= 6.2. The dev redis-server
-# here is 5.0.14.1, so that script fails with "ResponseError: ERR syntax error"
-# and crashes the celery worker on startup (during mingle/pidbox HELLO). kombu
-# 5.4.2 is the last release without that script and satisfies celery 5.3.6's
-# own constraint (kombu>=5.3.4,<6.0). Verified: worker starts and processes a
-# real tutor.tasks.generate_course_content task against redis 5.0.14.1.
-kombu==5.4.2
+# kombu was pinned to 5.4.2 because kombu 5.5+'s redis transport uses a
+# binding-expiry Lua script (`ZADD ... GT`) that requires Redis >= 6.2, and the
+# dev redis-server here used to be 5.0.14.1. That old Redis now runs separately
+# on port 6379 for anything else that needs it; astra's Celery broker (see
+# CELERY_BROKER_URL in .env) points at a new Redis 8.10.3 instance on port 6380
+# instead, so the Lua feature is available and the pin is no longer required.
+# Verified 2026-11-27: with kombu 5.7.0 (celery 5.3.6 still constrains it to
+# <6.0,>=5.3.4), a real worker started cleanly against redis://localhost:6380/0
+# (no Lua/mingle crash) and processed a real tutor.tasks.generate_course_content
+# task end to end (received -> executed -> completed, failing only downstream
+# on the already-known Gemini quota/Ollama-not-installed issue).
+kombu==5.7.0
 redis==8.2.0
 gunicorn==21.2.0
 dj-database-url==3.0.1
