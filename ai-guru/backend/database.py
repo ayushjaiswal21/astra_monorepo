@@ -1,6 +1,9 @@
+import logging
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 import config
+
+logger = logging.getLogger(__name__)
 
 client = None
 db = None
@@ -35,11 +38,10 @@ try:
     feedback_collection.create_index("session_id")
 
 except ConnectionFailure as e:
-    print(f"[ERROR] MongoDB connection failed: {e}")
-    print("[INFO] Fallback: Application will not be able to persist data.")
+    logger.error("MongoDB connection failed: %s -- running in DEGRADED mode (personalization/learning disabled, chat still works)", e)
     # In a real application, you might want to exit or have a more robust fallback.
 except Exception as e:
-    print(f"[ERROR] An unexpected error occurred with MongoDB: {e}")
+    logger.error("An unexpected error occurred with MongoDB: %s -- running in DEGRADED mode (personalization/learning disabled)", e)
 
 def get_chat_collection():
     return chat_collection

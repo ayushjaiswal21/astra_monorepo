@@ -136,6 +136,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY') or 'your-gemini-api-key-placeholder'
 JUDGE0_API_KEY = os.getenv('JUDGE0_API_KEY') or 'your-judge0-api-key-placeholder'
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434/api/generate')
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'phi3:mini')
 
 
 # Authentication Settings

@@ -1,0 +1,15 @@
+{
+  "name": "astra",
+  "version": "1.0.0",
+  "description": "Astralearn is a dynamic web application built with Django that leverages AI to automatically generate entire courses, complete with modules, lessons, and quizzes, based on a user-provided topic. It features real-time AI assistance and interactive elements powered by Django Channels.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

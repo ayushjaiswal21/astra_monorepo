@@ -394,6 +394,16 @@ app.add_middleware(
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+@app.get("/health")
+def health_check():
+    mongodb_connected = bool(database.is_db_available())
+    return {
+        "status": "ok" if mongodb_connected else "degraded",
+        "mongodb_connected": mongodb_connected,
+        "personalization_active": mongodb_connected,
+        "chat_available": True
+    }
+
 @app.post("/chat")
 async def chat_endpoint(request: ChatRequest, http_request: Request):
     try:
@@ -447,18 +457,19 @@ async def chat_endpoint(request: ChatRequest, http_request: Request):
         
         # Only return language info if we're confident about it
         response_data = {
-            "response": bot_response, 
+            "response": bot_response,
             "session_id": session_id,
-            "interaction_id": interaction_id
+            "interaction_id": interaction_id,
+            "personalization_active": bool(database.is_db_available())
         }
-        
+
         if should_display:
             response_data.update({
                 "detected_language": detected_lang,
                 "language_name": language_name,
                 "confidence": confidence
             })
-        
+
         return response_data
     except HTTPException as http_exc:
         # Re-raise HTTPException directly

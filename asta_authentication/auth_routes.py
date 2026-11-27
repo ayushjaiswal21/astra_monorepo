@@ -6,8 +6,10 @@ import os
 from sqlalchemy import exc
 try:
     from .models import db, User
+    from .utils import rate_limit
 except ImportError:
     from models import db, User
+    from utils import rate_limit
 from flask_login import login_user, logout_user, current_user
 
 auth_bp = Blueprint('auth', __name__)
@@ -36,6 +38,7 @@ def register_mock_oauth_routes(app):
 # --- API Endpoints for Testing ---
 
 @auth_bp.route('/register', methods=['POST'])
+@rate_limit(max_requests=5, window_seconds=60)
 def api_register():
     data = request.get_json()
 
@@ -84,6 +87,7 @@ def api_register():
         return jsonify({'error': 'An unexpected error occurred.'}), 500
 
 @auth_bp.route('/login', methods=['POST'])
+@rate_limit(max_requests=10, window_seconds=60)
 def api_login():
     data = request.get_json()
     if not data or not data.get('email') or not data.get('password'):
@@ -127,6 +131,7 @@ def role_selection():
     return render_template('role_selection.html')
 
 @auth_bp.route('/signin_email', methods=['GET', 'POST'])
+@rate_limit(max_requests=10, window_seconds=60, methods=['POST'])
 def signin_email():
     if request.method == 'POST':
         email = request.form.get('email')
@@ -143,6 +148,7 @@ def signin_email():
     return render_template('signin_email.html')
 
 @auth_bp.route('/join_form', methods=['POST'])
+@rate_limit(max_requests=5, window_seconds=60)
 def join_form():
     email = request.form.get('email')
     password = request.form.get('password')

@@ -1,7 +1,38 @@
 import os
+import time
+from collections import defaultdict, deque
 from functools import wraps
 from flask import request, jsonify, current_app
 from flask_login import current_user, login_required as flask_login_required
+
+# shortcut: in-memory, per-process sliding-window limiter — fine for a
+# single-worker prototype deployment, resets on restart, and won't share
+# state across multiple processes/workers. Upgrade to Flask-Limiter + Redis
+# if this app is ever run with more than one worker process.
+_rate_limit_hits = defaultdict(deque)
+
+def rate_limit(max_requests=10, window_seconds=60, methods=None):
+    """Limit an endpoint to `max_requests` per `window_seconds` per client IP.
+    `methods` restricts limiting to specific HTTP methods (e.g. only POST on
+    a combined GET+POST view), defaulting to all methods."""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if os.environ.get('TEST', 'false').lower() == 'true' or current_app.config.get('TESTING'):
+                return f(*args, **kwargs)
+            if methods and request.method not in methods:
+                return f(*args, **kwargs)
+            key = f"{f.__name__}:{request.remote_addr}"
+            now = time.time()
+            hits = _rate_limit_hits[key]
+            while hits and now - hits[0] > window_seconds:
+                hits.popleft()
+            if len(hits) >= max_requests:
+                return jsonify({"error": "Too many requests, please try again later."}), 429
+            hits.append(now)
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 def api_login_required(f):
     @wraps(f)

@@ -307,7 +307,16 @@ def ai_assistant(request):
 # Analytics endpoint for aggregated learning data
 @require_http_methods(["GET"])
 def analytics(request, user_id):
-    """Get aggregated analytics data for learning progress for a specific user"""
+    """Get aggregated analytics data for learning progress for a specific user.
+
+    `user_id` is actually this app's anonymous session_key (there is no real
+    login system here), so it must match the caller's own session_key or
+    anyone could read anyone else's learning analytics by guessing/sharing it.
+    """
+    if not request.session.session_key:
+        request.session.create()
+    if user_id != request.session.session_key:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
     try:
         # Filter courses, modules, lessons, quizzes by user's progress
         user_courses = Course.objects.filter(module__lessons__userprogress__session_key=user_id).distinct()
@@ -486,17 +495,22 @@ def submit_course_test_api(request, test_session_id):
 
         correct_answers = 0
         wrong_questions = []
+        pending_review_count = 0
 
-        for question in questions:
+        # Coding questions have no automated grading path yet (no sandboxed
+        # execution is wired up), so they're excluded from the score instead
+        # of silently counting as wrong and capping the max possible score.
+        scored_questions = [q for q in questions if q.question_type == 'mcq']
+
+        for question in scored_questions:
             if str(question.id) in answers:
-                if question.question_type == 'mcq':
-                    if answers[str(question.id)] == question.correct_answer_key:
-                        correct_answers += 1
-                    else:
-                        wrong_questions.append(question.question_text)
-            # For coding questions, we assume they are manually graded for now
+                if answers[str(question.id)] == question.correct_answer_key:
+                    correct_answers += 1
+                else:
+                    wrong_questions.append(question.question_text)
 
-        total_questions = questions.count()
+        pending_review_count = questions.count() - len(scored_questions)
+        total_questions = len(scored_questions)
         score = (correct_answers / total_questions) * 100 if total_questions > 0 else 0
 
         # Generate recommendations
@@ -523,7 +537,8 @@ def submit_course_test_api(request, test_session_id):
 
         return JsonResponse({
             'score': score,
-            'recommendations': recommendations
+            'recommendations': recommendations,
+            'pending_review_count': pending_review_count,
         })
 
     except Exception as e:

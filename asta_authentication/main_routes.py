@@ -84,7 +84,9 @@ def calculate_profile_completeness(user):
 
 def fetch_news_from_api(category="general", limit=10):
     """Fetch news from GNews API based on category with focus on jobs, careers, and market news"""
-    api_key = "c137fde903ff8adc20b448777fcd183d"
+    api_key = os.environ.get("GNEWS_API_KEY", "")
+    if not api_key:
+        return []
     base_url = "https://gnews.io/api/v4/search"  # Using search endpoint for better targeting
     
     # Define search queries for relevant job market and career news

@@ -38,6 +38,52 @@ def get_course_generation_prompt(topic):
     Ensure the JSON is well-formed and contains all the requested fields.
     '''
 
+def get_structure_generation_prompt(topic):
+    """Returns the prompt asking for ONLY the course/module/lesson structure (titles), no content."""
+    return f'''
+    You are an expert instructional designer. Plan the structure of a complete course on the topic: '{topic}'.
+    Respond with ONLY a single, valid JSON object, no other text.
+    The JSON structure should be:
+    {{
+      "course_title": "Course Title",
+      "course_description": "A brief description of the course.",
+      "modules": [
+        {{
+          "module_title": "Module 1 Title",
+          "module_objective": "The learning objective for this module.",
+          "lessons": [
+            {{
+              "lesson_title": "Lesson 1.1 Title"
+            }}
+          ]
+        }}
+      ]
+    }}
+
+    Do NOT include lesson content or quizzes, titles only.
+    Generate 3-5 modules for the course.
+    Each module should have 2-4 lessons.
+    '''
+
+
+def get_lesson_content_prompt(course_title, module_title, lesson_title):
+    """Returns the prompt asking Gemini to generate the content + quiz for a single lesson."""
+    return f'''
+    You are an expert instructional designer writing a lesson for the course '{course_title}',
+    module '{module_title}', lesson '{lesson_title}'.
+    Respond with ONLY a single, valid JSON object, no other text.
+    The JSON structure should be:
+    {{
+      "lesson_content": "The full lesson content in Markdown format. It should be detailed, clear, and easy to understand.",
+      "quiz": {{
+        "question": "A multiple-choice question to test the core concept of the lesson.",
+        "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+        "answer": "The correct option from the list."
+      }}
+    }}
+    '''
+
+
 def get_test_generation_prompt(course_title):
     """Returns the formatted prompt for generating a comprehensive test for a course."""
     return f"""
