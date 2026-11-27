@@ -272,6 +272,24 @@ i.fas, i.far, i.fab, svg.icon {
   .nav-collapse { display: flex !important; width: auto; }
 }
 
+/* layout.html's header: a mobile-only links panel, opposite of .nav-collapse
+   above (hidden from lg up, not forced visible) - toggled the same way via
+   site-chrome.js's [data-collapse-toggle], just with its own visibility rule
+   since .nav-collapse's "always visible at lg+" is wrong for this one. */
+.mobile-nav-panel { display: none; width: 100%; }
+.mobile-nav-panel.show { display: block; }
+
+/* This app's purged tailwind-built.css has zero `lg:*` rules at all (same
+   class of bug fixed in astra's base.html) - the desktop nav row, the
+   mobile-only hamburger toggle, and this panel's own `lg:hidden` were all
+   silently no-ops. Polyfill the handful actually used, pinned to Tailwind's
+   real `lg` breakpoint (1024px). */
+@media (min-width: 1024px) {
+  .lg\:hidden { display: none; }
+  .lg\:flex { display: flex; }
+  .lg\:items-center { align-items: center; }
+}
+
 /* ============================================================
    Forms: label proximity to its own input, visible focus state
    ============================================================ */
