@@ -48,7 +48,7 @@ const Sidebar = ({
       {/* Header */}
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
         {!sidebarCollapsed && (
-          <h2 className="text-xl font-bold text-blue-600">AI Guru</h2>
+          <h2 className="text-xl font-bold" style={{ color: 'var(--accent)' }}>AI Guru</h2>
         )}
         <div className="flex items-center gap-2">
           <button
@@ -86,7 +86,7 @@ const Sidebar = ({
       <div className="p-4">
         <button
           onClick={startNewChat}
-          className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition-colors shadow-sm hover:shadow-md"
+          className="btn-filled w-full flex items-center justify-center"
         >
           <span className="text-lg">✨</span>
           {!sidebarCollapsed && <span className="ml-2">New Chat</span>}

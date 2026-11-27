@@ -29,7 +29,7 @@ const MessageInput = ({
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-2 py-2 focus-within:ring-2 focus-within:ring-blue-500">
+        <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-2 py-2 focus-within:ring-2 focus-within:ring-[var(--accent)]">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}

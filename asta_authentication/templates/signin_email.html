@@ -21,9 +21,9 @@
 <body class="bg-gray-50">
     <header class="bg-white shadow-sm">
         <nav class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold text-blue-600">AstraLearn</a>
+            <a href="/" class="text-2xl font-bold text-indigo-600">AstraLearn</a>
             <div>
-                <a href="{{ url_for('auth.join') }}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Join Now</a>
+                <a href="{{ url_for('auth.join') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Join Now</a>
             </div>
         </nav>
     </header>
@@ -50,14 +50,14 @@
                     <div class="mb-4 relative">
                         <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
                         <input type="password" id="password" name="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" required>
-                         <span id="togglePassword" class="absolute right-3 top-10 text-blue-600 font-semibold toggle-password">Show</span>
+                         <span id="togglePassword" class="absolute right-3 top-10 text-indigo-600 font-semibold toggle-password">Show</span>
                     </div>
                     <div class="mb-6">
-                        <a href="{{ url_for('auth.forgot_password') }}" class="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800">
+                        <a href="{{ url_for('auth.forgot_password') }}" class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800">
                             Forgot Password?
                         </a>
                     </div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-full focus:outline-none focus:shadow-outline">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-full focus:outline-none focus:shadow-outline">
                         Sign In
                     </button>
                 </form>

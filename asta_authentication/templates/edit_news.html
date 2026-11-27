@@ -20,7 +20,7 @@
             <div class="max-w-4xl mx-auto px-4 py-4">
                 <div class="flex items-center justify-between">
                     <h1 class="text-2xl font-bold text-gray-900">Edit News Article</h1>
-                    <a href="{{ url_for('main.news') }}" class="text-blue-600 hover:text-blue-800">
+                    <a href="{{ url_for('main.news') }}" class="text-indigo-600 hover:text-indigo-700">
                         <i class="fas fa-arrow-left mr-2"></i>Back to News
                     </a>
                 </div>
@@ -85,7 +85,7 @@
 
                     <div class="flex items-center">
                         <input type="checkbox" id="is_published" name="is_published" {% if news.is_published %}checked{% endif %}
-                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                               class="h-4 w-4 text-indigo-600 focus:ring-blue-500 border-gray-300 rounded">
                         <label for="is_published" class="ml-2 block text-sm text-gray-900">
                             Published
                         </label>
@@ -97,7 +97,7 @@
                             Cancel
                         </a>
                         <button type="submit"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                             Update Article
                         </button>
                     </div>

@@ -23,7 +23,8 @@ block content %}
             {% for path in learning_paths %}
             <div class="mb-4">
               <div
-                class="card h-100 {% if path.is_active %}border-green-500{% endif %}"
+                class="card h-100"
+                {% if path.is_active %}style="border-color: #16a34a;"{% endif %}
               >
                 <div class="card-body">
                   <div

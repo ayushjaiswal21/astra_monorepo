@@ -4,13 +4,13 @@
 
 {% block content %}
 <div class="bg-white shadow overflow-hidden sm:rounded-2xl">
-    <div class="px-4 py-5 sm:px-6 bg-indigo-50">
+    <div class="px-4 py-5 sm:px-6" style="background: var(--surface-1);">
         <div class="flex items-center justify-between">
             <div>
                 <nav class="flex" aria-label="Breadcrumb">
                     <ol class="flex items-center space-x-2">
                         <li>
-                            <a href="{% url 'tutor:course_list' %}" class="text-indigo-600 hover:text-indigo-800">
+                            <a href="{% url 'tutor:course_list' %}" style="color: var(--accent);">
                                 <i class="fas fa-home"></i>
                                 <span class="sr-only">Home</span>
                             </a>
@@ -18,7 +18,7 @@
                         <li>
                             <div class="flex items-center">
                                 <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                                <a href="{% url 'tutor:course_detail' lesson.module.course.id %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                                <a href="{% url 'tutor:course_detail' lesson.module.course.id %}" class="text-sm font-medium" style="color: var(--accent);">
                                     {{ lesson.module.course.title }}
                                 </a>
                             </div>
@@ -26,7 +26,7 @@
                         <li>
                             <div class="flex items-center">
                                 <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                                <a href="{% url 'tutor:lesson_detail' lesson.module.course.id lesson.module.id lesson.id %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                                <a href="{% url 'tutor:lesson_detail' lesson.module.course.id lesson.module.id lesson.id %}" class="text-sm font-medium" style="color: var(--accent);">
                                     {{ lesson.title }}
                                 </a>
                             </div>
@@ -50,10 +50,10 @@
     <div class="px-4 py-5 sm:p-6">
         <div id="quiz-container">
             <div id="quiz-intro" class="text-center py-8">
-                <i class="fas fa-question-circle text-5xl text-indigo-500 mb-4"></i>
+                <i class="fas fa-question-circle text-5xl mb-4" style="color: var(--accent);"></i>
                 <h2 class="text-2xl font-bold text-gray-900 mb-2">Ready to test your knowledge?</h2>
                 <p class="text-gray-600 mb-6">This quiz contains {{ quiz.questions.count }} questions. Take your time and do your best!</p>
-                <button onclick="startQuiz()" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <button onclick="startQuiz()" class="btn-filled">
                     <i class="fas fa-play mr-2"></i> Start Quiz
                 </button>
             </div>
@@ -65,7 +65,7 @@
                 
                 <div class="mt-8 pt-6 border-t border-gray-200">
                     <div class="flex justify-end">
-                        <button type="button" onclick="submitQuiz()" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <button type="button" onclick="submitQuiz()" class="btn-filled">
                             <i class="fas fa-paper-plane mr-2"></i> Submit Quiz
                         </button>
                     </div>
@@ -81,7 +81,7 @@
                     <p class="mt-2 text-gray-600">Your score: <span id="quiz-score" class="font-bold">0</span>%</p>
                     <p id="quiz-message" class="mt-2 text-gray-600"></p>
                     <div class="mt-6">
-                        <a href="{% url 'tutor:lesson_detail' lesson.module.course.id lesson.module.id lesson.id %}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <a href="{% url 'tutor:lesson_detail' lesson.module.course.id lesson.module.id lesson.id %}" class="btn-filled">
                             <i class="fas fa-arrow-left mr-2"></i> Back to Lesson
                         </a>
                     </div>
@@ -93,7 +93,7 @@
                     <h3 class="mt-4 text-2xl font-medium text-gray-900">Something went wrong</h3>
                     <p id="error-message" class="mt-2 text-gray-600">Please try again later.</p>
                     <div class="mt-6">
-                        <button onclick="location.reload()" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <button onclick="location.reload()" class="btn-filled">
                             <i class="fas fa-sync-alt mr-2"></i> Try Again
                         </button>
                     </div>
@@ -104,7 +104,7 @@
 </div>
 
 <!-- AI Assistant Button (floating) -->
-<button onclick="toggleChat()" class="fixed bottom-6 right-6 bg-indigo-600 text-white rounded-full p-4 shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+<button onclick="toggleChat()" class="fixed bottom-6 right-6 rounded-full p-4 shadow-lg focus:outline-none" style="background: var(--accent); color: var(--text-on-accent);" onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">
     <i class="fas fa-robot text-2xl"></i>
 </button>
 {% endblock %}
@@ -160,13 +160,13 @@
                     ${choicesHtml}
                 </div>
                 ${question.explanation ? `
-                    <div class="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400">
+                    <div class="mt-4 p-3" style="background: var(--surface-1); border-left: 4px solid var(--accent);">
                         <div class="flex">
                             <div class="flex-shrink-0">
-                                <i class="fas fa-lightbulb text-yellow-400"></i>
+                                <i class="fas fa-lightbulb" style="color: var(--accent);"></i>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm text-yellow-700">${question.explanation}</p>
+                                <p class="text-sm" style="color: var(--text-secondary);">${question.explanation}</p>
                             </div>
                         </div>
                     </div>

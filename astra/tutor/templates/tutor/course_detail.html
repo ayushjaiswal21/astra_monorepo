@@ -5,7 +5,7 @@
 {% block content %}
 <div class="p-10">
     <div class="flex items-start justify-between flex-wrap gap-2">
-        <h1 class="text-3xl font-bold text-gray-800">{{ course.title }} <span class="text-sm bg-blue-100 text-blue-800 font-medium mr-2 px-2.5 py-0.5 rounded">Generic</span></h1>
+        <h1 class="text-3xl font-bold text-gray-800">{{ course.title }} <span class="text-sm font-medium mr-2 px-2.5 py-0.5 rounded" style="background: var(--surface-2); color: var(--text-secondary);">Generic</span></h1>
         <button onclick="copyCourseLink(this)" class="btn-outline text-sm shrink-0">
             <i class="fas fa-link"></i> <span>Copy course link</span>
         </button>
@@ -22,24 +22,24 @@
     {% endif %}
 
     <div class="mt-6">
-        <a href="{% url 'tutor:start_course_test' course.id %}" class="inline-block bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200">
-            🚀 Start Comprehensive Test
+        <a href="{% url 'tutor:start_course_test' course.id %}" class="btn-filled inline-block">
+            Start Comprehensive Test
         </a>
     </div>
 
     <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for module in modules %}
-        <div class="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-6 rounded-2xl shadow-lg flex flex-col transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+        <div class="card-surface p-6 flex flex-col transform transition-all duration-300 hover:scale-[1.01]">
             <div class="flex items-center justify-between mb-4">
-                <span class="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">Module {{ forloop.counter }}</span>
-                <span class="text-sm font-medium">{{ module.lessons.count }} Lessons</span>
+                <span class="text-sm font-medium px-3 py-1 rounded-full" style="background: var(--surface-2); color: var(--text-secondary);">Module {{ forloop.counter }}</span>
+                <span class="text-sm font-medium" style="color: var(--text-secondary);">{{ module.lessons.count }} Lessons</span>
             </div>
-            
-            <h2 class="text-xl font-bold mb-2">{{ module.title }}</h2>
-            <p class="text-blue-100 text-sm flex-grow">{{ module.description|default:"No description available." }}</p>
-            
-            <div class="mt-6 pt-4 border-t border-blue-500/30">
-                <div class="flex items-center justify-between text-sm text-blue-100 mb-4">
+
+            <h2 class="text-xl font-bold mb-2" style="color: var(--text-primary);">{{ module.title }}</h2>
+            <p class="text-sm flex-grow" style="color: var(--text-secondary);">{{ module.description|default:"No description available." }}</p>
+
+            <div class="mt-6 pt-4" style="border-top: var(--border-hairline);">
+                <div class="flex items-center justify-between text-sm mb-4" style="color: var(--text-secondary);">
                     <span class="flex items-center">
                         <i class="far fa-clock mr-1"></i> 1h 30m
                     </span>
@@ -47,14 +47,14 @@
                         <i class="far fa-star mr-1"></i> 4.5
                     </span>
                 </div>
-                
+
                 {% if module.lessons.first %}
-                <a href="{% url 'tutor:lesson_detail' course.id module.id module.lessons.first.id %}" 
-                   class="block w-full text-center bg-white text-blue-700 hover:bg-blue-50 font-semibold px-4 py-2.5 rounded-lg transition-colors duration-200">
+                <a href="{% url 'tutor:lesson_detail' course.id module.id module.lessons.first.id %}"
+                   class="btn-filled block w-full text-center">
                     Start Learning
                 </a>
                 {% else %}
-                <span class="block w-full text-center bg-white/10 text-white/70 font-medium px-4 py-2.5 rounded-lg cursor-not-allowed">
+                <span class="block w-full text-center font-medium px-4 py-2.5 rounded-lg cursor-not-allowed" style="background: var(--surface-1); color: var(--text-secondary);">
                     Coming Soon
                 </span>
                 {% endif %}
@@ -62,8 +62,8 @@
         </div>
         {% empty %}
         <div class="col-span-full text-center py-12">
-            <div class="inline-block p-4 bg-blue-50 rounded-full mb-4">
-                <i class="fas fa-book-open text-blue-500 text-2xl"></i>
+            <div class="inline-block p-4 rounded-full mb-4" style="background: var(--surface-2);">
+                <i class="fas fa-book-open text-2xl" style="color: var(--accent);"></i>
             </div>
             <h3 class="text-lg font-medium text-gray-900">No modules available yet</h3>
             <p class="mt-1 text-gray-500">Check back later or contact your instructor.</p>

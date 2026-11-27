@@ -84,7 +84,7 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert rounded-md border p-4 mb-3 flex items-start justify-between gap-4 {% if category == 'success' %}bg-green-50 border-green-200 text-green-800{% elif category in ['danger', 'error'] %}bg-red-50 border-red-200 text-red-800{% elif category == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}" role="alert">
+                    <div class="alert rounded-md border p-4 mb-3 flex items-start justify-between gap-4" style="{% if category == 'success' %}background: rgba(22,163,74,0.1); border-color: rgba(22,163,74,0.3); color: #166534;{% elif category in ['danger', 'error'] %}background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.3); color: #991b1b;{% elif category == 'warning' %}background: rgba(217,119,6,0.1); border-color: rgba(217,119,6,0.3); color: #92400e;{% else %}background: rgba(2,132,199,0.1); border-color: rgba(2,132,199,0.3); color: #075985;{% endif %}" role="alert">
                         <span>{{ message }}</span>
                         <button type="button" class="text-lg leading-none opacity-60 hover:opacity-100" aria-label="Close" onclick="this.closest('.alert').remove()">&times;</button>
                     </div>

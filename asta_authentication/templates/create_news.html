@@ -39,7 +39,7 @@
             </h1>
             <a
               href="{{ url_for('main.dashboard') }}"
-              class="text-blue-600 hover:text-blue-800"
+              class="text-indigo-600 hover:text-indigo-700"
             >
               <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
             </a>
@@ -177,7 +177,7 @@
                 id="is_published"
                 name="is_published"
                 checked
-                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                class="h-4 w-4 text-indigo-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label
                 for="is_published"
@@ -188,8 +188,8 @@
             </div>
 
             {% if sample_news %}
-            <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
-              <h3 class="text-sm font-medium text-blue-800 mb-3">
+            <div class="border rounded-md p-4 mb-6" style="background: var(--surface-1); border-color: var(--border-hairline);">
+              <h3 class="text-sm font-medium mb-3" style="color: var(--text-primary);">
                 Quick Add Sample Education News:
               </h3>
               <div class="space-y-2">
@@ -197,7 +197,8 @@
                 <button
                   type="button"
                   onclick="fillSampleData('{{ sample.title }}', '{{ sample.content }}', '{{ sample.summary }}', '{{ sample.category }}', '{{ sample.tags }}')"
-                  class="block w-full text-left px-3 py-2 text-sm bg-white border border-blue-300 rounded hover:bg-blue-50 text-blue-700"
+                  class="block w-full text-left px-3 py-2 text-sm bg-white border rounded hover:bg-gray-50 text-indigo-600"
+                  style="border-color: var(--border-hairline);"
                 >
                   {{ sample.title }}
                 </button>
@@ -215,7 +216,7 @@
               </a>
               <button
                 type="submit"
-                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 Create Article
               </button>

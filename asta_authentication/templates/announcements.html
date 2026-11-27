@@ -7,13 +7,13 @@
       <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-200">
 
         {% if item.type == 'Internship' %}
-          <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full mb-2">Internship</span>
+          <span class="badge bg-light mb-2">Internship</span>
         {% elif item.type == 'Job' %}
-          <span class="inline-block bg-green-100 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full mb-2">Job Post</span>
+          <span class="badge bg-light mb-2">Job Post</span>
         {% elif item.type == 'Workshop' %}
-          <span class="inline-block bg-yellow-100 text-yellow-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full mb-2">Workshop</span>
+          <span class="badge bg-light mb-2">Workshop</span>
         {% elif item.type == 'Event' %}
-          <span class="inline-block bg-purple-100 text-purple-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full mb-2">Event</span>
+          <span class="badge bg-light mb-2">Event</span>
         {% endif %}
 
         <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ item.title }}</h3>
@@ -29,7 +29,7 @@
           <span class="text-sm text-gray-500">Posted by: {{ item.provider.username }} on {{ item.date_posted.strftime('%b %d, %Y') }}</span>
           {% set link = item.apply_link or item.register_link %}
           {% if link %}
-            <a href="{{ link }}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm">
+            <a href="{{ link }}" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm">
               View Details
             </a>
           {% endif %}

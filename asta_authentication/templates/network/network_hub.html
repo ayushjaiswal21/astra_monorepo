@@ -22,10 +22,10 @@
             <div class="flex items-center justify-between h-14">
                 <div class="flex items-center space-x-2">
                     <div class="flex items-center">
-                        <div class="w-9 h-9 bg-blue-600 rounded flex items-center justify-center">
+                        <div class="w-9 h-9 rounded flex items-center justify-center" style="background: var(--accent);">
                             <i class="fas fa-graduation-cap text-white text-lg"></i>
                         </div>
-                        <span class="ml-2 text-xl font-bold text-blue-600">AstraLearn</span>
+                        <span class="ml-2 text-xl font-bold" style="color: var(--accent);">AstraLearn</span>
                     </div>
                     <input type="text" placeholder="Search" class="hidden md:block ml-2 w-64 px-3 py-1.5 bg-gray-100 rounded text-sm focus:outline-none focus:bg-white focus:border focus:border-gray-300">
                 </div>
@@ -90,7 +90,7 @@
                                 <h3 class="font-semibold text-gray-900">{{ user.name or user.username }}</h3>
                                 <p class="text-xs text-gray-600">{{ user.headline or '' }}</p>
                             </a>
-                            <button class="mt-4 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">Connect</button>
+                            <button class="mt-4 px-4 py-2 text-white text-sm font-medium rounded-full focus:outline-none focus:ring-2" style="background: var(--accent);">Connect</button>
                         </div>
                         {% endfor %}
                     </div>

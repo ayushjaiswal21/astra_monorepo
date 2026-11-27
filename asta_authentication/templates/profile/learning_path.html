@@ -104,7 +104,7 @@ path_data.career_name }}{% endblock %} {% block content %}
 
         {% for phase in path_data.phases %}
         <div class="card mb-3 phase-card">
-          <div class="card-header bg-indigo-600 text-white">
+          <div class="card-header" style="background: var(--surface-2); color: var(--text-primary);">
             <div class="flex justify-between items-center">
               <h5 class="mb-0">
                 Phase {{ phase.phase_number }}: {{ phase.title }}
@@ -159,7 +159,7 @@ path_data.career_name }}{% endblock %} {% block content %}
                 <i class="fas fa-project-diagram me-2"></i>Practice Projects:
               </h6>
               {% for project in phase.projects %}
-              <div class="card mb-2 border-green-500">
+              <div class="card mb-2">
                 <div class="card-body py-2">
                   <strong>{{ project.title }}</strong>
                   <p class="mb-1 mt-1">{{ project.description }}</p>
@@ -280,7 +280,7 @@ path_data.career_name }}{% endblock %} {% block content %}
 
       <!-- Success Metrics -->
       <div class="card mb-4">
-        <div class="card-header bg-green-600 text-white">
+        <div class="card-header" style="background: var(--surface-2); color: var(--text-primary);">
           <h4 class="mb-0">
             <i class="fas fa-chart-line me-2"></i>Success Metrics
           </h4>

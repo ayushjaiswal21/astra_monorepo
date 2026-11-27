@@ -7,7 +7,7 @@
     <h1 class="text-3xl font-bold text-gray-800">Comprehensive Test: {{ course.title }}</h1>
 
     <div id="loading-spinner" class="mt-8 text-center">
-        <i class="fas fa-spinner fa-spin text-4xl text-blue-600"></i>
+        <i class="fas fa-spinner fa-spin text-4xl" style="color: var(--accent);"></i>
         <p class="mt-2 text-gray-600">Generating your personalized test...</p>
     </div>
 
@@ -18,7 +18,7 @@
 <div id="quiz-container" class="hidden mt-8">
         <form id="quiz-form">
             <div id="questions-area" class="space-y-6"></div>
-            <button type="submit" id="submit-btn" class="mt-6 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200">
+            <button type="submit" id="submit-btn" class="btn-filled mt-6">
                 Submit Test
             </button>
         </form>
@@ -89,7 +89,7 @@
                             <div class="space-y-3 options-list">
                                 ${q.options.map(option => `
                                     <label class="flex items-center space-x-3 p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
-                                        <input type="radio" name="question-${q.id}" value="${option}" class="form-radio text-blue-600">
+                                        <input type="radio" name="question-${q.id}" value="${option}" class="form-radio" style="accent-color: var(--accent);">
                                         <span class="text-gray-700">${option}</span>
                                     </label>
                                 `).join('')}
@@ -104,7 +104,7 @@
                                 <textarea class="w-full h-32 bg-transparent text-white border-0 p-0 focus:ring-0 resize-y" name="question-${q.id}" placeholder="# Your code here">${q.starter_code}</textarea>
                             </div>
                             <div class="mt-4">
-                                <button type="button" onclick="runCode(${q.id})" class="run-code-btn bg-green-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-green-700">
+                                <button type="button" onclick="runCode(${q.id})" class="run-code-btn btn-filled text-sm">
                                     <i class="fas fa-play mr-1"></i> Run Code
                                 </button>
                             </div>
@@ -122,11 +122,11 @@
                     <p class="font-semibold text-gray-800 mb-4">1. (Placeholder) What is the main purpose of a 'for' loop?</p>
                     <div class="space-y-3 options-list">
                         <label class="flex items-center space-x-3 p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
-                            <input type="radio" name="q_mcq_mock_1" value="A" class="form-radio text-blue-600">
+                            <input type="radio" name="q_mcq_mock_1" value="A" class="form-radio" style="accent-color: var(--accent);">
                             <span class="text-gray-700">A) To store data</span>
                         </label>
                         <label class="flex items-center space-x-3 p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
-                            <input type="radio" name="q_mcq_mock_1" value="B" class="form-radio text-blue-600">
+                            <input type="radio" name="q_mcq_mock_1" value="B" class="form-radio" style="accent-color: var(--accent);">
                             <span class="text-gray-700">B) To iterate over a sequence of items</span>
                         </label>
                     </div>
@@ -137,7 +137,7 @@
                         <textarea class="w-full h-32 bg-transparent text-white border-0 p-0 focus:ring-0 resize-y" name="q_code_mock_1" placeholder="def greet(name):\n    # Your code here"></textarea>
                     </div>
                     <div class="mt-4">
-                        <button type="button" class="run-code-btn-mock bg-green-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-green-700">
+                        <button type="button" class="run-code-btn-mock btn-filled text-sm">
                             <i class="fas fa-play mr-1"></i> Run Code
                         </button>
                     </div>

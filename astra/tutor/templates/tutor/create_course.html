@@ -8,8 +8,8 @@
 
     <div class="mt-6 bg-white p-8 rounded-2xl shadow-md">
         <div class="flex items-center">
-            <input type="text" id="course-topic-input" placeholder="Search any topic to create a custom course..." class="flex-1 p-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <button id="create-course-btn" class="bg-indigo-600 text-white px-6 py-3 rounded-r-md hover:bg-indigo-700 font-semibold">Create Course</button>
+            <input type="text" id="course-topic-input" placeholder="Search any topic to create a custom course..." class="flex-1 p-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2" style="--tw-ring-color: var(--accent);">
+            <button id="create-course-btn" class="btn-filled rounded-l-none">Create Course</button>
         </div>
         <div id="create-course-feedback" class="mt-4 hidden rounded-md p-3 text-sm" style="border: var(--border-hairline); border-radius: var(--radius-sm);"></div>
         <div class="mt-4 flex items-center space-x-2">
@@ -54,7 +54,7 @@
                     </select>
                 </div>
                 <div class="text-center">
-                    <button type="submit" id="submit-personalization-btn" class="w-full bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700">Continue</button>
+                    <button type="submit" id="submit-personalization-btn" class="btn-filled w-full">Continue</button>
                 </div>
             </form>
         </div>

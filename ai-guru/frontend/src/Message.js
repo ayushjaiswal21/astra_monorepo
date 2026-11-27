@@ -17,12 +17,18 @@ const Message = ({ msg, index, submitFeedback, feedbackLoading, processingMessag
 
   return (
     <div className={`flex items-start gap-4 mb-6`}>
-      <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${isUser ? 'bg-blue-500' : 'bg-gray-700'}`}>
+      <div
+        className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-white"
+        style={{ background: isUser ? 'var(--accent)' : '#374151' }}
+      >
         {isUser ? "👤" : "🤖"}
       </div>
 
       <div className="flex-1">
-        <div className={`px-4 py-3 rounded-lg ${isUser ? 'bg-blue-100 text-blue-900' : 'bg-white border border-gray-200 text-gray-800'}`}>
+        <div
+          className={`px-4 py-3 rounded-lg ${isUser ? '' : 'bg-white border border-gray-200 text-gray-800'}`}
+          style={isUser ? { background: 'var(--surface-2)', color: 'var(--text-primary)' } : undefined}
+        >
           {msg.image && (
             <div className="mb-3">
               <img

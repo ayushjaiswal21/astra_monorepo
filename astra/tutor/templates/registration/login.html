@@ -18,14 +18,14 @@
         <div class="mb-4">
             <label for="id_username" class="block text-sm font-medium text-gray-700">Username</label>
             <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username"
-                   class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                   class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none sm:text-sm" style="--tw-ring-color: var(--accent); border-color: var(--border-hairline);">
         </div>
 
         <div class="mb-6">
             <label for="id_password" class="block text-sm font-medium text-gray-700">Password</label>
             <div class="relative mt-1">
                 <input type="password" name="password" autocomplete="current-password" required id="id_password"
-                       class="block w-full px-3 py-2 pr-10 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                       class="block w-full px-3 py-2 pr-10 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none sm:text-sm" style="--tw-ring-color: var(--accent);">
                 <button type="button" onclick="togglePasswordVisibility()" aria-label="Show password"
                         class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600">
                     <i id="password-toggle-icon" class="fas fa-eye"></i>
@@ -34,7 +34,7 @@
         </div>
 
         <div>
-            <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <button type="submit" class="btn-filled w-full flex justify-center">
                 Log in
             </button>
         </div>
@@ -42,7 +42,7 @@
     </form>
 
     <p class="mt-6 text-center text-sm text-gray-500">
-        <a href="{% url 'password_reset' %}" class="font-medium text-indigo-600 hover:text-indigo-500">Forgot your password?</a>
+        <a href="{% url 'password_reset' %}" class="font-medium" style="color: var(--accent);">Forgot your password?</a>
     </p>
 </div>
 <script>

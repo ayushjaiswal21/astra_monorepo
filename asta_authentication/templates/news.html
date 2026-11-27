@@ -40,11 +40,12 @@
           <div class="flex items-center space-x-2">
             <div class="flex items-center">
               <div
-                class="w-9 h-9 bg-blue-600 rounded flex items-center justify-center"
+                class="w-9 h-9 rounded flex items-center justify-center"
+                style="background: var(--accent);"
               >
                 <i class="fas fa-graduation-cap text-white text-lg"></i>
               </div>
-              <span class="ml-2 text-xl font-bold text-blue-600"
+              <span class="ml-2 text-xl font-bold" style="color: var(--accent);"
                 >AstraLearn</span
               >
             </div>
@@ -122,7 +123,8 @@
         {% if current_user.role == 'provider' %}
         <a
           href="{{ url_for('main.create_news') }}"
-          class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          class="text-white px-4 py-2 rounded-md"
+          style="background: var(--accent);"
         >
           <i class="fas fa-plus mr-2"></i>Create News
         </a>
@@ -139,19 +141,22 @@
           <div class="flex flex-wrap gap-2">
             <a
               href="{{ url_for('main.news', source='all', category=selected_category) }}"
-              class="px-3 py-1 rounded-full text-sm {% if selected_source == 'all' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}"
+              class="px-3 py-1 rounded-full text-sm {% if selected_source == 'all' %}text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}"
+              style="{% if selected_source == 'all' %}background: var(--accent);{% endif %}"
             >
               All Sources
             </a>
             <a
               href="{{ url_for('main.news', source='manual', category=selected_category) }}"
-              class="px-3 py-1 rounded-full text-sm {% if selected_source == 'manual' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}"
+              class="px-3 py-1 rounded-full text-sm {% if selected_source == 'manual' %}text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}"
+              style="{% if selected_source == 'manual' %}background: var(--accent);{% endif %}"
             >
               AstraLearn
             </a>
             <a
               href="{{ url_for('main.news', source='api', category=selected_category) }}"
-              class="px-3 py-1 rounded-full text-sm {% if selected_source == 'api' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}"
+              class="px-3 py-1 rounded-full text-sm {% if selected_source == 'api' %}text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}"
+              style="{% if selected_source == 'api' %}background: var(--accent);{% endif %}"
             >
               Live News
             </a>
@@ -166,14 +171,16 @@
           <div class="flex flex-wrap gap-2">
             <a
               href="{{ url_for('main.news', category='all', source=selected_source) }}"
-              class="px-3 py-1 rounded-full text-sm {% if selected_category == 'all' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}"
+              class="px-3 py-1 rounded-full text-sm {% if selected_category == 'all' %}text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}"
+              style="{% if selected_category == 'all' %}background: var(--accent);{% endif %}"
             >
               All
             </a>
             {% for cat in categories %}
             <a
               href="{{ url_for('main.news', category=cat, source=selected_source) }}"
-              class="px-3 py-1 rounded-full text-sm {% if selected_category == cat %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}"
+              class="px-3 py-1 rounded-full text-sm {% if selected_category == cat %}text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}"
+              style="{% if selected_category == cat %}background: var(--accent);{% endif %}"
             >
               {{ cat }}
             </a>
@@ -204,7 +211,7 @@
               {% endif %}
               <div class="flex items-center text-sm text-gray-500 mb-3">
                 <span
-                  class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium mr-2"
+                  class="badge bg-light px-2 py-1 rounded-full text-xs font-medium mr-2"
                   >{{ item.category }}</span
                 >
                 {% if item.tags %}
@@ -221,7 +228,7 @@
                 {% if item.source == 'api' %}
                 <span class="mx-2">•</span>
                 <span
-                  class="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs"
+                  class="badge bg-success px-2 py-0.5 rounded text-xs"
                   >Live News</span
                 >
                 {% endif %}
@@ -235,7 +242,7 @@
             <div class="flex space-x-2">
               <a
                 href="{{ url_for('main.edit_news', news_id=item.id) }}"
-                class="text-blue-600 hover:text-blue-800"
+                style="color: var(--accent);"
               >
                 <i class="fas fa-edit"></i>
               </a>
@@ -276,7 +283,8 @@
           <a
             href="{{ item.link_url }}"
             target="_blank"
-            class="inline-flex items-center text-blue-600 hover:text-blue-800"
+            class="inline-flex items-center"
+            style="color: var(--accent);"
           >
             <span>Read more</span>
             <i class="fas fa-external-link-alt ml-1"></i>
@@ -284,7 +292,8 @@
           {% else %}
           <a
             href="{{ item.link_url }}"
-            class="inline-flex items-center text-blue-600 hover:text-blue-800"
+            class="inline-flex items-center"
+            style="color: var(--accent);"
           >
             <span>Read more</span>
             <i class="fas fa-external-link-alt ml-1"></i>
@@ -308,7 +317,8 @@
           {% endif %} {% for page_num in pagination.iter_pages() %} {% if
           page_num %} {% if page_num == pagination.page %}
           <span
-            class="px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-gray-300"
+            class="px-3 py-2 text-sm font-medium border border-gray-300"
+            style="color: var(--accent); background: var(--surface-1);"
             >{{ page_num }}</span
           >
           {% else %}
@@ -341,7 +351,8 @@
         {% if current_user.role == 'provider' %}
         <a
           href="{{ url_for('main.create_news') }}"
-          class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          class="text-white px-4 py-2 rounded-md"
+          style="background: var(--accent);"
         >
           Create First Article
         </a>

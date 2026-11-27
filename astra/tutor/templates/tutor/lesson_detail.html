@@ -5,8 +5,8 @@
 
 {% block sidebar_content %}
 <div class="flex items-center mb-4">
-    <div class="p-2 bg-pink-100 rounded-md">
-        <i class="fas fa-lightbulb text-pink-600"></i>
+    <div class="p-2 rounded-md" style="background: var(--surface-2);">
+        <i class="fas fa-lightbulb" style="color: var(--accent);"></i>
     </div>
     <h2 class="ml-3 font-bold text-lg">{{ course.title }}</h2>
 </div>
@@ -14,7 +14,7 @@
     <ul>
         {% for m in course.modules.all %}
         <li class="mt-4">
-            <p class="font-bold text-gray-800 {% if m.id in module_progress %}text-green-500{% endif %}">
+            <p class="font-bold text-gray-800" {% if m.id in module_progress %}style="color: var(--accent);"{% endif %}>
                 {% if m.id in module_progress %}
                     <i class="fas fa-check-circle mr-2"></i>
                 {% else %}
@@ -25,7 +25,7 @@
             <ul class="mt-2 ml-4 border-l border-gray-200">
                 {% for lsn in m.lessons.all %}
                 <li>
-                    <a href="{% url 'tutor:lesson_detail' course.id m.id lsn.id %}" class="block py-2 px-4 text-sm rounded-md {% if lsn.id == lesson.id %} bg-blue-100 text-blue-700 font-bold {% else %} text-gray-600 hover:bg-gray-100 {% endif %}">
+                    <a href="{% url 'tutor:lesson_detail' course.id m.id lsn.id %}" class="block py-2 px-4 text-sm rounded-md {% if lsn.id == lesson.id %} font-bold {% else %} text-gray-600 hover:bg-gray-100 {% endif %}" {% if lsn.id == lesson.id %}style="background: var(--surface-2); color: var(--accent);"{% endif %}>
                         {{ lsn.title }}
                     </a>
                 </li>
@@ -38,6 +38,7 @@
 {% endblock %}
 
 {% block content %}
+<style>.tab-active-border { border-color: var(--accent) !important; color: var(--accent) !important; }</style>
 <div id="scroll-progress-bar" style="position:fixed; top:0; left:0; height:3px; width:0%; background: var(--accent); z-index:60; transition: width .1s linear;"></div>
 <div class="flex h-screen">
     <div id="lesson-scroll" class="flex-1 p-8 overflow-y-auto">
@@ -54,7 +55,7 @@
 
         <div class="mt-6 border-b border-gray-200">
             <nav class="-mb-px flex space-x-8" id="lesson-tabs">
-                <button data-tab="content" class="tab-button py-4 px-1 border-b-2 border-indigo-500 font-medium text-indigo-600">Content</button>
+                <button data-tab="content" class="tab-button py-4 px-1 border-b-2 font-medium tab-active-border">Content</button>
                 <button data-tab="simplify" class="tab-button py-4 px-1 border-b-2 border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">Simplify</button>
                 
                 {% if has_quiz %}
@@ -108,7 +109,7 @@
 
             <form method="post" action="{% url 'tutor:mark_lesson_complete' lesson.id %}" class="inline">
                 {% csrf_token %}
-                <button type="submit" class="bg-purple-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-purple-700">
+                <button type="submit" class="btn-filled px-8 py-3 font-bold">
                     Mark as Complete
                 </button>
             </form>
@@ -123,7 +124,7 @@
         </div>
     </div>
 
-    <button id="ai-assistant-btn" class="absolute bottom-8 right-8 mr-4 bg-purple-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-700 transition-colors duration-200" aria-label="Ask AI Guru about this lesson">
+    <button id="ai-assistant-btn" class="absolute bottom-8 right-8 mr-4 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-colors duration-200" style="background: var(--accent); color: var(--text-on-accent);" onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'" aria-label="Ask AI Guru about this lesson">
         <i class="fas fa-shield-alt text-2xl"></i>
     </button>
 
@@ -264,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Deactivate all tabs and panels
         tabsContainer.querySelectorAll('a, button').forEach(button => {
             if (button.tagName === 'BUTTON') {
-                button.classList.remove('border-indigo-500', 'text-indigo-600');
+                button.classList.remove('tab-active-border');
                 button.classList.add('border-transparent', 'text-gray-500');
             }
         });
@@ -273,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Activate the clicked tab and corresponding panel
-        clickedTab.classList.add('border-indigo-500', 'text-indigo-600');
+        clickedTab.classList.add('tab-active-border');
         clickedTab.classList.remove('border-transparent', 'text-gray-500');
         
         const tabName = clickedTab.dataset.tab;
