@@ -84,13 +84,21 @@ app.config['UPLOAD_FOLDER'] = 'asta_authentication/static/uploads'
 app.config['POST_UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'posts')
 app.config['ARTICLE_UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'articles')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
+DEBUG_MODE = os.environ.get("FLASK_DEBUG", "False").lower() in ["true", "1"]
+
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'True').lower() == 'true'
+# A Secure cookie is only ever sent back by a real browser over HTTPS - over
+# plain http://localhost (normal local dev/testing), the browser silently
+# drops it, which makes every login look like it worked (a 302 redirect)
+# but the session never actually persists. Default Secure=True only when
+# NOT in debug/dev mode, matching the SECRET_KEY/STATICFILES_STORAGE
+# pattern already used elsewhere in this codebase for exactly this reason.
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get(
+    'SESSION_COOKIE_SECURE', 'False' if DEBUG_MODE else 'True'
+).lower() == 'true'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 # JWTs must sign with their own secret, not silently reuse SECRET_KEY.
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', app.config['SECRET_KEY'])
-
-DEBUG_MODE = os.environ.get("FLASK_DEBUG", "False").lower() in ["true", "1"]
 MOCK_OAUTH = os.environ.get("MOCK_OAUTH", "false").lower() == "true"
 app.config['MOCK_OAUTH'] = MOCK_OAUTH
 
