@@ -116,8 +116,18 @@ block content %}
 
 <script>
   function activatePath(pathId) {
-    // You can implement path activation logic here
-    alert("Path activation feature coming soon!");
+    fetch(`/profile/learning-path/${pathId}/activate`, {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content,
+      },
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error("Activation failed");
+        return r.json();
+      })
+      .then(() => window.location.reload())
+      .catch(() => alert("Could not activate this path. Please try again."));
   }
 </script>
 {% endblock %}

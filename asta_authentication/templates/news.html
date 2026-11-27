@@ -304,7 +304,7 @@
       </div>
 
       <!-- Pagination -->
-      {% if pagination %}
+      {% if pagination and pagination.pages > 1 %}
       <div class="mt-8 flex justify-center">
         <nav class="flex items-center space-x-1">
           {% if pagination.has_prev %}

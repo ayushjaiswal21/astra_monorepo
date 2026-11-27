@@ -729,6 +729,19 @@ def my_learning_paths():
     learning_paths = LearningPath.query.filter_by(user_id=current_user.id).order_by(LearningPath.created_at.desc()).all()
     return render_template('profile/my_learning_paths.html', learning_paths=learning_paths)
 
+@profile_bp.route('/learning-path/<int:path_id>/activate', methods=['POST'])
+@login_required
+def activate_learning_path(path_id):
+    """Mark one learning path as the user's active path, deactivating any other."""
+    path = LearningPath.query.get_or_404(path_id)
+    if path.user_id != current_user.id:
+        return jsonify({"error": "unauthorized"}), 403
+
+    LearningPath.query.filter_by(user_id=current_user.id).update({"is_active": False})
+    path.is_active = True
+    db.session.commit()
+    return jsonify({"success": True, "active_path_id": path.id})
+
 def create_default_learning_path_structure(career_name, career_summary):
     """Create a default learning path structure when AI service is unavailable"""
     return {
