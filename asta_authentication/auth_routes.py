@@ -3,12 +3,16 @@ from flask_dance.contrib.google import google
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token
 import os
+import secrets
+import smtplib
+from email.message import EmailMessage
+from datetime import datetime, timedelta
 from sqlalchemy import exc
 try:
-    from .models import db, User
+    from .models import db, User, PasswordResetToken
     from .utils import rate_limit
 except ImportError:
-    from models import db, User
+    from models import db, User, PasswordResetToken
     from utils import rate_limit
 from flask_login import login_user, logout_user, current_user
 
@@ -120,9 +124,105 @@ def signin():
 def join():
     return render_template('join.html')
 
-@auth_bp.route('/forgot_password')
+@auth_bp.route('/forgot_password', methods=['GET', 'POST'])
+@rate_limit(max_requests=5, window_seconds=60, methods=['POST'])
 def forgot_password():
+    if request.method == 'POST':
+        email = (request.form.get('email') or '').strip()
+        user = User.query.filter_by(email=email).first()
+
+        if user:
+            token = secrets.token_urlsafe(32)
+            reset = PasswordResetToken(
+                user_id=user.id,
+                token=token,
+                expires_at=datetime.utcnow() + timedelta(hours=1),
+            )
+            db.session.add(reset)
+            db.session.commit()
+
+            reset_url = url_for('auth.reset_password', token=token, _external=True)
+            sent = _send_password_reset_email(user.email, reset_url)
+            if not sent:
+                # No SMTP configured in this environment - surface the real,
+                # working reset link directly instead of a silent dead end.
+                flash(
+                    f"Email isn't configured here, so here's your reset link directly: "
+                    f"{reset_url}",
+                    "info",
+                )
+
+        # Always show the same message, whether or not the email matched a
+        # real account, so this can't be used to probe which emails exist.
+        flash("If that email matches an account, a password reset link has been sent.", "success")
+        return redirect(url_for('auth.forgot_password'))
+
     return render_template('forgot_password.html')
+
+
+@auth_bp.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    reset = PasswordResetToken.query.filter_by(token=token).first()
+    valid = reset and not reset.used and reset.expires_at > datetime.utcnow()
+
+    if not valid:
+        flash("This password reset link is invalid or has expired.", "danger")
+        return redirect(url_for('auth.forgot_password'))
+
+    if request.method == 'POST':
+        password = request.form.get('password') or ''
+        confirm = request.form.get('confirm_password') or ''
+
+        if len(password) < 6:
+            flash("Password must be at least 6 characters long.", "danger")
+            return render_template('reset_password.html', token=token)
+        if password != confirm:
+            flash("Passwords do not match.", "danger")
+            return render_template('reset_password.html', token=token)
+
+        reset.user.password = generate_password_hash(password, method='pbkdf2:sha256')
+        reset.used = True
+        db.session.commit()
+
+        flash("Your password has been reset. Please sign in.", "success")
+        return redirect(url_for('auth.signin_email'))
+
+    return render_template('reset_password.html', token=token)
+
+
+def _send_password_reset_email(to_email, reset_url):
+    """Send a real email via SMTP if credentials are configured. Returns
+    True if it was actually sent, False if there's nothing configured to
+    send it with (caller falls back to showing the link directly)."""
+    host = os.environ.get('SMTP_HOST')
+    if not host:
+        return False
+
+    port = int(os.environ.get('SMTP_PORT', '587'))
+    username = os.environ.get('SMTP_USERNAME')
+    password = os.environ.get('SMTP_PASSWORD')
+    from_addr = os.environ.get('SMTP_FROM', username or 'no-reply@astralearn.local')
+
+    message = EmailMessage()
+    message['Subject'] = 'Reset your AstraLearn password'
+    message['From'] = from_addr
+    message['To'] = to_email
+    message.set_content(
+        f"We received a request to reset your AstraLearn password.\n\n"
+        f"Reset it here (valid for 1 hour): {reset_url}\n\n"
+        f"If you didn't request this, you can ignore this email."
+    )
+
+    try:
+        with smtplib.SMTP(host, port, timeout=10) as server:
+            server.starttls()
+            if username and password:
+                server.login(username, password)
+            server.send_message(message)
+        return True
+    except Exception as e:
+        current_app.logger.warning(f"Password reset email failed to send: {e}")
+        return False
 
 @auth_bp.route('/role_selection')
 def role_selection():

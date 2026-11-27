@@ -345,6 +345,17 @@ class Notification(db.Model):
             'is_read': self.is_read
         }
 
+class PasswordResetToken(db.Model):
+    __tablename__ = 'password_reset_tokens'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    token = db.Column(db.String(128), unique=True, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False, nullable=False)
+
+    user = db.relationship('User')
+
 class SavedItem(db.Model):
     __tablename__ = 'saved_items'
     id = db.Column(db.Integer, primary_key=True)
