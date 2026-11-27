@@ -1,7 +1,7 @@
 import React from 'react';
 import Message from './Message';
 
-const ChatMessages = ({ messages, messagesEndRef, submitFeedback, feedbackLoading, processingMessages, showJumpToLatest, scrollToBottom }) => {
+const ChatMessages = ({ messages, messagesEndRef, submitFeedback, feedbackLoading, processingMessages, showJumpToLatest, scrollToBottom, speakingId, onToggleSpeak }) => {
   return (
     <div className="p-6" data-testid="chat-messages">
       {messages.map((msg, index) => (
@@ -12,6 +12,8 @@ const ChatMessages = ({ messages, messagesEndRef, submitFeedback, feedbackLoadin
           submitFeedback={submitFeedback}
           feedbackLoading={feedbackLoading}
           processingMessages={processingMessages}
+          speakingId={speakingId}
+          onToggleSpeak={onToggleSpeak}
         />
       ))}
       <div ref={messagesEndRef} />

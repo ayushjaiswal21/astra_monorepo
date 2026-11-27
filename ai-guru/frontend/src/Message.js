@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { marked } from 'marked';
 
-const Message = ({ msg, index, submitFeedback, feedbackLoading, processingMessages }) => {
+const speechSupported = typeof window !== "undefined" && "speechSynthesis" in window;
+
+const Message = ({ msg, index, submitFeedback, feedbackLoading, processingMessages, speakingId, onToggleSpeak }) => {
   const isUser = msg.sender === "user";
   const isProcessing = processingMessages.has(msg.id);
   const [copied, setCopied] = useState(false);
+  const isSpeaking = speakingId === (msg.id || index);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(msg.text || "").then(() => {
@@ -54,14 +57,24 @@ const Message = ({ msg, index, submitFeedback, feedbackLoading, processingMessag
                 className="prose max-w-none"
               />
               {!isUser && (
-                <button
-                  onClick={handleCopy}
-                  className="copy-btn"
-                  style={{ marginTop: "var(--space-3)" }}
-                  title="Copy response"
-                >
-                  {copied ? "Copied!" : "📋 Copy"}
-                </button>
+                <div className="flex items-center gap-2" style={{ marginTop: "var(--space-3)" }}>
+                  <button
+                    onClick={handleCopy}
+                    className="copy-btn"
+                    title="Copy response"
+                  >
+                    {copied ? "Copied!" : "📋 Copy"}
+                  </button>
+                  {speechSupported && (
+                    <button
+                      onClick={() => onToggleSpeak(msg.id || index, msg.text || "")}
+                      className="copy-btn"
+                      title={isSpeaking ? "Stop reading aloud" : "Read aloud"}
+                    >
+                      {isSpeaking ? "⏹️ Stop" : "🔊 Listen"}
+                    </button>
+                  )}
+                </div>
               )}
 
               {!isUser && msg.detectedLanguage && msg.languageName !== "Unknown" && msg.detectedLanguage !== "en" && (

@@ -35,6 +35,22 @@ function App() {
   const [speechError, setSpeechError] = useState(null);
   const [feedbackLoading, setFeedbackLoading] = useState(new Set());
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
+  const [speakingId, setSpeakingId] = useState(null);
+
+  // Text-to-speech: toggles reading an assistant message aloud via the browser's native speechSynthesis.
+  const handleToggleSpeak = (id, text) => {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    if (speakingId === id) {
+      setSpeakingId(null);
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.onend = () => setSpeakingId(null);
+    utterance.onerror = () => setSpeakingId(null);
+    setSpeakingId(id);
+    window.speechSynthesis.speak(utterance);
+  };
   const [confirmState, setConfirmState] = useState(null);
   const [showConsent, setShowConsent] = useState(() => {
     try {
@@ -725,6 +741,8 @@ function App() {
                 processingMessages={processingMessages}
                 showJumpToLatest={showJumpToLatest}
                 scrollToBottom={scrollToBottom}
+                speakingId={speakingId}
+                onToggleSpeak={handleToggleSpeak}
               />
             </Suspense>
           )}
