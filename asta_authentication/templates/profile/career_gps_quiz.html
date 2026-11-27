@@ -3,20 +3,21 @@
 {% block title %}Career GPS Quiz{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
+<div class="max-w-7xl mx-auto px-4 mt-5">
+    <div class="flex justify-center">
+        <div class="w-full md:w-2/3">
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title mb-0">🎯 Career GPS Discovery</h3>
-                    <p class="text-muted mb-0">Answer a few questions to discover your ideal career path</p>
+                    <p class="text-gray-500 mb-0">Answer a few questions to discover your ideal career path</p>
                 </div>
                 <div class="card-body">
                     <form id="careerGpsForm" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <!-- Step 1: Interests -->
                         <div class="quiz-step" id="step1">
                             <h5>What topics excite you most?</h5>
-                            <p class="text-muted">Select all that apply</p>
+                            <p class="text-gray-500">Select all that apply</p>
                             <div class="mb-4">
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="checkbox" name="interests" value="Technology" id="tech">
@@ -55,9 +56,9 @@
                         </div>
 
                         <!-- Step 2: Skills -->
-                        <div class="quiz-step d-none" id="step2">
+                        <div class="quiz-step hidden" id="step2">
                             <h5>What skills do you already have?</h5>
-                            <p class="text-muted">Select all that apply or add your own</p>
+                            <p class="text-gray-500">Select all that apply or add your own</p>
                             <div class="mb-3">
                                 <select class="form-select" multiple aria-label="Skills" name="skills" id="skillsSelect">
                                     <option value="Communication">Communication</option>
@@ -76,14 +77,14 @@
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="addCustomSkill()">Add Skill</button>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-between">
+                            <div class="flex justify-between">
                                 <button type="button" class="btn btn-secondary" onclick="prevStep(2, 1)">Previous</button>
                                 <button type="button" class="btn btn-primary" onclick="nextStep(2, 3)">Next</button>
                             </div>
                         </div>
 
                         <!-- Step 3: Career Goal -->
-                        <div class="quiz-step d-none" id="step3">
+                        <div class="quiz-step hidden" id="step3">
                             <h5>What's your biggest career goal now?</h5>
                             <div class="mb-4">
                                 <div class="form-check">
@@ -107,14 +108,14 @@
                                     <label class="form-check-label" for="goal5">Make impact</label>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-between">
+                            <div class="flex justify-between">
                                 <button type="button" class="btn btn-secondary" onclick="prevStep(3, 2)">Previous</button>
                                 <button type="button" class="btn btn-primary" onclick="nextStep(3, 4)">Next</button>
                             </div>
                         </div>
 
                         <!-- Step 4: Motivation -->
-                        <div class="quiz-step d-none" id="step4">
+                        <div class="quiz-step hidden" id="step4">
                             <h5>What drives you in life?</h5>
                             <div class="mb-4">
                                 <div class="form-check">
@@ -138,14 +139,14 @@
                                     <label class="form-check-label" for="motivation5">Service</label>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-between">
+                            <div class="flex justify-between">
                                 <button type="button" class="btn btn-secondary" onclick="prevStep(4, 3)">Previous</button>
                                 <button type="button" class="btn btn-primary" onclick="nextStep(4, 5)">Next</button>
                             </div>
                         </div>
 
                         <!-- Step 5: Learning Style -->
-                        <div class="quiz-step d-none" id="step5">
+                        <div class="quiz-step hidden" id="step5">
                             <h5>How do you prefer to learn?</h5>
                             <div class="mb-4">
                                 <div class="form-check">
@@ -169,7 +170,7 @@
                                     <label class="form-check-label" for="learning5">Audio (lectures, podcasts)</label>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-between">
+                            <div class="flex justify-between">
                                 <button type="button" class="btn btn-secondary" onclick="prevStep(5, 4)">Previous</button>
                                 <button type="submit" class="btn btn-success">Generate My Career GPS</button>
                             </div>
@@ -192,13 +193,13 @@
 
 <script>
 function nextStep(current, next) {
-    document.getElementById('step' + current).classList.add('d-none');
-    document.getElementById('step' + next).classList.remove('d-none');
+    document.getElementById('step' + current).classList.add('hidden');
+    document.getElementById('step' + next).classList.remove('hidden');
 }
 
 function prevStep(current, prev) {
-    document.getElementById('step' + current).classList.add('d-none');
-    document.getElementById('step' + prev).classList.remove('d-none');
+    document.getElementById('step' + current).classList.add('hidden');
+    document.getElementById('step' + prev).classList.remove('hidden');
 }
 
 function addCustomSkill() {

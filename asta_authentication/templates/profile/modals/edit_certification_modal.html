@@ -8,20 +8,20 @@
             </div>
             <form class="edit-certification-form" action="{{ url_for('profile.edit_certification', cert_id=certification.id) }}" method="POST">
                 <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-12">
+                    <div class="flex flex-wrap gap-4">
+                        <div class="w-full">
                             <label for="certName-{{ index }}" class="form-label">Name</label>
                             <input type="text" class="form-control" id="certName-{{ index }}" name="name" value="{{ certification.name }}">
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="issuingOrg-{{ index }}" class="form-label">Issuing organization</label>
                             <input type="text" class="form-control" id="issuingOrg-{{ index }}" name="issuing_organization" value="{{ certification.issuing_organization or '' }}">
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="issueDate-{{ index }}" class="form-label">Issue Date</label>
                             <input type="text" class="form-control" id="issueDate-{{ index }}" name="issue_date" value="{{ certification.issue_date or '' }}">
                         </div>
-                        <div class="col-12">
+                        <div class="w-full">
                             <label for="credentialUrl-{{ index }}" class="form-label">Credential URL</label>
                             <input type="text" class="form-control" id="credentialUrl-{{ index }}" name="credential_url" value="{{ certification.credential_url or '' }}">
                         </div>
@@ -48,7 +48,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
-                        'Content-Type': 'application/x-www-form-urlencoded'
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: new URLSearchParams(formData).toString()
                 });

@@ -15,7 +15,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="skillLevel" class="form-label">Proficiency Level (1-10)</label>
-                        <div class="d-flex align-items-center">
+                        <div class="flex items-center">
                             <input type="range" class="form-range me-3" id="skillLevel" name="level" min="1" max="10" value="5">
                             <span id="skillLevelValue" class="badge bg-primary">5</span>
                         </div>
@@ -64,7 +64,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
-                        'Content-Type': 'application/x-www-form-urlencoded'
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: new URLSearchParams(formData).toString()
                 });

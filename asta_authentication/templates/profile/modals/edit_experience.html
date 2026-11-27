@@ -6,6 +6,7 @@
                 <button type="button" class="text-lg leading-none opacity-60 hover:opacity-100" data-modal-dismiss>&times;</button>
             </div>
             <form action="{{ url_for('profile.edit_experience', exp_id=exp.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-3"><label class="form-label">Title*</label><input type="text" class="form-control" name="title" value="{{ exp.title }}" required></div>
                     <div class="mb-3"><label class="form-label">Company*</label><input type="text" class="form-control" name="company" value="{{ exp.company }}" required></div>

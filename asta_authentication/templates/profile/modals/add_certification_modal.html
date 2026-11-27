@@ -8,32 +8,32 @@
             </div>
             <form id="addCertificationForm" action="{{ url_for('profile.add_certification') }}" method="POST">
                 <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-12">
+                    <div class="flex flex-wrap gap-4">
+                        <div class="w-full">
                             <label for="name" class="form-label">Certification Name*</label>
                             <input type="text" class="form-control" id="name" name="name" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="issuer" class="form-label">Issuing Organization*</label>
                             <input type="text" class="form-control" id="issuer" name="issuer" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="credential_id" class="form-label">Credential ID</label>
                             <input type="text" class="form-control" id="credential_id" name="credential_id">
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="issue_date" class="form-label">Issue Date*</label>
                             <input type="month" class="form-control" id="issue_date" name="issue_date" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="expiration_date" class="form-label">Expiration Date</label>
                             <input type="month" class="form-control" id="expiration_date" name="expiration_date">
                         </div>
-                        <div class="col-12">
+                        <div class="w-full">
                             <label for="credential_url" class="form-label">Credential URL</label>
                             <input type="url" class="form-control" id="credential_url" name="credential_url" placeholder="https://">
                         </div>
-                        <div class="col-12">
+                        <div class="w-full">
                             <label for="skills" class="form-label">Related Skills (comma separated)</label>
                             <input type="text" class="form-control" id="skills" name="skills" placeholder="e.g., Python, Data Analysis, Machine Learning">
                         </div>
@@ -60,7 +60,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
-                        'Content-Type': 'application/x-www-form-urlencoded'
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: new URLSearchParams(formData).toString()
                 });

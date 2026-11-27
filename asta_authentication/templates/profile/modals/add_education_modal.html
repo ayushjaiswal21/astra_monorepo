@@ -8,36 +8,36 @@
             </div>
             <form id="addEducationForm" action="{{ url_for('profile.add_education') }}" method="POST">
                 <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-12">
+                    <div class="flex flex-wrap gap-4">
+                        <div class="w-full">
                             <label for="school" class="form-label">School*</label>
                             <input type="text" class="form-control" id="school" name="school" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="degree" class="form-label">Degree</label>
                             <input type="text" class="form-control" id="degree" name="degree">
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="field_of_study" class="form-label">Field of Study</label>
                             <input type="text" class="form-control" id="field_of_study" name="field_of_study">
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="start_date" class="form-label">Start Date</label>
                             <input type="month" class="form-control" id="start_date" name="start_date">
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="end_date" class="form-label">End Date (or expected)</label>
                             <input type="month" class="form-control" id="end_date" name="end_date">
                         </div>
-                        <div class="col-12">
+                        <div class="w-full">
                             <label for="grade" class="form-label">Grade</label>
                             <input type="text" class="form-control" id="grade" name="grade" placeholder="e.g., 3.8/4.0, A+">
                         </div>
-                        <div class="col-12">
+                        <div class="w-full">
                             <label for="activities" class="form-label">Activities and Societies</label>
                             <textarea class="form-control" id="activities" name="activities" rows="3" placeholder="e.g., Basketball Team, Debate Club, School Newspaper"></textarea>
                         </div>
-                        <div class="col-12">
+                        <div class="w-full">
                             <label for="description" class="form-label">Description</label>
                             <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                         </div>
@@ -64,7 +64,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
-                        'Content-Type': 'application/x-www-form-urlencoded'
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: new URLSearchParams(formData).toString()
                 });

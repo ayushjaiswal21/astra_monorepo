@@ -8,36 +8,36 @@
             </div>
             <form class="edit-experience-form" action="{{ url_for('profile.edit_experience', exp_id=experience.id) }}" method="POST">
                 <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-12">
+                    <div class="flex flex-wrap gap-4">
+                        <div class="w-full">
                             <label for="title-{{ experience.id }}" class="form-label">Title*</label>
-                            <input type="text" class="form-control" id="title-{{ experience.id }}" name="title" 
+                            <input type="text" class="form-control" id="title-{{ experience.id }}" name="title"
                                    value="{{ experience.title }}" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="company-{{ experience.id }}" class="form-label">Company*</label>
-                            <input type="text" class="form-control" id="company-{{ experience.id }}" 
+                            <input type="text" class="form-control" id="company-{{ experience.id }}"
                                    name="company" value="{{ experience.company }}" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="location-{{ experience.id }}" class="form-label">Location</label>
-                            <input type="text" class="form-control" id="location-{{ experience.id }}" 
+                            <input type="text" class="form-control" id="location-{{ experience.id }}"
                                    name="location" value="{{ experience.location or '' }}">
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="start_date-{{ experience.id }}" class="form-label">Start Date*</label>
-                            <input type="month" class="form-control" id="start_date-{{ experience.id }}" 
+                            <input type="month" class="form-control" id="start_date-{{ experience.id }}"
                                    name="start_date" value="{{ experience.start_date }}" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="end_date-{{ experience.id }}" class="form-label">End Date</label>
                             <div class="input-group">
-                                <input type="month" class="form-control" id="end_date-{{ experience.id }}" 
-                                       name="end_date" value="{{ experience.end_date or '' }}" 
+                                <input type="month" class="form-control" id="end_date-{{ experience.id }}"
+                                       name="end_date" value="{{ experience.end_date or '' }}"
                                        {% if experience.current %}disabled{% endif %}>
-                                <div class="form-check form-switch ms-3 d-flex align-items-center">
-                                    <input class="form-check-input" type="checkbox" 
-                                           id="current_role-{{ experience.id }}" name="current_role" 
+                                <div class="form-check form-switch ms-3 flex items-center">
+                                    <input class="form-check-input" type="checkbox"
+                                           id="current_role-{{ experience.id }}" name="current_role"
                                            {% if experience.current %}checked{% endif %}>
                                     <label class="form-check-label ms-2" for="current_role-{{ experience.id }}">
                                         I currently work here
@@ -45,9 +45,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12">
+                        <div class="w-full">
                             <label for="description-{{ experience.id }}" class="form-label">Description</label>
-                            <textarea class="form-control" id="description-{{ experience.id }}" 
+                            <textarea class="form-control" id="description-{{ experience.id }}"
                                       name="description" rows="4">{{ experience.description or '' }}</textarea>
                         </div>
                     </div>
@@ -95,7 +95,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
-                        'Content-Type': 'application/x-www-form-urlencoded'
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: new URLSearchParams(formData).toString()
                 });
@@ -127,7 +128,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const response = await fetch(this.action, {
                     method: 'POST',
                     headers: {
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
                     }
                 });
                 let data;

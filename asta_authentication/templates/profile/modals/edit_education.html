@@ -6,6 +6,7 @@
                 <button type="button" class="text-lg leading-none opacity-60 hover:opacity-100" data-modal-dismiss>&times;</button>
             </div>
             <form action="{{ url_for('profile.edit_education', edu_id=edu.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-3"><label class="form-label">School*</label><input type="text" class="form-control" name="school" value="{{ edu.school }}" required></div>
                     <div class="mb-3"><label class="form-label">Degree</label><input type="text" class="form-control" name="degree" value="{{ edu.degree }}"></div>

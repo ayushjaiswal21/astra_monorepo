@@ -2,7 +2,8 @@
 {% block title %}{{ user.name }}'s Profile{% endblock %}
 
 {% block content %}
-<form id="imageUploadForm" action="{{ url_for('profile.upload_images') }}" method="POST" enctype="multipart/form-data" class="d-none">
+<form id="imageUploadForm" action="{{ url_for('profile.upload_images') }}" method="POST" enctype="multipart/form-data" class="hidden">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="file" id="bannerUpload" name="banner_image" onchange="this.form.submit()">
     <input type="file" id="profilePicUpload" name="profile_picture" onchange="this.form.submit()">
 </form>
@@ -26,19 +27,19 @@
     </div>
     
     <div class="profile-header-content p-4">
-        <div class="d-flex justify-content-between align-items-start">
+        <div class="flex justify-between items-start">
             <div>
                 <h2 class="mb-0 fw-bold">{{ user.name }}</h2>
-                <p class="text-muted fs-5">{{ user.headline or 'Update your headline' }}</p>
+                <p class="text-gray-500 fs-5">{{ user.headline or 'Update your headline' }}</p>
                 {% if user.location %}
-                <p class="text-muted mb-2">
+                <p class="text-gray-500 mb-2">
                     <i class="fas fa-map-marker-alt me-1"></i>{{ user.location }}
                 </p>
                 {% endif %}
                 
                 <!-- Career GPS Banner -->
                 {% if user.career_gps and user.career_gps.selected_career %}
-                <div class="alert alert-success d-inline-flex align-items-center mt-2 py-2 px-3 rounded-pill">
+                <div class="alert alert-success d-inline-flex items-center mt-2 py-2 px-3 rounded-pill">
                     <i class="fas fa-compass me-2"></i>
                     <span>Guided by Career GPS → {{ user.career_gps.selected_career }} | {{ user.career_gps.progress }}% Complete</span>
                     <a href="#" class="ms-2" title="✨ Update or Explore New Directions">
@@ -73,7 +74,7 @@
                 </div>
                 {% endif %}
                 {% if current_user.id == user.id %}
-                <div class="mt-3 d-flex gap-2 justify-content-end">
+                <div class="mt-3 flex gap-2 justify-end">
                     <button class="btn btn-outline-primary btn-sm" data-modal-target="#editBasicModal">
                         <i class="far fa-id-card me-1"></i> Edit Profile
                     </button>
@@ -91,7 +92,7 @@
 <!-- Career GPS Roadmap Section -->
 {% if user.career_gps and user.career_gps.selected_career %}
 <div class="card mt-4" id="careerGpsSection">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header flex justify-between items-center">
         <h5 class="card-title fw-bold mb-0">Career GPS Journey</h5>
         <a href="{{ url_for('profile.start_career_gps') }}" class="btn btn-sm btn-outline-secondary" title="Update My GPS">
             <i class="fas fa-sync-alt me-1"></i> Update
@@ -102,7 +103,7 @@
 
         <!-- Progress Bar -->
         <div class="mb-4">
-            <div class="d-flex justify-content-between mb-1">
+            <div class="flex justify-between mb-1">
                 <small class="fw-500">Progress</small>
                 <small class="fw-bold">{{ user.career_gps.progress }}% Complete</small>
             </div>
@@ -138,7 +139,7 @@
                     {% if user.career_gps.progress >= milestone.threshold %}
                         <small class="text-success"><i class="fas fa-check-circle"></i> Completed</small>
                     {% else %}
-                        <small class="text-muted">
+                        <small class="text-gray-500">
                             {{ 'In Progress' if milestone.threshold == 25 else 'Upcoming' }}
                         </small>
                     {% endif %}
@@ -149,7 +150,7 @@
 
         <!-- Mentor Recommendations -->
         <h6 class="mt-5 mb-3 fw-bold">Recommended Mentors</h6>
-        <div class="row g-3">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             {% set mentors = [
                 {'name': 'Industry Expert', 'role': 'Senior ' + user.career_gps.selected_career, 'icon': 'user-tie'},
                 {'name': 'Career Coach', 'role': 'Professional Development', 'icon': 'chalkboard-teacher'},
@@ -157,7 +158,7 @@
             ] %}
             
             {% for mentor in mentors %}
-            <div class="col-md-4">
+            <div>
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="card-body text-center p-4">
                         <div class="avatar-lg mx-auto mb-3">
@@ -166,7 +167,7 @@
                             </div>
                         </div>
                         <h5 class="mb-1">{{ mentor.name }}</h5>
-                        <p class="text-muted mb-3">{{ mentor.role }}</p>
+                        <p class="text-gray-500 mb-3">{{ mentor.role }}</p>
                         <button class="btn btn-outline-primary btn-sm w-100">
                             <i class="far fa-envelope me-1"></i> Contact
                         </button>
@@ -181,7 +182,7 @@
 
 <!-- About Section -->
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header flex justify-between items-center">
         <h5 class="card-title fw-bold mb-0">About</h5>
         {% if current_user.id == user.id %}
         <a href="#" class="btn btn-sm btn-outline-secondary" data-modal-target="#editAboutModal">
@@ -196,13 +197,13 @@
         
         {% if user.career_gps and user.career_gps.selected_career %}
         <div class="alert alert-light border">
-            <div class="d-flex">
+            <div class="flex">
                 <div class="flex-shrink-0 text-primary">
                     <i class="fas fa-graduation-cap fa-2x"></i>
                 </div>
                 <div class="flex-grow-1 ms-3">
                     <h6 class="mb-1">Personalized Learning Plan</h6>
-                    <p class="mb-2 text-muted">
+                    <p class="mb-2 text-gray-500">
                         Based on your career path in {{ user.career_gps.selected_career }}, we've created a custom learning plan to help you develop the necessary skills.
                     </p>
                     <a href="{{ url_for('profile.my_learning_paths') }}" class="btn btn-sm btn-outline-primary">
@@ -217,7 +218,7 @@
 
 <!-- Experience Section -->
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header flex justify-between items-center">
         <h5 class="card-title fw-bold mb-0">Experience</h5>
         {% if current_user.id == user.id %}
         <a href="#" class="btn btn-sm btn-outline-primary" data-modal-target="#addExperienceModal">
@@ -228,20 +229,20 @@
     <div class="card-body">
         {% if user.experience %}
             {% for exp in user.experience %}
-            <div class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}">
+            <div class="flex items-start py-3 {% if not loop.last %}border-bottom{% endif %}">
                 <div class="flex-shrink-0 me-3">
                     {% if exp.logo %}
                         <img src="{{ exp.logo }}" alt="{{ exp.company }} logo" class="rounded" style="width: 50px; height: 50px; object-fit: contain;">
                     {% else %}
-                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        <div class="bg-gray-200 rounded flex items-center justify-center" style="width: 50px; height: 50px;">
                             <i class="fas fa-briefcase text-secondary"></i>
                         </div>
                     {% endif %}
                 </div>
                 <div class="flex-grow-1">
                     <h6 class="fw-bold mb-1">{{ exp.title }}</h6>
-                    <p class="mb-1 text-muted">{{ exp.company }}</p>
-                    <small class="text-muted d-block">
+                    <p class="mb-1 text-gray-500">{{ exp.company }}</p>
+                    <small class="text-gray-500 block">
                         <i class="far fa-calendar-alt me-1"></i>{{ exp.dates }}
                         {% if exp.location %}
                             <span class="mx-2">·</span>
@@ -249,12 +250,12 @@
                         {% endif %}
                     </small>
                     {% if exp.description %}
-                    <p class="mt-2 mb-0 text-muted">{{ exp.description }}</p>
+                    <p class="mt-2 mb-0 text-gray-500">{{ exp.description }}</p>
                     {% endif %}
                 </div>
                 {% if current_user.id == user.id %}
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" data-dropdown-toggle aria-expanded="false">
+                    <button class="btn btn-sm btn-link text-gray-500" type="button" data-dropdown-toggle aria-expanded="false">
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
@@ -277,10 +278,10 @@
         {% else %}
             <div class="text-center py-4">
                 <div class="mb-3">
-                    <i class="fas fa-briefcase fa-3x text-muted"></i>
+                    <i class="fas fa-briefcase fa-3x text-gray-500"></i>
                 </div>
                 <h6 class="fw-bold">No experience added yet</h6>
-                <p class="text-muted mb-0">Share your work experience to showcase your professional journey</p>
+                <p class="text-gray-500 mb-0">Share your work experience to showcase your professional journey</p>
                 {% if current_user.id == user.id %}
                 <a href="#" class="btn btn-primary mt-3" data-modal-target="#addExperienceModal">
                     <i class="fas fa-plus me-1"></i> Add Experience
@@ -293,7 +294,7 @@
 
 <!-- Education Section -->
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header flex justify-between items-center">
         <h5 class="card-title fw-bold mb-0">Education</h5>
         {% if current_user.id == user.id %}
         <a href="#" class="btn btn-sm btn-outline-primary" data-modal-target="#addEducationModal">
@@ -304,20 +305,20 @@
     <div class="card-body">
         {% if user.education %}
             {% for edu in user.education %}
-            <div class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}">
+            <div class="flex items-start py-3 {% if not loop.last %}border-bottom{% endif %}">
                 <div class="flex-shrink-0 me-3">
                     {% if edu.school_logo %}
                         <img src="{{ edu.school_logo }}" alt="{{ edu.school }} logo" class="rounded" style="width: 50px; height: 50px; object-fit: contain;">
                     {% else %}
-                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        <div class="bg-gray-200 rounded flex items-center justify-center" style="width: 50px; height: 50px;">
                             <i class="fas fa-university text-secondary"></i>
                         </div>
                     {% endif %}
                 </div>
                 <div class="flex-grow-1">
                     <h6 class="fw-bold mb-1">{{ edu.degree }}, {{ edu.field_of_study }}</h6>
-                    <p class="mb-1 text-muted">{{ edu.school }}</p>
-                    <small class="text-muted d-block">
+                    <p class="mb-1 text-gray-500">{{ edu.school }}</p>
+                    <small class="text-gray-500 block">
                         <i class="far fa-calendar-alt me-1"></i>{{ edu.dates }}
                         {% if edu.grade %}
                             <span class="mx-2">·</span>
@@ -325,12 +326,12 @@
                         {% endif %}
                     </small>
                     {% if edu.activities %}
-                    <p class="mt-2 mb-0 text-muted">{{ edu.activities }}</p>
+                    <p class="mt-2 mb-0 text-gray-500">{{ edu.activities }}</p>
                     {% endif %}
                 </div>
                 {% if current_user.id == user.id %}
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" data-dropdown-toggle>
+                    <button class="btn btn-sm btn-link text-gray-500" type="button" data-dropdown-toggle>
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
@@ -353,10 +354,10 @@
         {% else %}
             <div class="text-center py-4">
                 <div class="mb-3">
-                    <i class="fas fa-graduation-cap fa-3x text-muted"></i>
+                    <i class="fas fa-graduation-cap fa-3x text-gray-500"></i>
                 </div>
                 <h6 class="fw-bold">No education added yet</h6>
-                <p class="text-muted mb-0">Add your education to showcase your academic background</p>
+                <p class="text-gray-500 mb-0">Add your education to showcase your academic background</p>
                 {% if current_user.id == user.id %}
                 <a href="#" class="btn btn-primary mt-3" data-modal-target="#addEducationModal">
                     <i class="fas fa-plus me-1"></i> Add Education
@@ -369,7 +370,7 @@
 
 <!-- Skills Section -->
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header flex justify-between items-center">
         <h5 class="card-title fw-bold mb-0">Skills</h5>
         {% if current_user.id == user.id %}
         <a href="#" class="btn btn-sm btn-outline-primary" data-modal-target="#addSkillModal">
@@ -379,18 +380,18 @@
     </div>
     <div class="card-body">
         {% if user.skills %}
-            <div class="d-flex flex-wrap gap-2 mb-3">
+            <div class="flex flex-wrap gap-2 mb-3">
                 {% for skill in user.skills %}
-                <span class="badge bg-light text-dark border p-2 d-flex align-items-center">
+                <span class="badge bg-light text-dark border p-2 flex items-center">
                     {% if skill.icon %}
                         <i class="{{ skill.icon }} me-1"></i>
                     {% endif %}
                     {{ skill.name }}
                     {% if skill.level %}
-                        <span class="ms-2 text-muted">{{ skill.level }}/10</span>
+                        <span class="ms-2 text-gray-500">{{ skill.level }}/10</span>
                     {% endif %}
                     {% if current_user.id == user.id %}
-                    <a href="#" class="ms-2 text-muted" data-modal-target="#editSkillModal-{{ loop.index }}">
+                    <a href="#" class="ms-2 text-gray-500" data-modal-target="#editSkillModal-{{ loop.index }}">
                         <i class="far fa-edit"></i>
                     </a>
                     {% endif %}
@@ -400,10 +401,10 @@
         {% else %}
             <div class="text-center py-4">
                 <div class="mb-3">
-                    <i class="fas fa-tools fa-3x text-muted"></i>
+                    <i class="fas fa-tools fa-3x text-gray-500"></i>
                 </div>
                 <h6 class="fw-bold">No skills added yet</h6>
-                <p class="text-muted mb-0">Add your skills to showcase your expertise</p>
+                <p class="text-gray-500 mb-0">Add your skills to showcase your expertise</p>
                 {% if current_user.id == user.id %}
                 <a href="#" class="btn btn-primary mt-3" data-modal-target="#addSkillModal">
                     <i class="fas fa-plus me-1"></i> Add Skills
@@ -416,7 +417,7 @@
 
 <!-- Certifications Section -->
 <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header flex justify-between items-center">
         <h5 class="card-title fw-bold mb-0">Licenses & Certifications</h5>
         {% if current_user.id == user.id %}
         <a href="#" class="btn btn-sm btn-outline-primary" data-modal-target="#addCertificationModal">
@@ -427,20 +428,20 @@
     <div class="card-body">
         {% if user.certifications %}
             {% for cert in user.certifications %}
-            <div class="d-flex align-items-start py-3 {% if not loop.last %}border-bottom{% endif %}">
+            <div class="flex items-start py-3 {% if not loop.last %}border-bottom{% endif %}">
                 <div class="flex-shrink-0 me-3">
                     {% if cert.issuer_logo %}
                         <img src="{{ cert.issuer_logo }}" alt="{{ cert.issuer }} logo" class="rounded" style="width: 50px; height: 50px; object-fit: contain;">
                     {% else %}
-                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        <div class="bg-gray-200 rounded flex items-center justify-center" style="width: 50px; height: 50px;">
                             <i class="fas fa-certificate text-secondary"></i>
                         </div>
                     {% endif %}
                 </div>
                 <div class="flex-grow-1">
                     <h6 class="fw-bold mb-1">{{ cert.name }}</h6>
-                    <p class="mb-1 text-muted">{{ cert.issuer }}</p>
-                    <small class="text-muted d-block">
+                    <p class="mb-1 text-gray-500">{{ cert.issuer }}</p>
+                    <small class="text-gray-500 block">
                         <i class="far fa-calendar-alt me-1"></i>
                         {{ cert.issue_date }}
                         {% if cert.expiration_date %}
@@ -459,7 +460,7 @@
                 </div>
                 {% if current_user.id == user.id %}
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" data-dropdown-toggle>
+                    <button class="btn btn-sm btn-link text-gray-500" type="button" data-dropdown-toggle>
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
@@ -482,10 +483,10 @@
         {% else %}
             <div class="text-center py-4">
                 <div class="mb-3">
-                    <i class="fas fa-award fa-3x text-muted"></i>
+                    <i class="fas fa-award fa-3x text-gray-500"></i>
                 </div>
                 <h6 class="fw-bold">No certifications added yet</h6>
-                <p class="text-muted mb-0">Add your certifications to showcase your qualifications</p>
+                <p class="text-gray-500 mb-0">Add your certifications to showcase your qualifications</p>
                 {% if current_user.id == user.id %}
                 <a href="#" class="btn btn-primary mt-3" data-modal-target="#addCertificationModal">
                     <i class="fas fa-plus me-1"></i> Add Certification
@@ -508,17 +509,17 @@
             {% endfor %}
         {% else %}
             <div class="text-center py-4">
-                <i class="far fa-newspaper fa-3x text-muted mb-3"></i>
+                <i class="far fa-newspaper fa-3x text-gray-500 mb-3"></i>
                 <h6 class="fw-bold">No posts yet</h6>
-                <p class="text-muted">When you share something, it will appear here</p>
+                <p class="text-gray-500">When you share something, it will appear here</p>
             </div>
         {% endif %}
         {% if pagination and pagination.pages > 1 %}
-        <div class="mt-3 d-flex justify-content-center gap-2">
+        <div class="mt-3 flex justify-center gap-2">
             {% if pagination.has_prev %}
             <a href="{{ url_for('profile.view_profile', username=user.username, page=pagination.prev_num) }}" class="btn btn-sm btn-outline-secondary">Previous</a>
             {% endif %}
-            <span class="align-self-center small text-muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            <span class="align-self-center small text-gray-500">Page {{ pagination.page }} of {{ pagination.pages }}</span>
             {% if pagination.has_next %}
             <a href="{{ url_for('profile.view_profile', username=user.username, page=pagination.next_num) }}" class="btn btn-sm btn-outline-secondary">Next</a>
             {% endif %}
@@ -562,7 +563,10 @@
         const fd = new URLSearchParams(new FormData(form));
         fetch('/profile/edit-basic', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
             body: fd.toString(),
             credentials: 'same-origin'
         })
@@ -930,31 +934,5 @@ document.getElementById('copyProfileLinkBtn')?.addEventListener('click', functio
 </style>
 
 <!-- duplicate profile sections removed -->
-
-{% include 'profile/modals/edit_about.html' %}
-
-{# Add Modals #}
-{% include 'profile/modals/add_education.html' %}
-{% include 'profile/modals/add_experience.html' %}
-{% include 'profile/modals/add_skill.html' %}
-{% include 'profile/modals/add_certification.html' %}
-
-<!-- Edit Modals -->
-{% for edu in user.education %}
-    {% include 'profile/modals/edit_education.html' %}
-{% endfor %}
-{% for exp in user.experience %}
-    {% include 'profile/modals/edit_experience.html' %}
-{% endfor %}
-{% for skill in user.skills %}
-    {% with index=loop.index %}
-    {% include 'profile/modals/edit_skill.html' %}
-    {% endwith %}
-{% endfor %}
-{% if user.certifications %}
-{% for cert in user.certifications %}
-    {% include 'profile/modals/edit_certification.html' %}
-{% endfor %}
-{% endif %}
 
 {% endblock %}

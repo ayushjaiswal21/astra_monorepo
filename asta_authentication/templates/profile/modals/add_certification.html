@@ -8,6 +8,7 @@
             </div>
             <div class="modal-body">
                 <form action="{{ url_for('profile.add_certification') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
                         <label for="certName" class="form-label">Name</label>
                         <input type="text" class="form-control" id="certName" name="name" placeholder="Ex: Microsoft Certified: Azure Fundamentals">
@@ -16,8 +17,8 @@
                         <label for="issuingOrg" class="form-label">Issuing organization</label>
                         <input type="text" class="form-control" id="issuingOrg" name="issuing_organization" placeholder="Ex: Microsoft">
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
+                    <div class="flex flex-wrap gap-4 mb-3">
+                        <div class="w-full md:w-1/2">
                             <label for="issueDate" class="form-label">Issue Date</label>
                             <input type="text" class="form-control" id="issueDate" name="issue_date" placeholder="Ex: Issued Jun 2023">
                         </div>

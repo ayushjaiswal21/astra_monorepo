@@ -259,6 +259,7 @@
                     <div class="modal-footer">
                       <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50" data-modal-dismiss>Cancel</button>
                       <form action="{{ url_for('main.delete_news', news_id=item.id) }}" method="POST" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700">Delete</button>
                       </form>
                     </div>

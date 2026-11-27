@@ -8,34 +8,34 @@
             </div>
             <form id="addExperienceForm" action="{{ url_for('profile.add_experience') }}" method="POST">
                 <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-12">
+                    <div class="flex flex-wrap gap-4">
+                        <div class="w-full">
                             <label for="title" class="form-label">Title*</label>
                             <input type="text" class="form-control" id="title" name="title" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="company" class="form-label">Company*</label>
                             <input type="text" class="form-control" id="company" name="company" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="location" class="form-label">Location</label>
                             <input type="text" class="form-control" id="location" name="location">
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="start_date" class="form-label">Start Date*</label>
                             <input type="month" class="form-control" id="start_date" name="start_date" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="w-full md:w-1/2">
                             <label for="end_date" class="form-label">End Date</label>
                             <div class="input-group">
                                 <input type="month" class="form-control" id="end_date" name="end_date">
-                                <div class="form-check form-switch ms-3 d-flex align-items-center">
+                                <div class="form-check form-switch ms-3 flex items-center">
                                     <input class="form-check-input" type="checkbox" id="current_role" name="current_role">
                                     <label class="form-check-label ms-2" for="current_role">I currently work here</label>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12">
+                        <div class="w-full">
                             <label for="description" class="form-label">Description</label>
                             <textarea class="form-control" id="description" name="description" rows="4"></textarea>
                         </div>
@@ -74,7 +74,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
-                        'Content-Type': 'application/x-www-form-urlencoded'
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: new URLSearchParams(formData).toString()
                 });
