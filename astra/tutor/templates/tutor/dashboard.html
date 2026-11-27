@@ -79,20 +79,21 @@
                         <div class="p-2 bg-blue-100 rounded-md">
                             <i class="fas fa-book text-blue-600"></i>
                         </div>
-                        <button onclick="deleteCourse({{ course.id }})"
+                        {% if not course.created_by_id or course.created_by_id == user.id %}
+                        <button onclick="deleteCourse({{ course.id }}, '{{ course.title|escapejs }}')"
                                 class="text-red-400 hover:text-red-600 text-sm">
                             <i class="fas fa-trash"></i>
                         </button>
+                        {% endif %}
                     </div>
                     <h3 class="font-bold text-gray-800 mb-2">{{ course.title|truncatechars:50 }}</h3>
                     <p class="text-sm text-gray-600 mb-3">{{ course.description|truncatechars:100 }}</p>
                     <div class="flex items-center justify-between">
                         <span class="text-xs text-gray-500">
-                            {{ course.created_at|date:"M d, Y" }}
+                            Updated {{ course.updated_at|date:"M d, Y" }}
                         </span>
-                        <a href="{% url 'tutor:course_detail' course.id %}"
-                           class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
-                            Start Course
+                        <a href="{% url 'tutor:course_detail' course.id %}" class="btn-filled text-sm">
+                            Start course
                         </a>
                     </div>
                 </div>
@@ -122,6 +123,23 @@
         {% endif %}
     </div>
 
+    <!-- Delete confirmation modal (replaces confirm()) -->
+    <div id="delete-modal" class="fixed z-50 inset-0 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75" onclick="closeDeleteModal()"></div>
+            <div class="card-surface relative sm:max-w-md sm:w-full">
+                <h3 class="text-lg font-bold" style="color: var(--text-primary);">Delete this course?</h3>
+                <p class="mt-2 text-sm" style="color: var(--text-secondary);">
+                    "<span id="delete-modal-title"></span>" will be permanently deleted. This action cannot be undone.
+                </p>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" class="btn-outline" onclick="closeDeleteModal()">Cancel</button>
+                    <button type="button" class="btn-filled" style="background: #DC2626;" onclick="confirmDeleteCourse()">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- AI Guru Integration -->
     <div class="mt-6 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg shadow-md p-6 text-white">
         <div class="flex items-center justify-between">
@@ -142,28 +160,42 @@
 
 {% block extra_js %}
 <script>
-function deleteCourse(courseId) {
-    if (confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
-        fetch(`/api/courses/${courseId}/delete/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error deleting course: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An unexpected error occurred.');
-        });
-    }
+let pendingDeleteCourseId = null;
+
+function deleteCourse(courseId, title) {
+    pendingDeleteCourseId = courseId;
+    document.getElementById('delete-modal-title').textContent = title;
+    document.getElementById('delete-modal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    pendingDeleteCourseId = null;
+    document.getElementById('delete-modal').classList.add('hidden');
+}
+
+function confirmDeleteCourse() {
+    if (pendingDeleteCourseId === null) return;
+    const courseId = pendingDeleteCourseId;
+    closeDeleteModal();
+    fetch(`/api/courses/${courseId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error deleting course: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An unexpected error occurred.');
+    });
 }
 </script>
 {% endblock %}

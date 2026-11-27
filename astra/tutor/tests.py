@@ -69,6 +69,12 @@ class CourseOwnershipAndMasterySmokeTest(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertTrue(User.objects.filter(username='newuser').exists())
 
+    def test_dashboard_renders_with_delete_modal(self):
+        resp = self.client.get('/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'delete-modal', resp.content)
+        self.assertIn(b'Updated', resp.content)  # the course card's updated_at label
+
     def test_analytics_idor_is_blocked(self):
         # The analytics endpoint takes a session_key as `user_id`; it must
         # reject one that isn't the caller's own session key.
