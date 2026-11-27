@@ -144,6 +144,42 @@ so, run it the same way:
 docker compose exec asta-authentication python init_db.py
 ```
 
+## 6b. Install Ollama on the VM (for free local course-generation AI)
+
+`astra`'s course generation tries Ollama first, falling back to Gemini.
+Ollama runs directly on the VM's host (not inside a container here, to
+keep the Docker setup simpler) - install it once, pull a model, and point
+`astra`'s `.env` at it:
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+sudo systemctl enable --now ollama      # keeps it running after reboot
+ollama pull llama3.2:3b                 # ~2GB, the model this project verified works well
+```
+
+Then in `astra/.env` (on the host, before `docker compose up`), set:
+
+```bash
+OLLAMA_URL=http://host.docker.internal:11434/api/generate
+OLLAMA_MODEL=llama3.2:3b
+```
+
+`host.docker.internal` lets a container reach a service running on the VM
+itself (not inside Docker) - if that hostname doesn't resolve on your
+Docker version, use the VM's docker0 bridge IP instead (`ip addr show
+docker0`, usually `172.17.0.1`) and set `OLLAMA_URL` to that IP.
+
+Verify it's reachable from inside the container before relying on it:
+
+```bash
+docker compose exec astra-web curl -s http://host.docker.internal:11434/api/tags
+```
+
+If this returns `{"models":[...]}` with `llama3.2:3b` listed, course
+generation will actually use it instead of falling straight through to
+Gemini (whose free-tier quota is easy to exhaust - Ollama running locally
+costs nothing per request and doesn't share that limit).
+
 ## 7. Verify it's up
 
 ```bash
