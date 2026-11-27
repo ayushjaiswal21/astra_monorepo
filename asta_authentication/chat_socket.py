@@ -1,9 +1,10 @@
 # chat_socket.py
-# Lightweight Socket.IO namespace for chat + notifications (development-friendly).
-# For production, authenticate tokens on connect instead of trusting query params.
+# Socket.IO namespace for chat + notifications, authenticated via the
+# caller's real Flask-Login session (the same session cookie the rest of
+# this app uses) — never a client-supplied user_id.
 
-from flask import request
 from flask_socketio import Namespace, join_room, leave_room
+from flask_login import current_user
 from models import db, Message, User, Notification
 import json
 from datetime import datetime
@@ -15,16 +16,12 @@ def attach_chat_namespace(socketio):
 
 class ChatNamespace(Namespace):
     def on_connect(self):
-        """
-        Expected (dev) usage: socket = io('/chat', { query: { user_id: CURRENT_USER_ID } })
-        In production, verify an auth token here (JWT or session).
-        """
-        user_id = request.args.get('user_id')
-        if user_id:
-            # join personal room so server can target notifications/messages
-            join_room(f'user_{user_id}')
-            # Optional: also join presence room, etc.
-        # Accept connection; to reject return False
+        """Reject the connection unless the caller has a real, logged-in
+        Flask-Login session — join only the authenticated user's own room,
+        never whatever user_id a client claims to be."""
+        if not current_user.is_authenticated:
+            return False  # reject the connection
+        join_room(f'user_{current_user.id}')
 
     def on_disconnect(self):
         # No-op for now; room membership is ephemeral and handled on reconnect
@@ -46,19 +43,22 @@ class ChatNamespace(Namespace):
         data = {
             'recipient_id': <int>,
             'content': '<text>',
-            # optionally 'sender_id' (if provided) otherwise uses request.args user_id
         }
+        `sender_id` is always the caller's own authenticated identity —
+        never taken from client-supplied data, or anyone could send a
+        message that displays as having come from someone else.
         This creates a Message row, commits, emits 'new_message' to recipient personal room
         and emits a 'notification' for recipient.
         """
+        if not current_user.is_authenticated:
+            return
         try:
-            sender_id = data.get('sender_id') or request.args.get('user_id')
+            sender_id = current_user.id
             recipient_id = data.get('recipient_id')
             content = data.get('content')
-            if not sender_id or not recipient_id or not content:
+            if not recipient_id or not content:
                 return  # malformed
 
-            sender_id = int(sender_id)
             recipient_id = int(recipient_id)
 
             # Persist message
