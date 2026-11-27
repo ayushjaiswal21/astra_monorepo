@@ -110,7 +110,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# The manifest storage requires `collectstatic` to have run first (which
+# Procfile's `release:` step does in production) - using it in local dev
+# breaks every {% static %} tag with "Missing staticfiles manifest entry"
+# the moment you haven't run collectstatic. Only use it when DEBUG=False.
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # CDN Configuration (Optional)
 CDN_URL = os.getenv('CDN_URL', '')  # e.g., 'https://cdn.yourdomain.com'

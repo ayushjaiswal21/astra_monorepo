@@ -2,6 +2,16 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# This file prints emoji/unicode status messages throughout (e.g. "📝 In-memory
+# mode..."). On a console using a non-UTF-8 codepage (default on Windows,
+# cp1252), those prints raise UnicodeEncodeError - which is worse than a
+# cosmetic log glitch: a crash inside an `except` block's own error-logging
+# print turns a normal successful request into an unhandled 500. Force UTF-8
+# with replacement instead of failing, so logging can never crash a request.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, 'reconfigure'):
+        _stream.reconfigure(encoding='utf-8', errors='replace')
+
 import models
 from fastapi import FastAPI, Body, UploadFile, File, HTTPException, Depends, Request
 from typing import Optional

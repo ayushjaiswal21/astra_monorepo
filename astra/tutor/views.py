@@ -253,6 +253,10 @@ def quiz_detail(request, quiz_id):
 @require_http_methods(["POST"])
 def submit_quiz(request, quiz_id):
     try:
+        if not request.session.session_key:
+            request.session.create()
+        session_key = request.session.session_key
+
         data = json.loads(request.body)
         # select_related/prefetch avoids a Question + Choice query per submitted answer.
         quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
@@ -275,11 +279,11 @@ def submit_quiz(request, quiz_id):
         # Marking the lesson complete on a passing score is handled by the
         # handle_quiz_attempt signal (tutor/signals.py), triggered by this create().
         UserQuizAttempt.objects.create(
-            session_key=request.session.session_key or 'anonymous',
+            session_key=session_key,
             quiz=quiz,
             score=score
         )
-        update_mastery(request.session.session_key or 'anonymous', quiz.lesson.title, score >= 70)
+        update_mastery(session_key, quiz.lesson.title, score >= 70)
 
         return JsonResponse({
             'success': True,
