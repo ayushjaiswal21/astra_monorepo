@@ -9,11 +9,24 @@ from flask_jwt_extended import JWTManager
 from flask_wtf import CSRFProtect
 from sqlalchemy import or_
 
-from .models import db, User, Post, Article, Education, Experience, Skill, Certification, Message, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration
-from .auth_routes import auth_bp, register_mock_oauth_routes # Import the new function
-from .main_routes import main_bp
-from .profile_routes import profile_bp
-from .routes import api_bp # Import the new API blueprint
+# Supports both invocation styles already used elsewhere in this codebase:
+# `python -m asta_authentication.app` (package-relative, what start_all.bat
+# uses) and `python app.py` / a WSGI server pointed straight at this file
+# from inside this directory (what start_all.ps1 and a Render Procfile do -
+# a bare `from .models import ...` crashes with "attempted relative import
+# with no known parent package" under that second style).
+try:
+    from .models import db, User, Post, Article, Education, Experience, Skill, Certification, Message, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration
+    from .auth_routes import auth_bp, register_mock_oauth_routes
+    from .main_routes import main_bp
+    from .profile_routes import profile_bp
+    from .routes import api_bp
+except ImportError:
+    from models import db, User, Post, Article, Education, Experience, Skill, Certification, Message, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration
+    from auth_routes import auth_bp, register_mock_oauth_routes
+    from main_routes import main_bp
+    from profile_routes import profile_bp
+    from routes import api_bp
 
 import logging
 
@@ -49,7 +62,12 @@ else:
     env_db_uri = os.environ.get('DATABASE_URL')
 if env_db_uri:
     uri = env_db_uri
-    if uri.startswith('sqlite:///') and not uri.startswith('sqlite:////'):
+    if uri == 'sqlite:///:memory:':
+        # Must stay exactly this - treating ':memory:' as a relative file
+        # path (the branch below) turns it into an invalid path containing
+        # a literal colon, which SQLite can't open on Windows.
+        pass
+    elif uri.startswith('sqlite:///') and not uri.startswith('sqlite:////'):
         rel_path = uri.replace('sqlite:///', '', 1)
         abs_path = os.path.abspath(os.path.join(base_dir, rel_path))
         # Normalize to forward slashes for SQLAlchemy URI on Windows

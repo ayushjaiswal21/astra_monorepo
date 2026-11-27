@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import current_user
-from .utils import api_login_required as login_required
 import os
 import sys
 try:
+    from .utils import api_login_required as login_required
     from .models import db, User, Post, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News, Notification
 except ImportError:
+    from utils import api_login_required as login_required
     from models import db, User, Post, Internship, JobPost, Workshop, Event, Message, Education, Experience, Skill, Certification, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration, News, Notification
 from werkzeug.utils import secure_filename
 import os

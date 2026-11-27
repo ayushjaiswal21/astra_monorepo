@@ -169,6 +169,25 @@ i.fas, i.far, i.fab, svg.icon {
 .card .card-body, .card > img, .card .list-group-item:first-child {
   border-radius: calc(var(--radius-outer) - var(--space-6));
 }
+.card-footer {
+  background: var(--surface-1);
+  border-top: var(--border-hairline);
+  padding: var(--space-4) var(--space-6);
+  margin: var(--space-6) calc(var(--space-6) * -1) calc(var(--space-6) * -1);
+  border-radius: 0 0 calc(var(--radius-outer) - 2px) calc(var(--radius-outer) - 2px);
+}
+
+/* nav-tabs: plain tab-button row, reusing accent/border tokens */
+.nav-tabs { display: flex; gap: var(--space-2); border-bottom: var(--border-hairline); flex-wrap: wrap; }
+.nav-tabs .nav-link {
+  padding: var(--space-2) var(--space-4);
+  color: var(--text-secondary);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+}
+.nav-tabs .nav-link:hover { color: var(--text-primary); }
+.nav-tabs .nav-link.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
 
 .modal-content {
   border-radius: var(--radius-outer);

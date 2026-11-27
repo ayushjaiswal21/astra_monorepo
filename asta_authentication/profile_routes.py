@@ -5,14 +5,15 @@ import json
 import requests
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_login import current_user
-from .utils import api_login_required as login_required
 from sqlalchemy import or_
 
 try:
+    from .utils import api_login_required as login_required
     from .models import db, User, Education, Experience, Skill, Certification, ProfileView, Post, CareerGPS, LearningPath
     from .main_routes import log_activity
     from .routes import allowed_file
 except ImportError:
+    from utils import api_login_required as login_required
     from models import db, User, Education, Experience, Skill, Certification, ProfileView, Post, CareerGPS, LearningPath
     from main_routes import log_activity
     from routes import allowed_file

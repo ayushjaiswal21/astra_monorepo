@@ -1,8 +1,8 @@
 {% extends 'layout.html' %} {% block title %}Career GPS{% endblock %} {% block
 content %}
-<div class="container mt-5">
-  <div class="row justify-content-center">
-    <div class="col-md-10">
+<div class="max-w-7xl mx-auto px-4 mt-5">
+  <div class="flex justify-center">
+    <div class="w-full md:w-5/6">
       <div class="card">
         <div class="card-header">
           <h3 class="card-title mb-0">🧭 Career GPS Dashboard</h3>
@@ -17,8 +17,8 @@ content %}
             <p>Progress: {{ gps_data.progress }}%</p>
           </div>
 
-          <div class="row">
-            <div class="col-md-6">
+          <div class="flex flex-wrap gap-4">
+            <div class="w-full md:w-1/2">
               <h5>Your Career Journey</h5>
               <div class="progress mb-3">
                 <div
@@ -41,9 +41,9 @@ content %}
               </ul>
             </div>
 
-            <div class="col-md-6">
+            <div class="w-full md:w-1/2">
               <h5>Quick Actions</h5>
-              <div class="d-grid gap-2">
+              <div class="grid gap-2">
                 <a
                   href="{{ url_for('profile.start_career_gps') }}"
                   class="btn btn-outline-primary"
@@ -77,9 +77,9 @@ content %}
           </div>
           {% else %}
           <div class="text-center py-5">
-            <i class="fas fa-compass fa-3x mb-3 text-muted"></i>
+            <i class="fas fa-compass fa-3x mb-3 text-gray-500"></i>
             <h4>You haven't set up your Career GPS yet</h4>
-            <p class="text-muted">
+            <p class="text-gray-500">
               Take our quick quiz to discover your ideal career path
             </p>
             <a

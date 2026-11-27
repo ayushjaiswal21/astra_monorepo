@@ -20,7 +20,7 @@
 </head>
 <body class="bg-gray-50">
     <header class="bg-white shadow-sm">
-        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+        <nav class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <a href="/" class="text-2xl font-bold text-blue-600">AstraLearn</a>
             <div>
                 <a href="{{ url_for('auth.join') }}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Join Now</a>
@@ -28,7 +28,7 @@
         </nav>
     </header>
 
-    <main id="main-content" class="container mx-auto px-6 py-12 flex justify-center">
+    <main id="main-content" class="max-w-7xl mx-auto px-6 py-12 flex justify-center">
         <div class="w-full max-w-md">
             <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">Sign in</h1>
             <div class="bg-white rounded-lg shadow-lg p-8">
@@ -42,6 +42,7 @@
                   {% endif %}
                 {% endwith %}
                 <form action="{{ url_for('auth.signin_email') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-4">
                         <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email or Phone</label>
                         <input type="text" id="email" name="email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
