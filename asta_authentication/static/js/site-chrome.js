@@ -231,7 +231,10 @@
     username = username.trim();
     if (!username) return;
     var card = document.querySelector('[data-post-id="' + postId + '"]');
-    var snippet = card ? card.querySelector('p').textContent.trim() : '';
+    // The card's first <p> is the "<date> - globe" byline, not the post body
+    // (that's the one with .leading-relaxed) - querySelector('p') was grabbing
+    // the byline, so shared posts carried the wrong text.
+    var snippet = card ? card.querySelector('p.leading-relaxed').textContent.trim() : '';
     if (snippet.length > 200) snippet = snippet.slice(0, 200) + '...';
     var csrfMeta = document.querySelector('meta[name="csrf-token"]');
     fetch('/api/messages/' + encodeURIComponent(username), {

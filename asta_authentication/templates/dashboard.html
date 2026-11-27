@@ -59,7 +59,10 @@
         border-top-right-radius: 8px;
         box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
         display: none;
-        z-index: 101;
+        /* Above --z-chrome (1040): the global theme-toggle FAB sits at the
+           same bottom-right corner and was intercepting clicks on the chat
+           send button. */
+        z-index: 1050;
       }
       #chat-header {
         background: var(--accent);
