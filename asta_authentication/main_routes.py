@@ -10,6 +10,7 @@ except ImportError:
 from werkzeug.utils import secure_filename
 import os
 from sqlalchemy import or_, func
+from sqlalchemy.orm import selectinload, joinedload
 import sys
 from datetime import datetime, timedelta
 import requests
@@ -347,10 +348,11 @@ def analytics():
         ).all()
         connected_seeker_ids.update([c[0] for c in connections_as_requester])
 
-        # Fetch progress for each connected seeker
+        # Fetch progress for each connected seeker (single batched lookup instead of one query per seeker)
+        seekers_by_id = {s.id: s for s in User.query.filter(User.id.in_(connected_seeker_ids)).all()} if connected_seeker_ids else {}
         seeker_progress_list = []
         for seeker_id in connected_seeker_ids:
-            seeker = User.query.get(seeker_id)
+            seeker = seekers_by_id.get(seeker_id)
             if seeker:
                 seeker_astra_data = fetch_astra_analytics(seeker_id)
                 seeker_progress_list.append({
@@ -364,9 +366,9 @@ def analytics():
 
         analytics_data['provider'] = {
             'announcement_performance': {
-                'internships': {i.title: len(i.applications) for i in Internship.query.filter_by(user_id=user.id).all()},
-                'jobs': {j.title: len(j.applications) for j in JobPost.query.filter_by(user_id=user.id).all()},
-                'workshops': {w.title: len(w.registrations) for w in Workshop.query.filter_by(user_id=user.id).all()}
+                'internships': {i.title: len(i.applications) for i in Internship.query.filter_by(user_id=user.id).options(selectinload(Internship.applications)).all()},
+                'jobs': {j.title: len(j.applications) for j in JobPost.query.filter_by(user_id=user.id).options(selectinload(JobPost.applications)).all()},
+                'workshops': {w.title: len(w.registrations) for w in Workshop.query.filter_by(user_id=user.id).options(selectinload(Workshop.registrations)).all()}
             },
             'seekers_connected': len(connected_seeker_ids),
             'seeker_progress': seeker_progress_list
@@ -397,7 +399,7 @@ def get_messages(username):
             (Message.sender_id == current_user.id) & (Message.recipient_id == other_user.id),
             (Message.sender_id == other_user.id) & (Message.recipient_id == current_user.id)
         )
-    ).order_by(Message.timestamp.asc()).all()
+    ).options(joinedload(Message.sender)).order_by(Message.timestamp.asc()).all()
 
     return jsonify([{
         'sender': msg.sender.username,
@@ -458,8 +460,9 @@ def post_message(username):
 @main_bp.route('/network')
 @login_required
 def network():
-    users = User.query.all()
-    return render_template('network/network_hub.html', users=users, current_user=current_user)
+    page = request.args.get('page', 1, type=int)
+    pagination = User.query.paginate(page=page, per_page=20, error_out=False)
+    return render_template('network/network_hub.html', users=pagination.items, pagination=pagination, current_user=current_user)
 
 @main_bp.route('/new-post', methods=['GET'])
 @login_required
@@ -485,26 +488,30 @@ def create_post():
 @main_bp.route('/internships')
 @login_required
 def internships():
-    all_internships = Internship.query.order_by(Internship.date_posted.desc()).all()
-    return render_template('internships.html', internships=all_internships)
+    page = request.args.get('page', 1, type=int)
+    pagination = Internship.query.order_by(Internship.date_posted.desc()).paginate(page=page, per_page=20, error_out=False)
+    return render_template('internships.html', internships=pagination.items, pagination=pagination)
 
 @main_bp.route('/workshops')
 @login_required
 def workshops():
-    all_workshops = Workshop.query.order_by(Workshop.date_posted.desc()).all()
-    return render_template('workshops.html', workshops=all_workshops)
+    page = request.args.get('page', 1, type=int)
+    pagination = Workshop.query.order_by(Workshop.date_posted.desc()).paginate(page=page, per_page=20, error_out=False)
+    return render_template('workshops.html', workshops=pagination.items, pagination=pagination)
 
 @main_bp.route('/events')
 @login_required
 def events():
-    all_events = Event.query.order_by(Event.date_posted.desc()).all()
-    return render_template('events.html', events=all_events)
+    page = request.args.get('page', 1, type=int)
+    pagination = Event.query.order_by(Event.date_posted.desc()).paginate(page=page, per_page=20, error_out=False)
+    return render_template('events.html', events=pagination.items, pagination=pagination)
 
 @main_bp.route('/jobs')
 @login_required
 def jobs():
-    all_jobs = JobPost.query.order_by(JobPost.date_posted.desc()).all()
-    return render_template('jobs.html', jobs=all_jobs)
+    page = request.args.get('page', 1, type=int)
+    pagination = JobPost.query.order_by(JobPost.date_posted.desc()).paginate(page=page, per_page=20, error_out=False)
+    return render_template('jobs.html', jobs=pagination.items, pagination=pagination)
 
 @main_bp.route('/announcements')
 @login_required

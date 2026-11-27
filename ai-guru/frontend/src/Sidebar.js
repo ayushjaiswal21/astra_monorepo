@@ -6,12 +6,13 @@ const Sidebar = ({
     setSidebarCollapsed,
     startNewChat,
     chatSessions,
+    isHistoryLoading,
     selectedSession,
     setSelectedSession,
     setCurrentSessionId,
     setMessages,
     deleteAllChatHistory,
-    deleteSession 
+    deleteSession
 }) => {
   return (
     <div className={`transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-20' : 'w-64'} bg-white text-gray-800 flex flex-col border-r border-gray-200`}>
@@ -39,8 +40,9 @@ const Sidebar = ({
         </button>
       </div>
 
-      <ChatHistory 
+      <ChatHistory
         chatSessions={chatSessions}
+        isHistoryLoading={isHistoryLoading}
         selectedSession={selectedSession}
         sidebarCollapsed={sidebarCollapsed}
         deleteAllChatHistory={deleteAllChatHistory}

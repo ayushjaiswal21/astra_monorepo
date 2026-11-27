@@ -6,6 +6,7 @@ from flask_socketio import SocketIO
 from flask_login import LoginManager, login_required, current_user
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_wtf import CSRFProtect
 from sqlalchemy import or_
 
 from .models import db, User, Post, Article, Education, Experience, Skill, Certification, Message, ProfileView, Connection, ActivityLog, JobApplication, InternshipApplication, WorkshopRegistration
@@ -24,11 +25,11 @@ load_dotenv('.env.test')
 # --- App Initialization ---
 app = Flask(__name__)
 
-# PROTOTYPE MODE: Enable CORS for all origins
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+# Only the known frontend origins may make credentialed cross-origin requests.
+_allowed_origins = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5000').split(',')
+CORS(app, resources={r"/*": {"origins": _allowed_origins}}, supports_credentials=True)
 
-# Provide noop csrf_token for prototype templates
-app.jinja_env.globals['csrf_token'] = lambda: ''
+csrf = CSRFProtect(app)
 
 # --- Logging Configuration ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -65,11 +66,13 @@ app.config['UPLOAD_FOLDER'] = 'asta_authentication/static/uploads'
 app.config['POST_UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'posts')
 app.config['ARTICLE_UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'articles')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
-app.config['SESSION_COOKIE_SAMESITE'] = None  # Allow cross-origin cookies
-app.config['SESSION_COOKIE_SECURE'] = False  # Allow HTTP (not just HTTPS)
-app.config['SESSION_COOKIE_HTTPONLY'] = False  # Allow JavaScript access
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'True').lower() == 'true'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+# JWTs must sign with their own secret, not silently reuse SECRET_KEY.
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', app.config['SECRET_KEY'])
 
-DEBUG_MODE = os.environ.get("FLASK_DEBUG", "True").lower() in ["true", "1"]
+DEBUG_MODE = os.environ.get("FLASK_DEBUG", "False").lower() in ["true", "1"]
 MOCK_OAUTH = os.environ.get("MOCK_OAUTH", "false").lower() == "true"
 app.config['MOCK_OAUTH'] = MOCK_OAUTH
 

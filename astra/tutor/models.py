@@ -83,7 +83,7 @@ class UserProgress(models.Model):
 
 class UserQuizAttempt(models.Model):
     # Using session key instead of user
-    session_key = models.CharField(max_length=40, default='')
+    session_key = models.CharField(max_length=40, default='', db_index=True)
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='attempts')
     score = models.FloatField()
     completed_at = models.DateTimeField(auto_now_add=True)

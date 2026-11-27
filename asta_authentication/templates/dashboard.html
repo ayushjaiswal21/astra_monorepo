@@ -678,7 +678,7 @@
         document.getElementById("chat-with").innerText = username;
         document.getElementById("chat-container").style.display = "block";
         const messagesDiv = document.getElementById("chat-messages");
-        messagesDiv.innerHTML = "";
+        messagesDiv.innerHTML = '<div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div>';
 
         const notification = document.getElementById(
           `notification-header-${username}`
@@ -692,6 +692,7 @@
         fetch(`/api/messages/${username}`)
           .then((response) => response.json())
           .then((messages) => {
+            messagesDiv.innerHTML = "";
             messages.forEach((msg) => {
               displayMessage(msg);
             });

@@ -1,11 +1,15 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import Sidebar from "./Sidebar";
 import WelcomeScreen from "./WelcomeScreen";
-import ChatMessages from "./ChatMessages";
 import MessageInput from "./MessageInput";
+
+// ChatMessages pulls in `marked` (markdown rendering) and is only needed once
+// a conversation exists, not on first paint (WelcomeScreen shows first).
+const ChatMessages = React.lazy(() => import("./ChatMessages"));
 
 function App() {
   const [chatSessions, setChatSessions] = useState([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState(null);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -103,7 +107,9 @@ function App() {
   }, [messages, isLoading]);
 
   useEffect(() => {
-    fetch("http://localhost:8001/chat-history")
+    const controller = new AbortController();
+    setIsHistoryLoading(true);
+    fetch("http://localhost:8001/chat-history", { signal: controller.signal })
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -114,8 +120,13 @@ function App() {
         setChatSessions(data.sessions || []);
       })
       .catch((err) => {
-        console.error("Failed to fetch chat sessions:", err);
-      });
+        if (err.name !== "AbortError") {
+          console.error("Failed to fetch chat sessions:", err);
+        }
+      })
+      .finally(() => setIsHistoryLoading(false));
+
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -189,6 +200,14 @@ function App() {
 
       setRecognition(recognitionInstance);
       setSpeechSupported(true);
+
+      return () => {
+        recognitionInstance.onresult = null;
+        recognitionInstance.onstart = null;
+        recognitionInstance.onend = null;
+        recognitionInstance.onerror = null;
+        recognitionInstance.abort();
+      };
     } else {
       setSpeechSupported(false);
     }
@@ -565,6 +584,7 @@ function App() {
         setSidebarCollapsed={setSidebarCollapsed}
         startNewChat={startNewChat}
         chatSessions={chatSessions}
+        isHistoryLoading={isHistoryLoading}
         selectedSession={selectedSession}
         setSelectedSession={setSelectedSession}
         setCurrentSessionId={setCurrentSessionId}
@@ -582,13 +602,15 @@ function App() {
               fileInputRef={fileInputRef}
             />
           ) : (
-            <ChatMessages
-              messages={messages}
-              messagesEndRef={messagesEndRef}
-              submitFeedback={submitFeedback}
-              feedbackLoading={feedbackLoading}
-              processingMessages={processingMessages}
-            />
+            <Suspense fallback={null}>
+              <ChatMessages
+                messages={messages}
+                messagesEndRef={messagesEndRef}
+                submitFeedback={submitFeedback}
+                feedbackLoading={feedbackLoading}
+                processingMessages={processingMessages}
+              />
+            </Suspense>
           )}
         </div>
 

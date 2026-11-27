@@ -1,5 +1,7 @@
 # asta_authentication/routes.py
 
+import os
+import uuid
 from flask import Blueprint, request, jsonify, send_from_directory, current_app
 from werkzeug.utils import secure_filename
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -43,15 +45,17 @@ def create_post():
 @api_bp.route('/posts/feed', methods=['GET'])
 @jwt_required()
 def get_main_feed():
-    posts = Post.query.order_by(Post.created_at.desc()).all()
-    return jsonify([p.to_dict() for p in posts])
+    page = request.args.get('page', 1, type=int)
+    pagination = Post.query.order_by(Post.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
+    return jsonify([p.to_dict() for p in pagination.items])
 
 @api_bp.route('/posts/user/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user_posts(user_id):
     user = User.query.get_or_404(user_id)
-    posts = user.posts.order_by(Post.created_at.desc()).all()
-    return jsonify([p.to_dict() for p in posts])
+    page = request.args.get('page', 1, type=int)
+    pagination = user.posts.order_by(Post.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
+    return jsonify([p.to_dict() for p in pagination.items])
 
 @api_bp.route('/articles', methods=['POST'])
 @jwt_required()
@@ -79,8 +83,9 @@ def create_article():
 
 @api_bp.route('/articles', methods=['GET'])
 def get_all_articles():
-    articles = Article.query.order_by(Article.created_at.desc()).all()
-    return jsonify([a.to_dict() for a in articles])
+    page = request.args.get('page', 1, type=int)
+    pagination = Article.query.order_by(Article.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
+    return jsonify([a.to_dict() for a in pagination.items])
 
 @api_bp.route('/articles/<int:article_id>', methods=['GET'])
 def get_single_article(article_id):

@@ -1,7 +1,7 @@
 import google.generativeai as genai
 import sys
 import os
-import requests # Import requests for mocking
+import httpx # Async HTTP client; used instead of requests so mock calls don't block the event loop
 import json # Import json for handling mock responses
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -16,18 +16,19 @@ if not config.USE_MOCK and config.GEMINI_API_KEY:
     text_model = genai.GenerativeModel('gemini-pro')
     vision_model = genai.GenerativeModel('gemini-pro-vision')
 
-def generate_text_response(text, recent_context, learned_prefs, detected_lang, language_name, should_display):
+async def generate_text_response(text, recent_context, learned_prefs, detected_lang, language_name, should_display):
     gemini_api_base_url = os.getenv('GEMINI_API_BASE_URL')
     if gemini_api_base_url or config.USE_MOCK or text_model is None:
         # Use mock server
         try:
             if gemini_api_base_url:
-                mock_response = requests.post(gemini_api_base_url, json={"message": text})
-                mock_response.raise_for_status()
-                return mock_response.json().get("response", "mocked AI reply")
+                async with httpx.AsyncClient() as client:
+                    mock_response = await client.post(gemini_api_base_url, json={"message": text})
+                    mock_response.raise_for_status()
+                    return mock_response.json().get("response", "mocked AI reply")
             # No mock server provided; return static mock
             return "mocked AI reply"
-        except requests.exceptions.RequestException as e:
+        except httpx.HTTPError as e:
             print(f"Error connecting to mock Gemini API: {e}. Falling back to default mock response.")
             return "mocked AI reply"
     else:
@@ -36,18 +37,19 @@ def generate_text_response(text, recent_context, learned_prefs, detected_lang, l
         response = text_model.generate_content(full_prompt)
         return response.text if response.text else "Sorry, I couldn't generate a response."
 
-def generate_image_response(pil_image, text, detected_lang, language_name, should_display):
+async def generate_image_response(pil_image, text, detected_lang, language_name, should_display):
     gemini_api_base_url = os.getenv('GEMINI_API_BASE_URL')
     if gemini_api_base_url or config.USE_MOCK or vision_model is None:
         # Use mock server
         try:
             # For image, we might just return a generic mock response
             if gemini_api_base_url:
-                mock_response = requests.post(gemini_api_base_url, json={"message": text, "image_present": True})
-                mock_response.raise_for_status()
-                return mock_response.json().get("response", "mocked image reply")
+                async with httpx.AsyncClient() as client:
+                    mock_response = await client.post(gemini_api_base_url, json={"message": text, "image_present": True})
+                    mock_response.raise_for_status()
+                    return mock_response.json().get("response", "mocked image reply")
             return "mocked image reply"
-        except requests.exceptions.RequestException as e:
+        except httpx.HTTPError as e:
             print(f"Error connecting to mock Gemini API for image: {e}. Falling back to default mock response.")
             return "mocked image reply"
     else:

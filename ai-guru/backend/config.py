@@ -5,10 +5,6 @@ from dotenv import load_dotenv
 load_dotenv()
 load_dotenv('.env.test')
 
-# --- Application Settings ---
-ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
-DEBUG_MODE = os.getenv('FLASK_DEBUG', 'True').lower() in ["true", "1", "t"]
-
 # --- Security & Rate Limiting ---
 MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', 10485760))  # 10MB default
 RATE_LIMIT_MAX_REQUESTS = int(os.getenv('RATE_LIMIT_MAX_REQUESTS', 30))

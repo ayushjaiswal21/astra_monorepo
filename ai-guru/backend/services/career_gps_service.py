@@ -58,27 +58,6 @@ def validate_and_preprocess_text(input_text, field_name):
     # Limit length
     return cleaned_text[:500]  # Max 500 characters
 
-def categorize_industry(career_name, summary):
-    """Categorize career into industry for diversity checking"""
-    text = (career_name + " " + summary).lower()
-
-    industry_keywords = {
-        'technology': ['software', 'developer', 'engineer', 'tech', 'programming', 'data', 'ai', 'cybersecurity', 'it'],
-        'design': ['designer', 'design', 'creative', 'ux', 'ui', 'graphic', 'artist', 'visual'],
-        'business': ['manager', 'analyst', 'consultant', 'business', 'marketing', 'sales', 'finance', 'operations'],
-        'healthcare': ['health', 'medical', 'nurse', 'doctor', 'therapist', 'patient', 'clinical', 'pharma'],
-        'education': ['teacher', 'educator', 'trainer', 'professor', 'instructor', 'learning', 'academic'],
-        'creative': ['writer', 'content', 'media', 'journalist', 'editor', 'artist', 'creative'],
-        'science': ['scientist', 'research', 'lab', 'chemistry', 'biology', 'physics', 'researcher'],
-        'engineering': ['engineer', 'engineering', 'architect', 'construction', 'manufacturing']
-    }
-
-    for industry, keywords in industry_keywords.items():
-        if any(keyword in text for keyword in keywords):
-            return industry
-
-    return 'general'
-
 def build_profile_context(user_profile):
     """Build comprehensive profile context for AI analysis"""
     if not user_profile:

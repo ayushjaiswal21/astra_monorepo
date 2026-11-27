@@ -5,12 +5,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Avg
 from django.conf import settings
 from django.utils import timezone
 import google.generativeai as genai
-import httpx
 
 # Dummy function to resolve F821 error until proper AI service is integrated
 def call_ollama(prompt):
@@ -18,25 +18,39 @@ def call_ollama(prompt):
     return {"response": "This is a placeholder response from the dummy call_ollama function."}
 
 from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress, UserQuizAttempt, ModuleProgress, CourseTestSession, CourseTestQuestion, CourseTestAttempt
-
-import json
-import random
-from datetime import timedelta
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
-from django.db import transaction
-from django.db.models import Avg
-from django.conf import settings
-from django.utils import timezone
-import google.generativeai as genai
-import httpx
-
-from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress, UserQuizAttempt, ModuleProgress, CourseTestSession, CourseTestQuestion, CourseTestAttempt
-
 from .prompts import get_test_generation_prompt
 from .tasks import generate_course_content
+
+
+def _get_adjacent_lessons(course_id, lesson):
+    """Return (prev_lesson, next_lesson) for `lesson` within its course's lesson order."""
+    course_lessons = list(Lesson.objects.filter(module__course_id=course_id).order_by('module__order', 'order'))
+    current_index = course_lessons.index(lesson)
+    prev_lesson = course_lessons[current_index - 1] if current_index > 0 else None
+    next_lesson = course_lessons[current_index + 1] if current_index + 1 < len(course_lessons) else None
+    return prev_lesson, next_lesson
+
+
+def _generate_lesson_variant(lesson_id, field_name, prompt_template):
+    """Fetch/generate a cached Gemini-produced variant of a lesson's content (simplified/example)."""
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+
+    cached = getattr(lesson, field_name)
+    if cached:
+        return JsonResponse({'content': cached})
+
+    if not lesson.content:
+        return JsonResponse({'content': f'Cannot generate {field_name.replace("_", " ")} for an empty lesson.'})
+
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    prompt = prompt_template.format(title=lesson.title, content=lesson.content)
+    response = model.generate_content(prompt)
+    generated_text = response.text.strip()
+
+    setattr(lesson, field_name, generated_text)
+    lesson.save()
+
+    return JsonResponse({'content': generated_text})
 
 
 def dashboard(request):
@@ -44,10 +58,12 @@ def dashboard(request):
         request.session.create()
     session_key = request.session.session_key
 
-    courses = Course.objects.all().order_by('-created_at')
-    total_courses = courses.count()
+    courses_qs = Course.objects.all().order_by('-created_at')
+    paginator = Paginator(courses_qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    total_courses = paginator.count
 
-    all_lessons = Lesson.objects.filter(module__course__in=courses)
+    all_lessons = Lesson.objects.filter(module__course__in=courses_qs)
     total_lessons = all_lessons.count()
 
     completed_lessons = UserProgress.objects.filter(
@@ -58,7 +74,8 @@ def dashboard(request):
     progress_percentage = (completed_lessons / total_lessons) * 100 if total_lessons > 0 else 0
 
     context = {
-        'courses': courses,
+        'courses': page_obj,
+        'page_obj': page_obj,
         'total_courses': total_courses,
         'completed_lessons': completed_lessons,
         'total_lessons': total_lessons,
@@ -67,9 +84,13 @@ def dashboard(request):
     return render(request, 'tutor/dashboard.html', context)
 
 def course_list(request):
-    courses = Course.objects.all().order_by('-created_at')
+    courses_qs = Course.objects.all().order_by('-created_at')
+    paginator = Paginator(courses_qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
     context = {
-        'courses': courses,
+        'courses': page_obj,
+        'page_obj': page_obj,
+        'total_courses': paginator.count,
     }
     return render(request, 'tutor/course_list.html', context)
 
@@ -158,10 +179,7 @@ def lesson_detail(request, course_id, module_id, lesson_id):
         session_key=session_key,
         lesson=lesson
     )
-    all_lessons = list(Lesson.objects.filter(module__course_id=course_id).order_by('module__order', 'order'))
-    current_index = all_lessons.index(lesson)
-    next_lesson = all_lessons[current_index + 1] if current_index + 1 < len(all_lessons) else None
-    prev_lesson = all_lessons[current_index - 1] if current_index > 0 else None
+    prev_lesson, next_lesson = _get_adjacent_lessons(course_id, lesson)
 
     module_progress = ModuleProgress.objects.filter(
         session_key=session_key,
@@ -208,36 +226,32 @@ def quiz_detail(request, quiz_id):
 def submit_quiz(request, quiz_id):
     try:
         data = json.loads(request.body)
-        quiz = Quiz.objects.get(id=quiz_id)
+        # select_related/prefetch avoids a Question + Choice query per submitted answer.
+        quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
         answers = data.get('answers', {})
-        
-        total_questions = quiz.questions.count()
+
+        questions_by_id = {str(q.id): q for q in quiz.questions.all()}
+        total_questions = len(questions_by_id)
         correct_answers = 0
-        
+
         for question_id, choice_id in answers.items():
-            try:
-                question = Question.objects.get(id=question_id, quiz=quiz)
-                correct_choice = question.choices.get(is_correct=True)
-                if str(correct_choice.id) == choice_id:
-                    correct_answers += 1
-            except (Question.DoesNotExist, Choice.DoesNotExist):
-                pass
-        
+            question = questions_by_id.get(str(question_id))
+            if question is None:
+                continue
+            correct_choice = next((c for c in question.choices.all() if c.is_correct), None)
+            if correct_choice and str(correct_choice.id) == choice_id:
+                correct_answers += 1
+
         score = (correct_answers / total_questions) * 100 if total_questions > 0 else 0
-        
+
+        # Marking the lesson complete on a passing score is handled by the
+        # handle_quiz_attempt signal (tutor/signals.py), triggered by this create().
         UserQuizAttempt.objects.create(
             session_key=request.session.session_key or 'anonymous',
             quiz=quiz,
             score=score
         )
-        
-        if score >= 70:
-            UserProgress.objects.update_or_create(
-                session_key=request.session.session_key or 'anonymous',
-                lesson=quiz.lesson,
-                defaults={'completed': True}
-            )
-        
+
         return JsonResponse({
             'success': True,
             'score': score,
@@ -371,9 +385,7 @@ def mark_lesson_complete(request, lesson_id):
         )
 
     # Determine the next lesson
-    all_course_lessons = list(Lesson.objects.filter(module__course_id=lesson.module.course.id).order_by('module__order', 'order'))
-    current_index = all_course_lessons.index(lesson)
-    next_lesson = all_course_lessons[current_index + 1] if current_index + 1 < len(all_course_lessons) else None
+    _, next_lesson = _get_adjacent_lessons(lesson.module.course.id, lesson)
 
     if next_lesson:
         return redirect('tutor:lesson_detail', course_id=next_lesson.module.course.id, module_id=next_lesson.module.id, lesson_id=next_lesson.id)
@@ -386,56 +398,24 @@ def mark_lesson_complete(request, lesson_id):
 @require_http_methods(["GET"])
 def simplify_content(request, lesson_id):
     try:
-        lesson = get_object_or_404(Lesson, id=lesson_id)
-        
-        if lesson.simplified_content:
-            return JsonResponse({'content': lesson.simplified_content})
-        
-        if not lesson.content:
-            return JsonResponse({'content': 'Cannot simplify an empty lesson.'})
-
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
-        prompt = f"""
-        Simplify the following lesson content for a beginner. Focus on core concepts, use simple language, and keep it concise.
-        Lesson Title: {lesson.title}
-        Lesson Content:
-        {lesson.content}
-        """
-        response = model.generate_content(prompt)
-        simplified_text = response.text.strip()
-        
-        lesson.simplified_content = simplified_text
-        lesson.save()
-        
-        return JsonResponse({'content': simplified_text})
+        return _generate_lesson_variant(
+            lesson_id,
+            'simplified_content',
+            "Simplify the following lesson content for a beginner. Focus on core concepts, "
+            "use simple language, and keep it concise.\nLesson Title: {title}\nLesson Content:\n{content}"
+        )
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
 @require_http_methods(["GET"])
 def generate_example(request, lesson_id):
     try:
-        lesson = get_object_or_404(Lesson, id=lesson_id)
-        
-        if lesson.example_content:
-            return JsonResponse({'content': lesson.example_content})
-        
-        if not lesson.content:
-             return JsonResponse({'content': 'Cannot generate an example for an empty lesson.'})
-
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
-        prompt = f"""
-        Provide a clear and practical example for the following lesson content. Focus on demonstrating the main concepts in a concise way.
-        Lesson Title: {lesson.title}
-        Lesson Content:
-        {lesson.content}
-        """
-        response = model.generate_content(prompt)
-        example_text = response.text.strip()
-        
-        lesson.example_content = example_text
-        lesson.save()
-        
-        return JsonResponse({'content': example_text})
+        return _generate_lesson_variant(
+            lesson_id,
+            'example_content',
+            "Provide a clear and practical example for the following lesson content. Focus on "
+            "demonstrating the main concepts in a concise way.\nLesson Title: {title}\nLesson Content:\n{content}"
+        )
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
@@ -545,54 +525,6 @@ def submit_course_test_api(request, test_session_id):
             'score': score,
             'recommendations': recommendations
         })
-
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-@require_http_methods(["POST"])
-def run_code_api(request):
-    try:
-        data = json.loads(request.body)
-        code = data.get('code')
-        question_id = data.get('question_id')
-
-        question = get_object_or_404(CourseTestQuestion, id=question_id)
-        test_cases = question.test_cases
-
-        if not test_cases:
-            return JsonResponse({'error': 'No test cases found for this question.'}, status=400)
-
-        # For simplicity, we'll just run the first test case for now
-        test_case = test_cases[0]
-        source_code = code
-        language_id = 71 # Python
-
-        headers = {
-            "X-RapidAPI-Key": settings.JUDGE0_API_KEY,
-            "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
-            "Content-Type": "application/json"
-        }
-
-        payload = {
-            "source_code": source_code,
-            "language_id": language_id,
-            "stdin": test_case['input']
-        }
-
-        try:
-            # Create submission
-            response = httpx.post("https://judge0-ce.p.rapidapi.com/submissions", headers=headers, json=payload)
-            response.raise_for_status()
-            token = response.json()['token']
-
-            # Get submission result
-            response = httpx.get(f"https://judge0-ce.p.rapidapi.com/submissions/{token}", headers=headers)
-            response.raise_for_status()
-            result = response.json()
-
-            return JsonResponse(result)
-        except httpx.HTTPStatusError as e:
-            return JsonResponse({'error': f'Judge0 API error: {e.response.text}'}, status=500)
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

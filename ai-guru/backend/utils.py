@@ -95,6 +95,9 @@ LANGUAGE_NAMES = {
     'ha': 'Hausa',
 }
 
+# Hoisted out of detect_language: static list, rebuilt every call otherwise
+PROBLEMATIC_LANG_CODES = frozenset(['fi', 'da', 'no', 'sv', 'et', 'lv', 'lt', 'so', 'cy', 'eu', 'mt', 'ga', 'is', 'fo', 'ca', 'pt', 'ro', 'sk', 'cs', 'hr', 'sl'])
+
 def detect_language(text: str) -> tuple:
     """
     Detect the language of input text with confidence, handling mixed languages.
@@ -125,8 +128,7 @@ def detect_language(text: str) -> tuple:
         confidence = top_lang.prob
         
         # Filter out commonly mis-detected European languages for Indian English users
-        problematic_codes = ['fi', 'da', 'no', 'sv', 'et', 'lv', 'lt', 'so', 'cy', 'eu', 'mt', 'ga', 'is', 'fo', 'ca', 'pt', 'ro', 'sk', 'cs', 'hr', 'sl']
-        if language_code in problematic_codes:
+        if language_code in PROBLEMATIC_LANG_CODES:
             return ('en', 0.0, False)  # Treat as English
         
         # Only show language detection if confidence is high enough
@@ -137,27 +139,6 @@ def detect_language(text: str) -> tuple:
     except (LangDetectException, Exception) as e:
         print(f"Language detection error: {e}")
         return ('en', 0.0, False)  # Default to English, don't display
-
-def has_indian_script(text: str) -> bool:
-    """Check if text contains Indian language scripts"""
-    indian_script_ranges = [
-        (0x0900, 0x097F),  # Devanagari (Hindi, Marathi, Nepali)
-        (0x0980, 0x09FF),  # Bengali
-        (0x0A00, 0x0A7F),  # Gurmukhi (Punjabi)
-        (0x0A80, 0x0AFF),  # Gujarati
-        (0x0B00, 0x0B7F),  # Oriya
-        (0x0B80, 0x0BFF),  # Tamil
-        (0x0C00, 0x0C7F),  # Telugu
-        (0x0C80, 0x0CFF),  # Kannada
-        (0x0D00, 0x0D7F),  # Malayalam
-    ]
-    
-    for char in text:
-        char_code = ord(char)
-        for start, end in indian_script_ranges:
-            if start <= char_code <= end:
-                return True
-    return False
 
 def detect_mixed_indian_language(text: str) -> str:
     """Detect mixed Indian languages with English"""

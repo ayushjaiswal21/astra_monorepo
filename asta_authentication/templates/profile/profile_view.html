@@ -509,6 +509,17 @@
                 <p class="text-muted">When you share something, it will appear here</p>
             </div>
         {% endif %}
+        {% if pagination and pagination.pages > 1 %}
+        <div class="mt-3 d-flex justify-content-center gap-2">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('profile.view_profile', username=user.username, page=pagination.prev_num) }}" class="btn btn-sm btn-outline-secondary">Previous</a>
+            {% endif %}
+            <span class="align-self-center small text-muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            {% if pagination.has_next %}
+            <a href="{{ url_for('profile.view_profile', username=user.username, page=pagination.next_num) }}" class="btn btn-sm btn-outline-secondary">Next</a>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -700,10 +711,13 @@ function sendConnectionRequest(userId) {
         }
     });
 }
-// Initialize tooltips
-var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl);
+// Initialize tooltips (wrapped: bootstrap.bundle.min.js now loads with `defer`, so it is not yet
+// executed when this inline script runs during parsing; DOMContentLoaded guarantees it has run)
+document.addEventListener('DOMContentLoaded', function () {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
 });
 </script>
 

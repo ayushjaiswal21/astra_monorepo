@@ -24,18 +24,6 @@ class ChatRequest(BaseModel):
             raise ValueError('Invalid session ID format')
         return v
 
-class ImageRequest(BaseModel):
-    description: str
-    session_id: Optional[str] = None
-    
-    @field_validator('description')
-    @classmethod
-    def validate_description(cls, v):
-        if len(v) > 1000:
-            raise ValueError('Description too long (max 1000 characters)')
-        v = re.sub(r'[<>"\\]', '', v.strip()) # Corrected escaping for backslash
-        return v
-
 class FeedbackRequest(BaseModel):
     interaction_id: str
     session_id: str

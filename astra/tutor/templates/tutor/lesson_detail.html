@@ -66,7 +66,10 @@
                 {% if lesson.simplified_content %}
                     {{ lesson.simplified_content|convert_markdown|safe }}
                 {% else %}
-                    <p>Simplified content is being generated...</p>
+                    <div class="skeleton-line" style="width:90%"></div>
+                    <div class="skeleton-line" style="width:75%"></div>
+                    <div class="skeleton-line" style="width:60%"></div>
+                    <p class="text-sm" style="color: var(--text-secondary);">Simplified content is being generated...</p>
                 {% endif %}
             </div>
             <div id="tab-quiz-panel" class="prose max-w-none tab-panel hidden">
@@ -76,7 +79,10 @@
                 {% if lesson.example_content %}
                     {{ lesson.example_content|convert_markdown|safe }}
                 {% else %}
-                    <p>A relevant example is being generated...</p>
+                    <div class="skeleton-line" style="width:90%"></div>
+                    <div class="skeleton-line" style="width:75%"></div>
+                    <div class="skeleton-line" style="width:60%"></div>
+                    <p class="text-sm" style="color: var(--text-secondary);">A relevant example is being generated...</p>
                 {% endif %}
             </div>
         </div>
@@ -115,7 +121,7 @@
 
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

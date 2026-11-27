@@ -17,7 +17,7 @@
             <h2 class="text-xl font-bold text-gray-800">
                 <i class="fas fa-graduation-cap text-gray-400 mr-2"></i>Available Courses
             </h2>
-            <span class="text-sm text-gray-500">{{ courses.count }} course{{ courses.count|pluralize }}</span>
+            <span class="text-sm text-gray-500">{{ total_courses }} course{{ total_courses|pluralize }}</span>
         </div>
 
         {% if courses %}
@@ -39,23 +39,33 @@
                         <span class="text-xs text-gray-500">
                             {{ course.created_at|date:"M d, Y" }}
                         </span>
-                        <a href="{% url 'tutor:course_detail' course.id %}"
-                           class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
-                            Start Course
+                        <a href="{% url 'tutor:course_detail' course.id %}" class="btn-filled text-sm">
+                            Start course
                         </a>
                     </div>
                 </div>
                 {% endfor %}
             </div>
         {% else %}
-            <div class="text-center py-8">
+            <div class="empty-state">
                 <i class="fas fa-book-open text-gray-300 text-4xl mb-4"></i>
-                <p class="text-gray-500 mb-4">No courses have been created yet.</p>
-                <a href="{% url 'tutor:create_course_page' %}"
-                   class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">
-                    Create a Course
+                <p>No courses yet. Create your first one to get started.</p>
+                <a href="{% url 'tutor:create_course_page' %}" class="btn-filled empty-state-action">
+                    Create a course
                 </a>
             </div>
+        {% endif %}
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="flex items-center justify-center gap-2 mt-6">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-50">Previous</a>
+            {% endif %}
+            <span class="text-sm text-gray-600">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-50">Next</a>
+            {% endif %}
+        </div>
         {% endif %}
     </div>
 </div>

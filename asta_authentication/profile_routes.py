@@ -11,9 +11,11 @@ from sqlalchemy import or_
 try:
     from .models import db, User, Education, Experience, Skill, Certification, ProfileView, Post, CareerGPS, LearningPath
     from .main_routes import log_activity
+    from .routes import allowed_file
 except ImportError:
     from models import db, User, Education, Experience, Skill, Certification, ProfileView, Post, CareerGPS, LearningPath
     from main_routes import log_activity
+    from routes import allowed_file
 
 profile_bp = Blueprint('profile', __name__, url_prefix='/profile')
 
@@ -120,12 +122,6 @@ def get_profile():
 
 # --- Original Form-Based Routes ---
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 @profile_bp.route('/upload-images', methods=['POST'])
 @login_required
 def upload_images():
@@ -153,13 +149,15 @@ def upload_images():
 @login_required
 def view_profile(username):
     user = User.query.filter_by(username=username).first_or_404()
-    posts = Post.query.filter_by(user_id=user.id).order_by(Post.created_at.desc()).all()
+    page = request.args.get('page', 1, type=int)
+    pagination = Post.query.filter_by(user_id=user.id).order_by(Post.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
+    posts = pagination.items
     if current_user.id != user.id:
         profile_view = ProfileView(viewer_id=current_user.id, viewed_id=user.id)
         db.session.add(profile_view)
         db.session.commit()
         log_activity(current_user.id, 'viewed_profile', f"viewed {user.username}'s profile")
-    return render_template('profile/profile_view.html', user=user, posts=posts)
+    return render_template('profile/profile_view.html', user=user, posts=posts, pagination=pagination)
 
 @profile_bp.route('/edit-about', methods=['POST'])
 @login_required

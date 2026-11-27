@@ -1,7 +1,8 @@
 import React from 'react';
 
-const ChatHistory = ({ 
+const ChatHistory = ({
     chatSessions,
+    isHistoryLoading,
     selectedSession,
     sidebarCollapsed,
     deleteAllChatHistory,
@@ -97,7 +98,20 @@ const ChatHistory = ({
         </div>
       )}
 
-      {chatSessions.length === 0 ? (
+      {isHistoryLoading ? (
+        [0, 1, 2].map((i) => (
+          <div
+            key={i}
+            style={{
+              height: "40px",
+              borderRadius: "6px",
+              marginBottom: "4px",
+              background: "var(--surface-2)",
+              opacity: 0.6,
+            }}
+          />
+        ))
+      ) : chatSessions.length === 0 ? (
         <div
           style={{
             color: "#6b7280",

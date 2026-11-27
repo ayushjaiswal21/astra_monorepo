@@ -27,9 +27,9 @@ const Message = ({ msg, index, submitFeedback, feedbackLoading, processingMessag
             </div>
           )}
           {isProcessing ? (
-            <div className="flex items-center gap-2 text-gray-500">
-              <div className="w-4 h-4 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
-              <span>AI is thinking...</span>
+            <div aria-label="AI is thinking" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ height: "10px", width: "70%", borderRadius: "4px", background: "var(--surface-2)", opacity: 0.8 }} />
+              <div style={{ height: "10px", width: "45%", borderRadius: "4px", background: "var(--surface-2)", opacity: 0.8 }} />
             </div>
           ) : (
             <>

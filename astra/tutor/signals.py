@@ -60,8 +60,3 @@ def handle_quiz_attempt(sender, instance, created, **kwargs):
             lesson=instance.quiz.lesson,
             defaults={'completed': True}
         )
-
-# Connect the signals
-def connect_signals():
-    # These are connected via the @receiver decorator
-    pass

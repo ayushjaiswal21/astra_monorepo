@@ -6,8 +6,8 @@ db = SQLAlchemy()
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
@@ -101,7 +101,7 @@ class Education(db.Model):
     degree = db.Column(db.String(120))
     dates = db.Column(db.String(120))
     grade = db.Column(db.String(20))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
 class Experience(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -110,12 +110,12 @@ class Experience(db.Model):
     dates = db.Column(db.String(120))
     location = db.Column(db.String(120))
     description = db.Column(db.Text)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
 class Skill(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
 class Certification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -123,26 +123,49 @@ class Certification(db.Model):
     issuing_organization = db.Column(db.String(120))
     issue_date = db.Column(db.String(120))
     credential_url = db.Column(db.String(200))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
 class Post(db.Model):
     __tablename__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     content = db.Column(db.Text, nullable=False)
     media_url = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     author = db.relationship('User', back_populates='posts')
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'author_username': self.author.username if self.author else None,
+            'content': self.content,
+            'media_url': self.media_url,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
 class Article(db.Model):
     __tablename__ = 'articles'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     title = db.Column(db.String(200), nullable=False)
     body = db.Column(db.Text, nullable=False)
     cover_image_url = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     author = db.relationship('User', back_populates='articles')
+
+    def to_dict(self, with_body=False):
+        data = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'author_username': self.author.username if self.author else None,
+            'title': self.title,
+            'cover_image_url': self.cover_image_url,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+        if with_body:
+            data['body'] = self.body
+        return data
 
 
 class Internship(db.Model):
@@ -153,7 +176,7 @@ class Internship(db.Model):
     description = db.Column(db.Text, nullable=False)
     apply_link = db.Column(db.String(255))
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     view_count = db.Column(db.Integer, default=0)
 
 class JobPost(db.Model):
@@ -164,7 +187,7 @@ class JobPost(db.Model):
     description = db.Column(db.Text, nullable=False)
     apply_link = db.Column(db.String(255))
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     view_count = db.Column(db.Integer, default=0)
 
 class Workshop(db.Model):
@@ -176,7 +199,7 @@ class Workshop(db.Model):
     register_link = db.Column(db.String(255))
     workshop_date = db.Column(db.DateTime)
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -187,12 +210,12 @@ class Event(db.Model):
     register_link = db.Column(db.String(255))
     event_date = db.Column(db.DateTime)
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
 class ProfileView(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    viewer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    viewed_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    viewer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    viewed_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     viewer = db.relationship('User', foreign_keys=[viewer_id])
@@ -200,11 +223,11 @@ class ProfileView(db.Model):
 
 class Connection(db.Model):
     __tablename__ = 'connection'
-    
+
     id = db.Column(db.Integer, primary_key=True)
-    requester_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    status = db.Column(db.String(20), nullable=False, default='pending')  # pending, accepted, rejected
+    requester_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    status = db.Column(db.String(20), nullable=False, default='pending', index=True)  # pending, accepted, rejected
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships with back_populates to match User model
@@ -217,7 +240,7 @@ class Connection(db.Model):
 
 class ActivityLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     activity_type = db.Column(db.String(50), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     details = db.Column(db.Text)
@@ -226,8 +249,8 @@ class ActivityLog(db.Model):
 
 class JobApplication(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    job_id = db.Column(db.Integer, db.ForeignKey('job_post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('job_post.id'), nullable=False, index=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref='job_applications')
@@ -235,8 +258,8 @@ class JobApplication(db.Model):
 
 class InternshipApplication(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    internship_id = db.Column(db.Integer, db.ForeignKey('internship.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    internship_id = db.Column(db.Integer, db.ForeignKey('internship.id'), nullable=False, index=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref='internship_applications')
@@ -244,8 +267,8 @@ class InternshipApplication(db.Model):
 
 class WorkshopRegistration(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    workshop_id = db.Column(db.Integer, db.ForeignKey('workshop.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    workshop_id = db.Column(db.Integer, db.ForeignKey('workshop.id'), nullable=False, index=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref='workshop_registrations')
@@ -264,14 +287,14 @@ class News(db.Model):
     source_url = db.Column(db.String(500))  # Original source URL from API
     is_published = db.Column(db.Boolean, default=True)
     date_posted = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
     author = db.relationship('User', backref='news_posts', lazy=True)
 
 class Notification(db.Model):
     __tablename__ = 'notifications'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     payload = db.Column(db.JSON, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_read = db.Column(db.Boolean, default=False, nullable=False)
@@ -287,7 +310,7 @@ class Notification(db.Model):
 
 class CareerGPS(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     interests = db.Column(db.Text)
     skills = db.Column(db.Text)
     goal = db.Column(db.String(100))
@@ -302,7 +325,7 @@ class CareerGPS(db.Model):
 
 class LearningPath(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     career_name = db.Column(db.String(150), nullable=False)
     career_summary = db.Column(db.Text)
     match_percentage = db.Column(db.Integer)

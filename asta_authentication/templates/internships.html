@@ -26,6 +26,17 @@
       </div>
     {% endfor %}
   </div>
+  {% if pagination and pagination.pages > 1 %}
+  <div class="mt-6 flex justify-center space-x-2">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('main.internships', page=pagination.prev_num) }}" class="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Previous</a>
+    {% endif %}
+    <span class="px-3 py-2 text-sm text-gray-700">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+    <a href="{{ url_for('main.internships', page=pagination.next_num) }}" class="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Next</a>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 
 <script>

@@ -10,6 +10,7 @@ import tempfile
 import os
 import base64
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 import google.generativeai as genai
 from dotenv import load_dotenv
 from PIL import Image
@@ -115,7 +116,7 @@ def store_interaction(input_type, user_input, bot_response, session_id=None, lan
             
             # Insert into MongoDB
             database.get_chat_collection().insert_one(document)
-            print(f"💾 Stored interaction for session {session_id} (Language: {LANGUAGE_NAMES.get(language_code, 'Unknown')})")
+            print(f"💾 Stored interaction for session {session_id} (Language: {utils.LANGUAGE_NAMES.get(language_code, 'Unknown')})")
             
             # Learn from this interaction for future improvements
             learn_from_interaction(document)
@@ -391,6 +392,8 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],     # Only needed headers
 )
 
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 @app.post("/chat")
 async def chat_endpoint(request: ChatRequest, http_request: Request):
     try:
@@ -434,7 +437,7 @@ async def chat_endpoint(request: ChatRequest, http_request: Request):
         
         # Generate response using the Gemini service
         print("Calling Gemini service...")
-        bot_response = gemini_service.generate_text_response(
+        bot_response = await gemini_service.generate_text_response(
             text, recent_context, learned_prefs, detected_lang, language_name, should_display
         )
         print(f"Gemini response: {bot_response[:100]}...")
@@ -537,7 +540,7 @@ async def image_chat(image: UploadFile = File(...), text: str = Body(..., embed=
         is_translation_request = any(keyword in text.lower() for keyword in ['translate', 'translation', 'convert to', 'say in', 'how do you say', 'what is', 'meaning in'])
         
         # Generate response using the Gemini service
-        bot_response = gemini_service.generate_image_response(
+        bot_response = await gemini_service.generate_image_response(
             pil_image, text, detected_lang, language_name, should_display
         )
         
@@ -595,9 +598,11 @@ def get_chat_history():
         for session in sessions:
             session_id = session['_id']
             
-            # Get all messages for this session
+            # Get all messages for this session (projected: only fields the frontend reads)
             messages = list(chat_collection.find(
-                {"session_id": session_id}
+                {"session_id": session_id},
+                {"user_input": 1, "bot_response": 1, "language_code": 1, "language_name": 1,
+                 "session_id": 1, "timestamp": 1}
             ).sort("timestamp", 1))
             
             # Convert ObjectId to string and format datetime
