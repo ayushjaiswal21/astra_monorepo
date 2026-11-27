@@ -15,6 +15,7 @@ from .prompts import (
     get_lesson_content_prompt,
 )
 from .schemas import StructureResponse, CourseGenerationResponse, LessonContentResponse
+from .mastery import difficulty_for_score
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ def call_ollama(prompt, timeout=30):
             "model": settings.OLLAMA_MODEL,
             "prompt": prompt,
             "stream": False,
+            "format": "json",
         },
         timeout=timeout,
     )
@@ -53,24 +55,35 @@ def call_ollama(prompt, timeout=30):
     return response.json()["response"]
 
 
-def generate_structure_via_ollama(topic):
+def generate_structure_via_ollama(topic, difficulty="intermediate"):
     """Asks Ollama for the course structure (titles only) and returns the validated dict."""
-    raw_text = call_ollama(get_structure_generation_prompt(topic))
+    raw_text = call_ollama(get_structure_generation_prompt(topic, difficulty))
     parsed = clean_gemini_response(raw_text)
     return StructureResponse.model_validate(parsed).model_dump()
 
 
-def generate_structure_via_gemini(topic):
+def generate_structure_via_gemini(topic, difficulty="intermediate"):
     """Fallback: asks Gemini for the full course (structure + content) in one call."""
     genai.configure(api_key=settings.GEMINI_API_KEY)
     model = genai.GenerativeModel('gemini-1.5-flash-latest')
-    response = model.generate_content(get_course_generation_prompt(topic))
+    response = model.generate_content(get_course_generation_prompt(topic, difficulty))
     parsed = clean_gemini_response(response.text)
     return CourseGenerationResponse.model_validate(parsed).model_dump()
 
 
+def _lookup_difficulty(session_key, skill_name):
+    """Looks up the SkillMastery score for (session_key, skill_name) and maps it to a
+    difficulty label. Returns "intermediate" if there's no session_key or no row yet."""
+    if not session_key:
+        return "intermediate"
+    from .models import SkillMastery  # local import: avoid app-loading-order issues
+
+    mastery = SkillMastery.objects.filter(session_key=session_key, skill_name=skill_name).first()
+    return difficulty_for_score(mastery.score if mastery else None)
+
+
 @shared_task
-def generate_course_content(course_id, topic):
+def generate_course_content(course_id, topic, session_key=None):
     """
     Background task to generate the full course structure, content, and quizzes.
 
@@ -83,16 +96,20 @@ def generate_course_content(course_id, topic):
     try:
         course = Course.objects.get(id=course_id)
 
+        # Overall course difficulty, driven by the learner's mastery of this topic so far
+        # (if any). Per-lesson difficulty is re-derived below from each lesson's own skill.
+        course_difficulty = _lookup_difficulty(session_key, topic)
+
         structure_only = True
         try:
-            ai_response_json = generate_structure_via_ollama(topic)
+            ai_response_json = generate_structure_via_ollama(topic, course_difficulty)
         except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPError, ValueError, KeyError, ValidationError) as e:
             logger.warning(
                 "Ollama unreachable or returned an invalid structure (falling back to Gemini-only "
                 "structure generation) at %s: %s",
                 settings.OLLAMA_URL, e,
             )
-            ai_response_json = generate_structure_via_gemini(topic)
+            ai_response_json = generate_structure_via_gemini(topic, course_difficulty)
             structure_only = False  # Gemini fallback already includes lesson content + quizzes
 
         genai.configure(api_key=settings.GEMINI_API_KEY)
@@ -119,8 +136,9 @@ def generate_course_content(course_id, topic):
 
                     if structure_only:
                         # Ollama only gave us the title; ask Gemini for this lesson's content.
+                        lesson_difficulty = _lookup_difficulty(session_key, lesson_title)
                         content_response = content_model.generate_content(
-                            get_lesson_content_prompt(course_title, module.title, lesson_title)
+                            get_lesson_content_prompt(course_title, module.title, lesson_title, lesson_difficulty)
                         )
                         lesson_content_json = LessonContentResponse.model_validate(
                             clean_gemini_response(content_response.text)

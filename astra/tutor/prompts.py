@@ -5,11 +5,50 @@ Centralized location for all AI prompt generation.
 This helps to avoid code duplication and makes prompts easier to manage.
 """
 
-def get_course_generation_prompt(topic):
+_DIFFICULTY_GUIDANCE = {
+    "beginner": (
+        "Target audience: complete beginners. Avoid jargon, define any technical term the "
+        "first time it is used, and prefer simple everyday analogies over formal definitions."
+    ),
+    "intermediate": (
+        "Target audience: learners with some basic familiarity with the subject. You can use "
+        "standard terminology, but still briefly clarify any non-obvious concept."
+    ),
+    "advanced": (
+        "Target audience: experienced learners. Use precise technical terminology freely, cover "
+        "edge cases and nuance, and prefer depth over hand-holding explanations."
+    ),
+}
+
+_NO_FENCE_INSTRUCTION = (
+    "Respond with ONLY the raw JSON object - no other text, and no markdown code fences "
+    "(do not wrap the JSON in ```json or ``` blocks)."
+)
+
+_QUIZ_QUALITY_INSTRUCTION = (
+    "The quiz must have exactly one unambiguously correct option and three other options "
+    "that are genuinely plausible distractors (believable mistakes someone learning the "
+    "material could make), not random trivia or obviously-wrong filler."
+)
+
+_LESSON_LENGTH_INSTRUCTION = (
+    "The lesson content should be roughly 300-600 words of Markdown, structured as: a short "
+    "introduction, 2-4 subsections (each with its own heading) covering the core ideas, a "
+    "worked example, and a brief closing summary."
+)
+
+
+def _difficulty_text(difficulty):
+    return _DIFFICULTY_GUIDANCE.get(difficulty, _DIFFICULTY_GUIDANCE["intermediate"])
+
+
+def get_course_generation_prompt(topic, difficulty="intermediate"):
     """Returns the formatted prompt for generating a full course structure."""
     return f'''
     You are an expert instructional designer. Generate a complete course on the topic: '{topic}'.
-    The output must be a single, valid JSON object.
+    Difficulty level: {difficulty}. {_difficulty_text(difficulty)}
+
+    The output must be a single, valid JSON object. {_NO_FENCE_INSTRUCTION}
     The JSON structure should be:
     {{
       "course_title": "Course Title",
@@ -21,7 +60,7 @@ def get_course_generation_prompt(topic):
           "lessons": [
             {{
               "lesson_title": "Lesson 1.1 Title",
-              "lesson_content": "The full lesson content in Markdown format. It should be detailed, clear, and easy to understand.",
+              "lesson_content": "The full lesson content in Markdown format.",
               "quiz": {{
                 "question": "A multiple-choice question to test the core concept of the lesson.",
                 "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
@@ -33,16 +72,19 @@ def get_course_generation_prompt(topic):
       ]
     }}
 
-    Generate 3-5 modules for the course.
-    Each module should have 2-4 lessons.
+    Generate 3-5 modules for the course. Each module should have 2-4 lessons.
+    {_LESSON_LENGTH_INSTRUCTION}
+    {_QUIZ_QUALITY_INSTRUCTION}
     Ensure the JSON is well-formed and contains all the requested fields.
     '''
 
-def get_structure_generation_prompt(topic):
+
+def get_structure_generation_prompt(topic, difficulty="intermediate"):
     """Returns the prompt asking for ONLY the course/module/lesson structure (titles), no content."""
     return f'''
     You are an expert instructional designer. Plan the structure of a complete course on the topic: '{topic}'.
-    Respond with ONLY a single, valid JSON object, no other text.
+    Difficulty level: {difficulty}. {_difficulty_text(difficulty)}
+    {_NO_FENCE_INSTRUCTION}
     The JSON structure should be:
     {{
       "course_title": "Course Title",
@@ -66,32 +108,37 @@ def get_structure_generation_prompt(topic):
     '''
 
 
-def get_lesson_content_prompt(course_title, module_title, lesson_title):
+def get_lesson_content_prompt(course_title, module_title, lesson_title, difficulty="intermediate"):
     """Returns the prompt asking Gemini to generate the content + quiz for a single lesson."""
     return f'''
     You are an expert instructional designer writing a lesson for the course '{course_title}',
     module '{module_title}', lesson '{lesson_title}'.
-    Respond with ONLY a single, valid JSON object, no other text.
+    Difficulty level: {difficulty}. {_difficulty_text(difficulty)}
+    {_NO_FENCE_INSTRUCTION}
     The JSON structure should be:
     {{
-      "lesson_content": "The full lesson content in Markdown format. It should be detailed, clear, and easy to understand.",
+      "lesson_content": "The full lesson content in Markdown format.",
       "quiz": {{
         "question": "A multiple-choice question to test the core concept of the lesson.",
         "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
         "answer": "The correct option from the list."
       }}
     }}
+
+    {_LESSON_LENGTH_INSTRUCTION}
+    {_QUIZ_QUALITY_INSTRUCTION}
     '''
 
 
-def get_test_generation_prompt(course_title):
+def get_test_generation_prompt(course_title, language="python", difficulty="intermediate"):
     """Returns the formatted prompt for generating a comprehensive test for a course."""
     return f"""
     You are a helpful quiz generation assistant.
     Generate a comprehensive test for the course titled '{course_title}'.
     The test should contain a mix of 5 multiple-choice questions and 2 coding problems.
-    The difficulty level should be medium.
-    You MUST respond with ONLY a valid JSON object.
+    Difficulty level: {difficulty}. {_difficulty_text(difficulty)}
+    Any coding problem's starter code, expected solution, and test cases must be written in {language}.
+    {_NO_FENCE_INSTRUCTION}
     The JSON object must follow this exact format:
     {{
       "questions": [

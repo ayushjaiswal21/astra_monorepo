@@ -28,3 +28,15 @@ def update_mastery(session_key, skill_name, passed):
     mastery.score = max(0.0, min(1.0, new_score))
     mastery.save(update_fields=['score', 'updated_at'])
     return mastery
+
+
+def difficulty_for_score(score):
+    """Maps a SkillMastery 0-1 score (or None, when no row exists yet) to a
+    difficulty label usable by the prompts in tutor/prompts.py."""
+    if score is None:
+        return "intermediate"
+    if score < 0.4:
+        return "beginner"
+    if score <= 0.75:
+        return "intermediate"
+    return "advanced"

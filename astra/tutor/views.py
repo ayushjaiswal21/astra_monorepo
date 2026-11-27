@@ -22,7 +22,7 @@ import google.generativeai as genai
 from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress, UserQuizAttempt, ModuleProgress, CourseTestSession, CourseTestQuestion, CourseTestAttempt, SkillMastery
 from .prompts import get_test_generation_prompt
 from .tasks import generate_course_content
-from .mastery import update_mastery
+from .mastery import update_mastery, difficulty_for_score
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +121,9 @@ def create_course(request):
         data = json.loads(request.body)
         topic = data.get('topic', 'Unnamed Topic')
 
+        if not request.session.session_key:
+            request.session.create()
+
         # --- Step 1: Create a placeholder Course object ---
         course = Course.objects.create(
             title=f"New Course on {topic}",
@@ -129,7 +132,7 @@ def create_course(request):
         )
 
         # --- Step 2: Dispatch the background task to do all the work ---
-        generate_course_content.delay(course.id, topic)
+        generate_course_content.delay(course.id, topic, request.session.session_key)
 
         # --- Step 3: Return an immediate response ---
         return JsonResponse({'success': True, 'course_id': course.id})
@@ -322,7 +325,7 @@ def ai_assistant(request):
         '''
         
         genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
         response = model.generate_content(prompt)
         response_text = response.text.strip()
 
@@ -486,9 +489,11 @@ def generate_course_test_api(request, course_id):
 
     try:
         genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
-        prompt = get_test_generation_prompt(course.title)
+        mastery = SkillMastery.objects.filter(session_key=session_key, skill_name=course.title).first()
+        difficulty = difficulty_for_score(mastery.score if mastery else None)
+        prompt = get_test_generation_prompt(course.title, difficulty=difficulty)
 
         response = model.generate_content(prompt)
         quiz_data = json.loads(response.text)
@@ -559,7 +564,7 @@ def submit_course_test_api(request, test_session_id):
         recommendations = ""
         if wrong_questions:
             genai.configure(api_key=settings.GEMINI_API_KEY)
-            model = genai.GenerativeModel('gemini-pro')
+            model = genai.GenerativeModel('gemini-1.5-flash-latest')
             prompt = f"""
             A user got the following questions wrong in a test on the course '{test_session.course.title}':
             {wrong_questions}

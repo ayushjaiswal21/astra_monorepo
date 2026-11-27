@@ -46,6 +46,9 @@
         <p class="text-gray-500">Module {{ lesson.module.order|add:1 }}: {{ lesson.module.title }}</p>
         <div class="flex items-center justify-between flex-wrap gap-2">
             <h1 class="text-3xl font-bold mt-1">{{ lesson.title }}</h1>
+            <button id="read-aloud-btn" type="button" class="w-9 h-9 rounded-full flex items-center justify-center" style="background: var(--surface-2); color: var(--text-secondary);" aria-label="Read lesson content aloud" title="Read aloud">
+                <i class="fas fa-volume-up"></i>
+            </button>
             {% if mastery_score is not None %}
             <span class="text-sm px-3 py-1 rounded-full" style="background: var(--surface-2); color: var(--text-secondary);" title="Based on your past quiz attempts for this lesson">
                 Mastery: {{ mastery_score }}%
@@ -194,6 +197,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     addCodeCopyButtons();
+
+    // Read-aloud (TTS): reads the ALREADY-RENDERED content panel's innerText (plain
+    // text, markdown syntax already stripped by the browser), not the raw markdown.
+    const readAloudBtn = document.getElementById('read-aloud-btn');
+    if (readAloudBtn && 'speechSynthesis' in window) {
+        readAloudBtn.addEventListener('click', function () {
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+                readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                return;
+            }
+            const activePanel = document.querySelector('.tab-panel:not(.hidden)') || document.getElementById('tab-content-panel');
+            const text = activePanel ? activePanel.innerText : '';
+            if (!text.trim()) return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.onend = function () { readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i>'; };
+            utterance.onerror = function () { readAloudBtn.innerHTML = '<i class="fas fa-volume-up"></i>'; };
+            window.speechSynthesis.speak(utterance);
+            readAloudBtn.innerHTML = '<i class="fas fa-stop"></i>';
+        });
+    } else if (readAloudBtn) {
+        readAloudBtn.disabled = true;
+        readAloudBtn.title = 'Read aloud is not supported in this browser';
+    }
 
     // AI Guru embedded tutor: ask a question grounded in this lesson's own
     // content (calls AstraLearn's own API, which in turn calls the separate
