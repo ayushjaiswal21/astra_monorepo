@@ -25,10 +25,29 @@ if not SECRET_KEY:
             "SECRET_KEY environment variable is required when DEBUG=False (production)."
         )
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+# ALLOWED_HOSTS: comma-separated via env for production (e.g. your domain and/or
+# VM's public IP). Dev default covers localhost; production should always set
+# this explicitly - Django refuses unknown Host headers either way.
+_allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(',') if h.strip()] or ['localhost', '127.0.0.1']
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# HTTPS/proxy hardening - all default to dev-safe (off) and are opt-in via env
+# for production. SECURE_PROXY_SSL_HEADER is required when Django sits behind
+# an nginx/load-balancer that terminates TLS and forwards plain HTTP: without
+# it, Django thinks every request is insecure and SECURE_SSL_REDIRECT loops
+# forever. Only enable USE_X_FORWARDED_PROTO if the proxy actually sets this
+# header (standard nginx proxy_set_header X-Forwarded-Proto $scheme) - trusting
+# it without a real proxy in front lets a client spoof "I'm HTTPS".
+USE_X_FORWARDED_PROTO = os.getenv('USE_X_FORWARDED_PROTO', 'False').lower() in ('true', '1', 't')
+if USE_X_FORWARDED_PROTO:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1', 't')
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False').lower() in ('true', '1', 't')
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False').lower() in ('true', '1', 't')
 
 # Application definition
 INSTALLED_APPS = [
