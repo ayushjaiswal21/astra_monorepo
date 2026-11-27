@@ -81,7 +81,14 @@ def simplify(text: str, max_new_tokens: int = 60):
     t0 = time.time()
     inputs = _tokenizer("simplify: " + text, return_tensors="pt", truncation=True, max_length=128)
     with torch.no_grad():
-        out_ids = _model.generate(**inputs, max_new_tokens=max_new_tokens, num_beams=1)
+        # no_repeat_ngram_size/repetition_penalty: the retrained model (see
+        # simplify_model/model_card.json) occasionally loops on a short
+        # phrase under plain greedy decoding; this suppresses that without
+        # changing latency.
+        out_ids = _model.generate(
+            **inputs, max_new_tokens=max_new_tokens, num_beams=1,
+            no_repeat_ngram_size=3, repetition_penalty=1.3,
+        )
     simplified = _tokenizer.decode(out_ids[0], skip_special_tokens=True)
     latency = time.time() - t0
     return simplified, latency
