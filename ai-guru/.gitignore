@@ -37,6 +37,11 @@ auth.json
 *.sqlite
 *.sqlite3
 
+# Local model checkpoints (build artifacts, not source - regenerate locally,
+# too large to sensibly version control; ~48MB for the small text-simplify
+# encoder-decoder transformer)
+backend/simplify_model/
+
 # Large files and media
 *.wav
 *.mp3

@@ -24,6 +24,19 @@ class ChatRequest(BaseModel):
             raise ValueError('Invalid session ID format')
         return v
 
+class SimplifyTextRequest(BaseModel):
+    text: str
+    target_length: Optional[int] = None
+
+    @field_validator('text')
+    @classmethod
+    def validate_text(cls, v):
+        if not v or not v.strip():
+            raise ValueError('text cannot be empty')
+        if len(v) > 4000:
+            raise ValueError('text too long (max 4000 characters)')
+        return v.strip()
+
 class RagIndexRequest(BaseModel):
     document_id: str
     text: str

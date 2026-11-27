@@ -33,3 +33,10 @@ typing-inspection==0.4.1
 typing_extensions==4.15.0
 urllib3==2.5.0
 uvicorn==0.27.1
+
+# Local, offline small Transformer for /simplify-text (free fallback when
+# Gemini quota/key is unavailable). CPU-only build - no GPU/CUDA needed.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.15.0
+transformers==4.57.1
+sentencepiece==0.2.3
