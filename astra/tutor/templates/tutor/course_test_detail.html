@@ -50,7 +50,7 @@
 
         async function generateTest() {
             try {
-                const response = await fetch(`/api/testing/generate/${courseId}/`, {
+                const response = await fetch(`/api/courses/${courseId}/test/generate/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -186,7 +186,7 @@
             }
 
             try {
-                const response = await fetch(`/api/testing/submit/${currentTestSessionId}/`, {
+                const response = await fetch(`/api/test/${currentTestSessionId}/submit/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

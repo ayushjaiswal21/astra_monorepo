@@ -227,6 +227,12 @@
            edge even on desktop, which is why the whole left column looked
            empty. Polyfill the exact handful this app actually uses, pinned to
            Tailwind's own `md` breakpoint (768px). */
+        /* Same purge gap, `sm:*` flavor: quiz_detail.html's `sm:rounded-2xl`
+           never made it into the build either (only `sm:rounded-lg` did), so
+           the quiz card rendered with square corners at every screen size. */
+        @media (min-width: 640px) {
+            .sm\:rounded-2xl { border-radius: 1rem; }
+        }
         @media (min-width: 768px) {
             .md\:hidden { display: none; }
             .md\:relative { position: relative; }
