@@ -101,6 +101,20 @@ app.config['POST_UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'po
 app.config['ARTICLE_UPLOAD_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'articles')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
 DEBUG_MODE = os.environ.get("FLASK_DEBUG", "False").lower() in ["true", "1"]
+if DEBUG_MODE:
+    # Debug mode exposes the Werkzeug interactive traceback (arbitrary code
+    # execution via the debugger PIN) on every unhandled error. This must
+    # never be on when the process is reachable from outside localhost -
+    # which in practice means "never in production" since the actual bind
+    # address (gunicorn --bind, or a cloud VM's public NIC) isn't knowable
+    # from here. Loud warning instead of a hard refusal so local dev
+    # (FLASK_DEBUG=true on 127.0.0.1) still works unchanged.
+    logging.getLogger(__name__).warning(
+        "FLASK_DEBUG is enabled - the interactive debugger/traceback page is "
+        "exposed. NEVER run with FLASK_DEBUG=true on a server reachable from "
+        "outside localhost (0.0.0.0 bind, public IP, behind a reverse proxy). "
+        "Unset FLASK_DEBUG (or set it to false) for any deployment."
+    )
 
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 # A Secure cookie is only ever sent back by a real browser over HTTPS - over

@@ -394,13 +394,11 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 # Secure CORS Configuration
-allowed_origins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:8000",  # astra Django dev server (lesson-page /simplify-text fallback)
-    # Add your production domains here
-    # "https://your-app.vercel.app"
-]
+# ALLOWED_ORIGINS: comma-separated list of production origins (e.g.
+# "https://app.example.com,https://astra.example.com"). Falls back to the
+# dev origins below so local dev keeps working when it's unset.
+_default_origins = "http://localhost:3000,http://localhost:3001,http://localhost:8000"
+allowed_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", _default_origins).split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,

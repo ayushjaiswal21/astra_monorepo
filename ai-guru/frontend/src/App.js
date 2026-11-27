@@ -7,6 +7,10 @@ import MessageInput from "./MessageInput";
 // a conversation exists, not on first paint (WelcomeScreen shows first).
 const ChatMessages = React.lazy(() => import("./ChatMessages"));
 
+// CRA bakes REACT_APP_* vars in at build time (not runtime) - set
+// REACT_APP_API_URL before `npm run build` to point at the production backend.
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8001";
+
 function App() {
   const [chatSessions, setChatSessions] = useState([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
@@ -111,7 +115,7 @@ function App() {
     try {
       setFeedbackLoading((prev) => new Set([...prev, interactionId]));
 
-      const response = await fetch("http://localhost:8001/feedback", {
+      const response = await fetch(API_URL + "/feedback", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -178,7 +182,7 @@ function App() {
   useEffect(() => {
     const controller = new AbortController();
     setIsHistoryLoading(true);
-    fetch("http://localhost:8001/chat-history", { signal: controller.signal })
+    fetch(API_URL + "/chat-history", { signal: controller.signal })
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -218,7 +222,7 @@ function App() {
     const ssoToken = params.get("sso_token");
     if (!ssoToken) return;
 
-    fetch("http://localhost:8001/sso/verify", {
+    fetch(API_URL + "/sso/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: ssoToken }),
@@ -335,7 +339,7 @@ function App() {
   }, []);
 
   const refreshChatSessions = () => {
-    fetch("http://localhost:8001/chat-history")
+    fetch(API_URL + "/chat-history")
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -426,7 +430,7 @@ function App() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8001/chat/stream", {
+      const response = await fetch(API_URL + "/chat/stream", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -545,7 +549,7 @@ function App() {
   const deleteSession = async (sessionId) => {
     try {
       const response = await fetch(
-        `http://localhost:8001/session/${sessionId}`,
+        `${API_URL}/session/${sessionId}`,
         {
           method: "DELETE",
         }
@@ -584,7 +588,7 @@ function App() {
     // Confirmation now happens via the styled modal (requestDeleteAllChatHistory)
     // before this is ever called.
     try {
-      const response = await fetch("http://localhost:8001/chat-history", {
+      const response = await fetch(API_URL + "/chat-history", {
         method: "DELETE",
       });
       if (response.ok) {
@@ -663,7 +667,7 @@ function App() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8001/image-chat", {
+      const response = await fetch(API_URL + "/image-chat", {
         method: "POST",
         body: formData,
         signal: abortController.signal,

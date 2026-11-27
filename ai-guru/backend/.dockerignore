@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.test
+rag_store.sqlite
+.git/
+*.md
+# simplify_model/ is intentionally NOT excluded - it's required at runtime
+# by services/simplify_service.py and must be present in the built image.

@@ -26,6 +26,10 @@ import jwt
 SSO_SHARED_SECRET = os.environ.get('SSO_SHARED_SECRET', 'dev-sso-shared-secret-change-in-production')
 ASTRALEARN_BASE_URL = os.environ.get('ASTRALEARN_BASE_URL', 'http://localhost:8000')
 AI_GURU_BASE_URL = os.environ.get('AI_GURU_FRONTEND_BASE_URL', 'http://localhost:3000')
+# AI Guru's own backend API (FastAPI service), as opposed to its frontend
+# above - same env var name the Django app (astra/astralearn/settings.py)
+# already uses for this same service, so one var configures it everywhere.
+AI_GURU_API_BASE_URL = os.environ.get('AI_GURU_BASE_URL', 'http://localhost:8001')
 
 
 def _issue_sso_token(user):
@@ -73,7 +77,7 @@ def fetch_ai_guru_analytics(user_id):
     """Fetch analytics data from ai-guru backend"""
     try:
         # AI Guru currently exposes a global analytics endpoint (no user scoping)
-        response = requests.get('http://localhost:8001/analytics', timeout=5)
+        response = requests.get(f'{AI_GURU_API_BASE_URL}/analytics', timeout=5)
         if response.status_code == 200:
             return response.json()
         else:
@@ -84,7 +88,7 @@ def fetch_ai_guru_analytics(user_id):
 def fetch_astra_analytics(user_id):
     """Fetch analytics data from astra Django app"""
     try:
-        response = requests.get(f'http://localhost:8000/api/analytics/{user_id}/', timeout=5)
+        response = requests.get(f'{ASTRALEARN_BASE_URL}/api/analytics/{user_id}/', timeout=5)
         if response.status_code == 200:
             return response.json()
         else:

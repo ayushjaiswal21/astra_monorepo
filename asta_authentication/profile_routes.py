@@ -484,7 +484,7 @@ def process_career_gps(gps_id):
         print(f"DEBUG: user_profile_data keys={user_profile_data.keys() if user_profile_data else None}")
 
         # Call the AI Guru API for career recommendations
-        ai_guru_url = "http://localhost:8001/career-gps/recommendations"
+        ai_guru_url = f"{os.environ.get('AI_GURU_BASE_URL', 'http://localhost:8001')}/career-gps/recommendations"
         print(f"🚀 Calling AI Guru service at {ai_guru_url}")
         
         payload = {
@@ -517,7 +517,7 @@ def process_career_gps(gps_id):
     except requests.exceptions.ConnectionError as e:
         # AI Guru service is not running
         print(f"❌ Cannot connect to AI Guru service: {e}")
-        print("⚠️ Make sure the AI Guru service is running on http://localhost:8001")
+        print(f"⚠️ Make sure the AI Guru service is running on {os.environ.get('AI_GURU_BASE_URL', 'http://localhost:8001')}")
         print("🔄 Using fallback recommendations")
         top_careers = get_default_career_recommendations()
         gps_data.top_careers = json.dumps(top_careers)
@@ -635,7 +635,7 @@ def generate_learning_path(career_index):
         try:
             import requests
             
-            ai_guru_url = "http://localhost:8001/career-gps/learning-path"
+            ai_guru_url = f"{os.environ.get('AI_GURU_BASE_URL', 'http://localhost:8001')}/career-gps/learning-path"
             print(f"🚀 Calling AI Guru service at {ai_guru_url}")
             
             payload = {
