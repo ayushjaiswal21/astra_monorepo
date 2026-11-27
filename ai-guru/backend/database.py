@@ -10,6 +10,7 @@ db = None
 chat_collection = None
 learning_collection = None
 feedback_collection = None
+rag_collection = None
 
 try:
     # Configure MongoDB client with proper settings
@@ -28,6 +29,7 @@ try:
     chat_collection = db.chat_history
     learning_collection = db.learned_patterns
     feedback_collection = db.user_feedback
+    rag_collection = db.rag_documents
 
     # session_id is the common filter field for chat history lookups,
     # conversation context, and session deletes; timestamp is sorted on
@@ -36,6 +38,8 @@ try:
     chat_collection.create_index("timestamp")
     learning_collection.create_index("session_id")
     feedback_collection.create_index("session_id")
+    # document_id is the filter field for every RAG indexing/retrieval lookup.
+    rag_collection.create_index("document_id")
 
 except ConnectionFailure as e:
     logger.error("MongoDB connection failed: %s -- running in DEGRADED mode (personalization/learning disabled, chat still works)", e)
@@ -51,6 +55,9 @@ def get_learning_collection():
 
 def get_feedback_collection():
     return feedback_collection
+
+def get_rag_collection():
+    return rag_collection
 
 def is_db_available():
     return client is not None and db is not None

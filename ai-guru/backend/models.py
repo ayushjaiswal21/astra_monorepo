@@ -24,6 +24,14 @@ class ChatRequest(BaseModel):
             raise ValueError('Invalid session ID format')
         return v
 
+class RagIndexRequest(BaseModel):
+    document_id: str
+    text: str
+
+class RagQueryRequest(BaseModel):
+    document_id: str
+    question: str
+
 class FeedbackRequest(BaseModel):
     interaction_id: str
     session_id: str

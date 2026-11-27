@@ -18,7 +18,7 @@ import io
 from datetime import datetime
 import uuid
 import re
-from models import ChatRequest, FeedbackRequest
+from models import ChatRequest, FeedbackRequest, RagIndexRequest, RagQueryRequest
 from collections import defaultdict
 from datetime import timedelta
 import langdetect
@@ -26,6 +26,7 @@ from langdetect import detect, detect_langs, DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
 
 import services.gemini_service as gemini_service
+import services.rag_service as rag_service
 import utils
 import database
 import config
@@ -1112,6 +1113,45 @@ async def generate_learning_path(
         # Return default learning path on error
         fallback = career_gps_service.generate_default_learning_path(career_name, career_summary)
         return {"success": True, "learning_path": fallback}
+
+@app.post("/rag/index")
+async def rag_index(request: RagIndexRequest):
+    """
+    Index a document's text for grounded retrieval: chunk it, embed each
+    chunk with Gemini embeddings, and store it in MongoDB under
+    document_id. Re-indexing the same document_id replaces its old chunks.
+    Additive endpoint; does not affect /chat.
+    """
+    if not database.is_db_available():
+        raise HTTPException(status_code=503, detail="Database unavailable")
+    if not rag_service.embeddings_available():
+        raise HTTPException(status_code=503, detail="Embedding service unavailable (no GEMINI_API_KEY / mock mode)")
+    try:
+        chunk_count = rag_service.index_document(request.document_id, request.text)
+        return {"success": True, "document_id": request.document_id, "chunks_indexed": chunk_count}
+    except Exception as e:
+        print(f"RAG index error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to index document")
+
+@app.post("/rag/query")
+async def rag_query(request: RagQueryRequest):
+    """
+    Answer a question grounded ONLY in the previously-indexed document's
+    content. Returns {"answer": str, "sources": [chunk_text, ...]}.
+    Additive endpoint; does not affect /chat.
+    """
+    if not database.is_db_available():
+        raise HTTPException(status_code=503, detail="Database unavailable")
+    if not rag_service.embeddings_available():
+        raise HTTPException(status_code=503, detail="Embedding service unavailable (no GEMINI_API_KEY / mock mode)")
+    try:
+        result = rag_service.answer_from_document(request.document_id, request.question)
+    except Exception as e:
+        print(f"RAG query error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to answer from document")
+    if result is None:
+        raise HTTPException(status_code=404, detail="No indexed chunks found for this document_id")
+    return result
 
 if __name__ == "__main__":
     import uvicorn, signal, threading, time

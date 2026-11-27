@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -6,8 +7,8 @@ class Course(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    # Removed user dependency
-    
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='courses')
+
     def __str__(self):
         return self.title
 
@@ -131,3 +132,17 @@ class CourseTestAttempt(models.Model):
 
     def __str__(self):
         return f"Attempt for {self.test_session.course.title} by {self.session_key}"
+
+class SkillMastery(models.Model):
+    # Pure addition (see tracing.py's sibling task report): no taxonomy exists yet,
+    # so skill_name is the Lesson.title, as the simplest real identifier available.
+    session_key = models.CharField(max_length=40, db_index=True)
+    skill_name = models.CharField(max_length=200)
+    score = models.FloatField(default=0.5)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('session_key', 'skill_name')
+
+    def __str__(self):
+        return f"{self.session_key} - {self.skill_name}: {self.score:.2f}"

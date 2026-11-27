@@ -105,4 +105,58 @@
       }
     } catch (e) { /* localStorage unavailable */ }
   });
+
+  // --- Minimal modal / dropdown / collapse behavior ---
+  // Vanilla replacement for bootstrap.bundle.min.js, now that Bootstrap is
+  // being removed. Markup uses data-modal-target / data-modal-dismiss,
+  // data-dropdown-toggle and data-collapse-toggle instead of data-bs-*.
+  document.addEventListener("DOMContentLoaded", function () {
+    var modalBackdrop = document.createElement("div");
+    modalBackdrop.className = "modal-backdrop";
+    document.body.appendChild(modalBackdrop);
+
+    function closeAllModals() {
+      document.querySelectorAll(".modal.show").forEach(function (m) {
+        m.classList.remove("show");
+      });
+      modalBackdrop.classList.remove("show");
+    }
+
+    document.addEventListener("click", function (e) {
+      var opener = e.target.closest("[data-modal-target]");
+      if (opener) {
+        e.preventDefault();
+        var target = document.querySelector(opener.getAttribute("data-modal-target"));
+        if (target) {
+          target.classList.add("show");
+          modalBackdrop.classList.add("show");
+        }
+        return;
+      }
+      if (e.target.closest("[data-modal-dismiss]") || e.target === modalBackdrop) {
+        closeAllModals();
+        return;
+      }
+
+      var dropToggle = e.target.closest("[data-dropdown-toggle]");
+      var openMenu = dropToggle ? dropToggle.parentElement.querySelector(".dropdown-menu") : null;
+      document.querySelectorAll(".dropdown-menu.show").forEach(function (menu) {
+        if (menu !== openMenu) menu.classList.remove("show");
+      });
+      if (dropToggle && openMenu) {
+        openMenu.classList.toggle("show");
+        return;
+      }
+
+      var collapseToggle = e.target.closest("[data-collapse-toggle]");
+      if (collapseToggle) {
+        var collapseTarget = document.querySelector(collapseToggle.getAttribute("data-collapse-toggle"));
+        if (collapseTarget) collapseTarget.classList.toggle("show");
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeAllModals();
+    });
+  });
 })();

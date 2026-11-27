@@ -4,6 +4,7 @@ import re
 import httpx
 import google.generativeai as genai
 from celery import shared_task
+from pydantic import ValidationError
 from django.conf import settings
 from django.db import transaction
 from .models import Course, Module, Lesson, Quiz, Question, Choice
@@ -12,6 +13,7 @@ from .prompts import (
     get_structure_generation_prompt,
     get_lesson_content_prompt,
 )
+from .schemas import StructureResponse, CourseGenerationResponse, LessonContentResponse
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +53,10 @@ def call_ollama(prompt, timeout=30):
 
 
 def generate_structure_via_ollama(topic):
-    """Asks Ollama for the course structure (titles only) and returns the parsed dict."""
+    """Asks Ollama for the course structure (titles only) and returns the validated dict."""
     raw_text = call_ollama(get_structure_generation_prompt(topic))
-    return clean_gemini_response(raw_text)
+    parsed = clean_gemini_response(raw_text)
+    return StructureResponse.model_validate(parsed).model_dump()
 
 
 def generate_structure_via_gemini(topic):
@@ -61,7 +64,8 @@ def generate_structure_via_gemini(topic):
     genai.configure(api_key=settings.GEMINI_API_KEY)
     model = genai.GenerativeModel('gemini-1.5-flash-latest')
     response = model.generate_content(get_course_generation_prompt(topic))
-    return clean_gemini_response(response.text)
+    parsed = clean_gemini_response(response.text)
+    return CourseGenerationResponse.model_validate(parsed).model_dump()
 
 
 @shared_task
@@ -81,9 +85,10 @@ def generate_course_content(course_id, topic):
         structure_only = True
         try:
             ai_response_json = generate_structure_via_ollama(topic)
-        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPError, ValueError, KeyError) as e:
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPError, ValueError, KeyError, ValidationError) as e:
             logger.warning(
-                "Ollama unreachable at %s, falling back to Gemini-only structure generation: %s",
+                "Ollama unreachable or returned an invalid structure (falling back to Gemini-only "
+                "structure generation) at %s: %s",
                 settings.OLLAMA_URL, e,
             )
             ai_response_json = generate_structure_via_gemini(topic)
@@ -116,7 +121,9 @@ def generate_course_content(course_id, topic):
                         content_response = content_model.generate_content(
                             get_lesson_content_prompt(course_title, module.title, lesson_title)
                         )
-                        lesson_content_json = clean_gemini_response(content_response.text)
+                        lesson_content_json = LessonContentResponse.model_validate(
+                            clean_gemini_response(content_response.text)
+                        ).model_dump()
                     else:
                         # Gemini fallback already produced content + quiz for every lesson.
                         lesson_content_json = lesson_data
@@ -144,6 +151,17 @@ def generate_course_content(course_id, topic):
                             )
 
         return f"Successfully generated all content for course {course_id}."
+
+    except ValidationError as e:
+        bad_fields = ", ".join(".".join(str(p) for p in err["loc"]) for err in e.errors())
+        logger.error(
+            "AI response for course %s failed schema validation (field(s): %s): %s",
+            course_id, bad_fields, e, exc_info=True,
+        )
+        if course:
+            course.description = "### Error Generating Course Content\n\nWe encountered an issue while building this course.\n\nPlease try deleting this course and creating it again."
+            course.save()
+        return f"Failed to generate content for course {course_id}"
 
     except Exception as e:
         logger.error("Failed to generate content for course %s: %s", course_id, e, exc_info=True)

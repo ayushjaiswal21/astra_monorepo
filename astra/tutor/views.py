@@ -3,6 +3,8 @@ import logging
 import random
 from datetime import timedelta
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth import login
+from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
@@ -21,6 +23,7 @@ def call_ollama(prompt):
 from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress, UserQuizAttempt, ModuleProgress, CourseTestSession, CourseTestQuestion, CourseTestAttempt
 from .prompts import get_test_generation_prompt
 from .tasks import generate_course_content
+from .mastery import update_mastery
 
 logger = logging.getLogger(__name__)
 
@@ -121,8 +124,9 @@ def create_course(request):
 
         # --- Step 1: Create a placeholder Course object ---
         course = Course.objects.create(
-            title=f"New Course on {topic}", 
-            description="Course content is being generated in the background. Please check back in a few moments."
+            title=f"New Course on {topic}",
+            description="Course content is being generated in the background. Please check back in a few moments.",
+            created_by=request.user if request.user.is_authenticated else None
         )
 
         # --- Step 2: Dispatch the background task to do all the work ---
@@ -271,6 +275,7 @@ def submit_quiz(request, quiz_id):
             quiz=quiz,
             score=score
         )
+        update_mastery(request.session.session_key or 'anonymous', quiz.lesson.title, score >= 70)
 
         return JsonResponse({
             'success': True,
@@ -376,6 +381,15 @@ def analytics(request, user_id):
 def delete_course(request, course_id):
     try:
         course = get_object_or_404(Course, id=course_id)
+        # Ownerless (legacy/anonymous) courses stay deletable by anyone, matching
+        # prior behavior. An owned course can only be deleted by its own owner.
+        if course.created_by_id is not None and (
+            not request.user.is_authenticated or course.created_by_id != request.user.id
+        ):
+            return JsonResponse(
+                {'success': False, 'error': 'You do not have permission to delete this course.'},
+                status=403,
+            )
         course.delete()
         return JsonResponse({'success': True, 'message': 'Course deleted successfully.'})
 
@@ -565,3 +579,21 @@ def submit_course_test_api(request, test_session_id):
 
     except Exception as e:
         return _safe_error_response(e)
+
+
+def register(request):
+    """Minimal signup using Django's built-in UserCreationForm; logs the new
+    user in immediately so they can start owning courses right away."""
+    if request.user.is_authenticated:
+        return redirect('tutor:dashboard')
+
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('tutor:dashboard')
+    else:
+        form = UserCreationForm()
+
+    return render(request, 'registration/register.html', {'form': form})

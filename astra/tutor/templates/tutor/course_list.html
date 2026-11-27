@@ -34,10 +34,12 @@
                         <div class="p-2 bg-blue-100 rounded-md">
                             <i class="fas fa-book text-blue-600"></i>
                         </div>
+                        {% if not course.created_by_id or course.created_by_id == user.id %}
                         <button onclick="deleteCourse({{ course.id }}, '{{ course.title|escapejs }}')"
                                 class="text-red-400 hover:text-red-600 text-sm">
                             <i class="fas fa-trash"></i>
                         </button>
+                        {% endif %}
                     </div>
                     <h3 class="font-bold text-gray-800 mb-2">{{ course.title|truncatechars:50 }}</h3>
                     <p class="text-sm text-gray-600 mb-3">{{ course.description|truncatechars:100 }}</p>

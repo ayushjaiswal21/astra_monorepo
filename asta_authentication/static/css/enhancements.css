@@ -174,6 +174,83 @@ i.fas, i.far, i.fab, svg.icon {
   border-radius: var(--radius-outer);
   box-shadow: var(--shadow-soft);
   border: var(--border-hairline);
+  background: var(--surface-0);
+}
+
+/* ============================================================
+   Modal / dropdown / mobile-nav collapse: vanilla-JS equivalents
+   of Bootstrap's JS components, toggled by site-chrome.js via
+   data-modal-target / data-modal-dismiss / data-dropdown-toggle /
+   data-collapse-toggle instead of data-bs-*.
+   ============================================================ */
+.modal { display: none; }
+.modal.show {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 1055;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+.modal-backdrop { display: none; }
+.modal-backdrop.show {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 1050;
+}
+.modal-dialog { position: relative; z-index: 1056; width: 100%; max-width: 500px; margin: auto; }
+.modal-dialog.modal-lg { max-width: 800px; }
+.modal-title { font-weight: 700; font-size: 1.125rem; margin: 0; }
+.modal-header, .modal-footer {
+  display: flex;
+  align-items: center;
+  padding: var(--space-4) var(--space-6);
+}
+.modal-header { justify-content: space-between; border-bottom: var(--border-hairline); }
+.modal-footer { justify-content: flex-end; gap: var(--space-2); border-top: var(--border-hairline); }
+.modal-body { padding: var(--space-6); }
+
+.dropdown { position: relative; }
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 10rem;
+  margin-top: var(--space-1);
+  background: var(--surface-0);
+  border: var(--border-hairline);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-2) 0;
+  z-index: 1000;
+}
+.dropdown-menu.show { display: block; }
+.dropdown-menu.dropdown-menu-end { left: auto; right: 0; }
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  text-align: left;
+  text-decoration: none;
+}
+.dropdown-item:hover { background: var(--surface-1); }
+.dropdown-divider { margin: var(--space-2) 0; border-top: var(--border-hairline); }
+
+/* Mobile nav toggle: collapsed below lg, always visible from lg up.
+   (Not named .collapse — Tailwind's own .collapse utility means
+   visibility:collapse, a different thing, so it would conflict.) */
+.nav-collapse { display: none; width: 100%; }
+.nav-collapse.show { display: block; }
+@media (min-width: 992px) {
+  .nav-collapse { display: flex !important; width: auto; }
 }
 
 /* ============================================================

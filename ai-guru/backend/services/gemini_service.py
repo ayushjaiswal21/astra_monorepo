@@ -7,6 +7,7 @@ import json # Import json for handling mock responses
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import utils
 import config
+from tracing import trace_llm_call
 
 # Initialize models only if not in mock mode and API key is available
 text_model = None
@@ -16,6 +17,7 @@ if not config.USE_MOCK and config.GEMINI_API_KEY:
     text_model = genai.GenerativeModel('gemini-pro')
     vision_model = genai.GenerativeModel('gemini-pro-vision')
 
+@trace_llm_call(call_type="chat")
 async def generate_text_response(text, recent_context, learned_prefs, detected_lang, language_name, should_display):
     gemini_api_base_url = os.getenv('GEMINI_API_BASE_URL')
     if gemini_api_base_url or config.USE_MOCK or text_model is None:
@@ -37,6 +39,7 @@ async def generate_text_response(text, recent_context, learned_prefs, detected_l
         response = text_model.generate_content(full_prompt)
         return response.text if response.text else "Sorry, I couldn't generate a response."
 
+@trace_llm_call(call_type="vision")
 async def generate_image_response(pil_image, text, detected_lang, language_name, should_display):
     gemini_api_base_url = os.getenv('GEMINI_API_BASE_URL')
     if gemini_api_base_url or config.USE_MOCK or vision_model is None:

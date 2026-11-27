@@ -13,6 +13,9 @@ urlpatterns = [
     # New dedicated page for creating a course
     path('create/', views.create_course_page, name='create_course_page'),
 
+    # Registration (login/logout/password reset come from django.contrib.auth.urls)
+    path('register/', views.register, name='register'),
+
     path('courses/<int:course_id>/', views.course_detail, name='course_detail'),
     path('course/<int:course_id>/module/<int:module_id>/lesson/<int:lesson_id>/', views.lesson_detail, name='lesson_detail'),
     path('quiz/<int:quiz_id>/', views.quiz_detail, name='quiz_detail'),
