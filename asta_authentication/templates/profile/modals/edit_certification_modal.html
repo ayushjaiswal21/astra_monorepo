@@ -21,9 +21,21 @@
                             <label for="issueDate-{{ index }}" class="form-label">Issue Date</label>
                             <input type="text" class="form-control" id="issueDate-{{ index }}" name="issue_date" value="{{ certification.issue_date or '' }}">
                         </div>
+                        <div class="w-full md:w-1/2">
+                            <label for="expirationDate-{{ index }}" class="form-label">Expiration Date</label>
+                            <input type="text" class="form-control" id="expirationDate-{{ index }}" name="expiration_date" value="{{ certification.expiration_date or '' }}">
+                        </div>
+                        <div class="w-full md:w-1/2">
+                            <label for="credentialId-{{ index }}" class="form-label">Credential ID</label>
+                            <input type="text" class="form-control" id="credentialId-{{ index }}" name="credential_id" value="{{ certification.credential_id or '' }}">
+                        </div>
                         <div class="w-full">
                             <label for="credentialUrl-{{ index }}" class="form-label">Credential URL</label>
                             <input type="text" class="form-control" id="credentialUrl-{{ index }}" name="credential_url" value="{{ certification.credential_url or '' }}">
+                        </div>
+                        <div class="w-full">
+                            <label for="certSkills-{{ index }}" class="form-label">Skills</label>
+                            <input type="text" class="form-control" id="certSkills-{{ index }}" name="skills" value="{{ certification.skills or '' }}">
                         </div>
                     </div>
                 </div>

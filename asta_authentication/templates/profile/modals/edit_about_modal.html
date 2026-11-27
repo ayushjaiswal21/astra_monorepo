@@ -56,16 +56,11 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 if (data.success) {
-                    // Update the about section on the page
-                    const aboutSection = document.querySelector('.profile-about-content');
-                    if (aboutSection) {
-                        aboutSection.textContent = data.about || 'No information provided yet.';
-                    }
-                    // Show success message
-                    showToast('About section updated successfully!', 'success');
-                    // Close the modal (vanilla replacement for the old Bootstrap JS modal API)
-                    document.getElementById('editAboutModal')?.classList.remove('show');
-                    document.querySelector('.modal-backdrop')?.classList.remove('show');
+                    // Reload so the saved text actually shows - this page has no
+                    // ".profile-about-content" element to patch in place (that
+                    // selector never matched anything), so without a reload the
+                    // save looked like it silently did nothing.
+                    location.reload();
                 } else {
                     showToast(data.message || 'Failed to update about section', 'error');
                 }

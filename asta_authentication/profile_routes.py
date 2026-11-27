@@ -198,12 +198,15 @@ def add_education():
     new_edu = Education(
         school=request.form.get('school'),
         degree=request.form.get('degree'),
+        field_of_study=request.form.get('field_of_study'),
         # The add-education modal sends start_date/end_date, not a combined
         # 'dates' field, so this fell back to None (and templates then
         # rendered the literal string "None") unless a caller sends 'dates'
         # directly, as the plain edit-education form does.
         dates=request.form.get('dates') or f"{request.form.get('start_date', '')} - {request.form.get('end_date', '')}".strip(' -') or None,
         grade=request.form.get('grade'),
+        activities=request.form.get('activities'),
+        description=request.form.get('description'),
         user_id=current_user.id
     )
     db.session.add(new_edu)
@@ -220,7 +223,11 @@ def edit_education(edu_id):
 
     edu.school = request.form.get('school', edu.school)
     edu.degree = request.form.get('degree', edu.degree)
+    edu.field_of_study = request.form.get('field_of_study', edu.field_of_study)
     edu.dates = request.form.get('dates', edu.dates)
+    edu.grade = request.form.get('grade', edu.grade)
+    edu.activities = request.form.get('activities', edu.activities)
+    edu.description = request.form.get('description', edu.description)
     db.session.commit()
     log_activity(current_user.id, 'edited_education', f'{edu.school}')
     return jsonify({'success': True})
@@ -228,10 +235,12 @@ def edit_education(edu_id):
 @profile_bp.route('/add-experience', methods=['POST'])
 @login_required
 def add_experience():
+    start_date = request.form.get('start_date', '')
+    end_date = 'Present' if request.form.get('current_role') else request.form.get('end_date', '')
     new_exp = Experience(
         title=request.form.get('title'),
         company=request.form.get('company'),
-        dates=f"{request.form.get('start_date')} - {request.form.get('end_date')}",
+        dates=f"{start_date} - {end_date}".strip(' -') or None,
         location=request.form.get('location'),
         description=request.form.get('description'),
         user_id=current_user.id
@@ -312,7 +321,10 @@ def add_certification():
         name=request.form.get('name'),
         issuing_organization=(request.form.get('issuing_organization') or request.form.get('issuer')),
         issue_date=request.form.get('issue_date'),
+        expiration_date=request.form.get('expiration_date'),
+        credential_id=request.form.get('credential_id'),
         credential_url=request.form.get('credential_url'),
+        skills=request.form.get('skills'),
         user_id=current_user.id
     )
     db.session.add(new_cert)
@@ -326,83 +338,14 @@ def edit_certification(cert_id):
     cert = Certification.query.get_or_404(cert_id)
     if cert.user_id != current_user.id:
         return jsonify({'success': False, 'error': 'You are not authorized to edit this certification.'}), 403
-    
-    def get_comprehensive_user_profile(user_id):
-        """Get comprehensive user profile data for career recommendations"""
-        user = User.query.get(user_id)
-        if not user:
-            return {}
-    
-        # Get all user data
-        education = Education.query.filter_by(user_id=user_id).all()
-        experience = Experience.query.filter_by(user_id=user_id).all()
-        skills = Skill.query.filter_by(user_id=user_id).all()
-        certifications = Certification.query.filter_by(user_id=user_id).all()
-    
-        # Format education data
-        education_data = []
-        for edu in education:
-            education_data.append({
-                "school": edu.school,
-                "degree": edu.degree,
-                "dates": edu.dates,
-                "grade": getattr(edu, 'grade', None)
-            })
-    
-        # Format experience data
-        experience_data = []
-        for exp in experience:
-            experience_data.append({
-                "title": exp.title,
-                "company": exp.company,
-                "dates": exp.dates,
-                "location": exp.location,
-                "description": exp.description
-            })
-    
-        # Format skills data
-        skills_data = [skill.name for skill in skills]
-    
-        # Format certifications data
-        certifications_data = []
-        for cert in certifications:
-            certifications_data.append({
-                "name": cert.name,
-                "issuing_organization": cert.issuing_organization,
-                "issue_date": cert.issue_date,
-                "credential_url": cert.credential_url
-            })
-    
-        # Get existing career GPS data if any
-        career_gps = CareerGPS.query.filter_by(user_id=user_id).first()
-        career_history = None
-        if career_gps:
-            career_history = {
-                "selected_career": career_gps.selected_career,
-                "progress": career_gps.progress,
-                "created_at": career_gps.created_at.isoformat() if career_gps.created_at else None
-            }
-    
-        return {
-            "basic_info": {
-                "name": user.name,
-                "headline": user.headline,
-                "location": user.location,
-                "university": user.university,
-                "about": user.about,
-                "role": user.role
-            },
-            "education": education_data,
-            "experience": experience_data,
-            "skills": skills_data,
-            "certifications": certifications_data,
-            "career_history": career_history
-        }
 
     cert.name = request.form.get('name', cert.name)
     cert.issuing_organization = (request.form.get('issuing_organization') or request.form.get('issuer') or cert.issuing_organization)
     cert.issue_date = request.form.get('issue_date', cert.issue_date)
+    cert.expiration_date = request.form.get('expiration_date', cert.expiration_date)
+    cert.credential_id = request.form.get('credential_id', cert.credential_id)
     cert.credential_url = request.form.get('credential_url', cert.credential_url)
+    cert.skills = request.form.get('skills', cert.skills)
     db.session.commit()
     log_activity(current_user.id, 'edited_certification', f'{cert.name}')
     return jsonify({'success': True})

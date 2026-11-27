@@ -10,7 +10,11 @@
                 <div class="modal-body">
                     <div class="mb-3"><label class="form-label">School*</label><input type="text" class="form-control" name="school" value="{{ edu.school or '' }}" required></div>
                     <div class="mb-3"><label class="form-label">Degree</label><input type="text" class="form-control" name="degree" value="{{ edu.degree or '' }}"></div>
+                    <div class="mb-3"><label class="form-label">Field of Study</label><input type="text" class="form-control" name="field_of_study" value="{{ edu.field_of_study or '' }}"></div>
                     <div class="mb-3"><label class="form-label">Dates</label><input type="text" class="form-control" name="dates" value="{{ edu.dates or '' }}"></div>
+                    <div class="mb-3"><label class="form-label">Grade</label><input type="text" class="form-control" name="grade" value="{{ edu.grade or '' }}"></div>
+                    <div class="mb-3"><label class="form-label">Activities and Societies</label><textarea class="form-control" name="activities" rows="3">{{ edu.activities or '' }}</textarea></div>
+                    <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="3">{{ edu.description or '' }}</textarea></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-modal-dismiss>Close</button>

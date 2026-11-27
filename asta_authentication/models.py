@@ -99,8 +99,11 @@ class Education(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school = db.Column(db.String(120), nullable=False)
     degree = db.Column(db.String(120))
+    field_of_study = db.Column(db.String(120))
     dates = db.Column(db.String(120))
     grade = db.Column(db.String(20))
+    activities = db.Column(db.Text)
+    description = db.Column(db.Text)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
 class Experience(db.Model):
@@ -122,7 +125,10 @@ class Certification(db.Model):
     name = db.Column(db.String(120), nullable=False)
     issuing_organization = db.Column(db.String(120))
     issue_date = db.Column(db.String(120))
+    expiration_date = db.Column(db.String(120))
+    credential_id = db.Column(db.String(120))
     credential_url = db.Column(db.String(200))
+    skills = db.Column(db.String(300))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
 class Post(db.Model):

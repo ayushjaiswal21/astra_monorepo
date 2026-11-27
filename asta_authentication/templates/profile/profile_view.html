@@ -243,7 +243,7 @@
                     <h6 class="fw-bold mb-1">{{ exp.title }}</h6>
                     <p class="mb-1 text-gray-500">{{ exp.company }}</p>
                     <small class="text-gray-500 block">
-                        <i class="far fa-calendar-alt me-1"></i>{{ exp.dates }}
+                        <i class="far fa-calendar-alt me-1"></i>{{ exp.dates or '' }}
                         {% if exp.location %}
                             <span class="mx-2">·</span>
                             <i class="fas fa-map-marker-alt me-1"></i>{{ exp.location }}
@@ -316,15 +316,18 @@
                     {% endif %}
                 </div>
                 <div class="flex-grow-1">
-                    <h6 class="fw-bold mb-1">{{ edu.degree }}, {{ edu.field_of_study }}</h6>
+                    <h6 class="fw-bold mb-1">{% if edu.degree and edu.field_of_study %}{{ edu.degree }}, {{ edu.field_of_study }}{% else %}{{ edu.degree or edu.field_of_study or '' }}{% endif %}</h6>
                     <p class="mb-1 text-gray-500">{{ edu.school }}</p>
                     <small class="text-gray-500 block">
-                        <i class="far fa-calendar-alt me-1"></i>{{ edu.dates }}
+                        <i class="far fa-calendar-alt me-1"></i>{{ edu.dates or '' }}
                         {% if edu.grade %}
                             <span class="mx-2">·</span>
                             <i class="fas fa-star me-1"></i>{{ edu.grade }}
                         {% endif %}
                     </small>
+                    {% if edu.description %}
+                    <p class="mt-2 mb-0 text-gray-500">{{ edu.description }}</p>
+                    {% endif %}
                     {% if edu.activities %}
                     <p class="mt-2 mb-0 text-gray-500">{{ edu.activities }}</p>
                     {% endif %}
@@ -443,7 +446,7 @@
                     <p class="mb-1 text-gray-500">{{ cert.issuing_organization }}</p>
                     <small class="text-gray-500 block">
                         <i class="far fa-calendar-alt me-1"></i>
-                        {{ cert.issue_date }}
+                        {{ cert.issue_date or '' }}
                         {% if cert.expiration_date %}
                             - {{ cert.expiration_date }}
                         {% endif %}
@@ -452,6 +455,9 @@
                             <span>Credential ID: {{ cert.credential_id }}</span>
                         {% endif %}
                     </small>
+                    {% if cert.skills %}
+                    <p class="mt-2 mb-0 text-gray-500">Skills: {{ cert.skills }}</p>
+                    {% endif %}
                     {% if cert.credential_url %}
                     <a href="{{ cert.credential_url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
                         <i class="fas fa-external-link-alt me-1"></i> Show Credential
