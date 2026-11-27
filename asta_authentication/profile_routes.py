@@ -158,7 +158,16 @@ def view_profile(username):
         db.session.add(profile_view)
         db.session.commit()
         log_activity(current_user.id, 'viewed_profile', f"viewed {user.username}'s profile")
-    return render_template('profile/profile_view.html', user=user, posts=posts, pagination=pagination)
+    # CareerGPS is one-to-many per user (retaking the quiz adds a new row),
+    # so `user.career_gps` is a list, not a single object - the template's
+    # `user.career_gps.selected_career` checks were always Undefined/falsy
+    # in Jinja, so the "Guided by Career GPS" banner never rendered no
+    # matter how many quizzes were taken. Resolve the one row to show here.
+    career_gps = CareerGPS.query.filter(
+        CareerGPS.user_id == user.id,
+        CareerGPS.selected_career.isnot(None)
+    ).order_by(CareerGPS.updated_at.desc()).first()
+    return render_template('profile/profile_view.html', user=user, posts=posts, pagination=pagination, career_gps=career_gps)
 
 @profile_bp.route('/edit-about', methods=['POST'])
 @login_required
@@ -189,7 +198,12 @@ def add_education():
     new_edu = Education(
         school=request.form.get('school'),
         degree=request.form.get('degree'),
-        dates=request.form.get('dates'),
+        # The add-education modal sends start_date/end_date, not a combined
+        # 'dates' field, so this fell back to None (and templates then
+        # rendered the literal string "None") unless a caller sends 'dates'
+        # directly, as the plain edit-education form does.
+        dates=request.form.get('dates') or f"{request.form.get('start_date', '')} - {request.form.get('end_date', '')}".strip(' -') or None,
+        grade=request.form.get('grade'),
         user_id=current_user.id
     )
     db.session.add(new_edu)

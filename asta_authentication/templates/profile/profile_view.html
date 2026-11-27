@@ -38,10 +38,10 @@
                 {% endif %}
                 
                 <!-- Career GPS Banner -->
-                {% if user.career_gps and user.career_gps.selected_career %}
+                {% if career_gps and career_gps.selected_career %}
                 <div class="alert alert-success d-inline-flex items-center mt-2 py-2 px-3 rounded-pill">
                     <i class="fas fa-compass me-2"></i>
-                    <span>Guided by Career GPS → {{ user.career_gps.selected_career }} | {{ user.career_gps.progress }}% Complete</span>
+                    <span>Guided by Career GPS → {{ career_gps.selected_career }} | {{ career_gps.progress }}% Complete</span>
                     <a href="#" class="ms-2" title="✨ Update or Explore New Directions">
                         <i class="fas fa-sync-alt"></i>
                     </a>
@@ -90,7 +90,7 @@
 </div>
 
 <!-- Career GPS Roadmap Section -->
-{% if user.career_gps and user.career_gps.selected_career %}
+{% if career_gps and career_gps.selected_career %}
 <div class="card mt-4" id="careerGpsSection">
     <div class="card-header flex justify-between items-center">
         <h5 class="card-title fw-bold mb-0">Career GPS Journey</h5>
@@ -99,19 +99,19 @@
         </a>
     </div>
     <div class="card-body">
-        <h6 class="fw-bold text-primary">{{ user.career_gps.selected_career }}</h6>
+        <h6 class="fw-bold text-primary">{{ career_gps.selected_career }}</h6>
 
         <!-- Progress Bar -->
         <div class="mb-4">
             <div class="flex justify-between mb-1">
                 <small class="fw-500">Progress</small>
-                <small class="fw-bold">{{ user.career_gps.progress }}% Complete</small>
+                <small class="fw-bold">{{ career_gps.progress }}% Complete</small>
             </div>
             <div class="progress" style="height: 8px">
                 <div class="progress-bar bg-success" 
                      role="progressbar" 
-                     style="width: {{ user.career_gps.progress }}%"
-                     aria-valuenow="{{ user.career_gps.progress }}" 
+                     style="width: {{ career_gps.progress }}%"
+                     aria-valuenow="{{ career_gps.progress }}" 
                      aria-valuemin="0" 
                      aria-valuemax="100">
                 </div>
@@ -130,13 +130,13 @@
             ] %}
             
             {% for milestone in milestones %}
-            <div class="step {% if user.career_gps.progress >= milestone.threshold %}completed{% endif %}">
+            <div class="step {% if career_gps.progress >= milestone.threshold %}completed{% endif %}">
                 <div class="step-icon">
                     <i class="fas fa-{{ milestone.icon }}"></i>
                 </div>
                 <div class="step-content">
                     <h6 class="mb-0">{{ milestone.name }}</h6>
-                    {% if user.career_gps.progress >= milestone.threshold %}
+                    {% if career_gps.progress >= milestone.threshold %}
                         <small class="text-success"><i class="fas fa-check-circle"></i> Completed</small>
                     {% else %}
                         <small class="text-gray-500">
@@ -152,7 +152,7 @@
         <h6 class="mt-5 mb-3 fw-bold">Recommended Mentors</h6>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             {% set mentors = [
-                {'name': 'Industry Expert', 'role': 'Senior ' + user.career_gps.selected_career, 'icon': 'user-tie'},
+                {'name': 'Industry Expert', 'role': 'Senior ' + career_gps.selected_career, 'icon': 'user-tie'},
                 {'name': 'Career Coach', 'role': 'Professional Development', 'icon': 'chalkboard-teacher'},
                 {'name': 'Alumni Network', 'role': 'Peer Mentor', 'icon': 'users'}
             ] %}
@@ -195,7 +195,7 @@
             <p class="mb-0">{{ user.about or 'No information provided yet.' }}</p>
         </div>
         
-        {% if user.career_gps and user.career_gps.selected_career %}
+        {% if career_gps and career_gps.selected_career %}
         <div class="alert alert-light border">
             <div class="flex">
                 <div class="flex-shrink-0 text-primary">
@@ -204,7 +204,7 @@
                 <div class="flex-grow-1 ms-3">
                     <h6 class="mb-1">Personalized Learning Plan</h6>
                     <p class="mb-2 text-gray-500">
-                        Based on your career path in {{ user.career_gps.selected_career }}, we've created a custom learning plan to help you develop the necessary skills.
+                        Based on your career path in {{ career_gps.selected_career }}, we've created a custom learning plan to help you develop the necessary skills.
                     </p>
                     <a href="{{ url_for('profile.my_learning_paths') }}" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-external-link-alt me-1"></i> View Learning Paths
@@ -440,7 +440,7 @@
                 </div>
                 <div class="flex-grow-1">
                     <h6 class="fw-bold mb-1">{{ cert.name }}</h6>
-                    <p class="mb-1 text-gray-500">{{ cert.issuer }}</p>
+                    <p class="mb-1 text-gray-500">{{ cert.issuing_organization }}</p>
                     <small class="text-gray-500 block">
                         <i class="far fa-calendar-alt me-1"></i>
                         {{ cert.issue_date }}

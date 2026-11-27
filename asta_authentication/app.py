@@ -1,5 +1,21 @@
 import os
 import sys
+
+# Several routes (profile_routes.py's Career GPS flow, this file's own
+# startup logs, etc.) print emoji status markers (checkmarks, rockets).
+# On Windows, stdout/stderr default to the cp1252 console codepage, which
+# can't encode those characters: the print() call itself then raises
+# UnicodeEncodeError, turning an otherwise-handled fallback branch into an
+# unhandled 500 (reproduced via the Career GPS quiz when the AI Guru
+# service at localhost:8001 is unreachable). Force UTF-8 so these prints
+# never crash a request.
+if sys.platform == 'win32':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 from dotenv import load_dotenv
 from flask import Flask, jsonify
 from flask_socketio import SocketIO

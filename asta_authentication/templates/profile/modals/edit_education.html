@@ -5,12 +5,12 @@
                 <h5 class="modal-title">Edit Education</h5>
                 <button type="button" class="text-lg leading-none opacity-60 hover:opacity-100" data-modal-dismiss>&times;</button>
             </div>
-            <form action="{{ url_for('profile.edit_education', edu_id=edu.id) }}" method="POST">
+            <form class="edit-education-plain-form" action="{{ url_for('profile.edit_education', edu_id=edu.id) }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
-                    <div class="mb-3"><label class="form-label">School*</label><input type="text" class="form-control" name="school" value="{{ edu.school }}" required></div>
-                    <div class="mb-3"><label class="form-label">Degree</label><input type="text" class="form-control" name="degree" value="{{ edu.degree }}"></div>
-                    <div class="mb-3"><label class="form-label">Dates</label><input type="text" class="form-control" name="dates" value="{{ edu.dates }}"></div>
+                    <div class="mb-3"><label class="form-label">School*</label><input type="text" class="form-control" name="school" value="{{ edu.school or '' }}" required></div>
+                    <div class="mb-3"><label class="form-label">Degree</label><input type="text" class="form-control" name="degree" value="{{ edu.degree or '' }}"></div>
+                    <div class="mb-3"><label class="form-label">Dates</label><input type="text" class="form-control" name="dates" value="{{ edu.dates or '' }}"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-modal-dismiss>Close</button>
@@ -20,3 +20,39 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // This form POSTs to a route that returns JSON (jsonify), not a redirect.
+    // Without intercepting the submit, the browser navigates to that raw
+    // JSON response instead of staying on the profile page. Submit via
+    // fetch instead, matching every other profile edit modal in this app.
+    var form = document.querySelector('#editEducationModal-{{ edu.id }} .edit-education-plain-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var formData = new FormData(form);
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: new URLSearchParams(formData).toString()
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.success) {
+                    window.location.reload();
+                } else {
+                    (window.showToast || alert)((data && (data.message || data.error)) || 'Failed to update education', 'error');
+                }
+            })
+            .catch(function() {
+                (window.showToast || alert)('An error occurred while updating education', 'error');
+            });
+        });
+    }
+});
+</script>
