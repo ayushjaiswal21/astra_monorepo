@@ -103,7 +103,7 @@
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
             <ul class="space-y-2 text-sm text-gray-700">
                 {% for activity in analytics_data.common.activity_feed %}
-                <li>{{ activity.timestamp.strftime('%Y-%m-%d %H:%M') }}: {{ activity.activity_type | replace('_', ' ') }} {{ activity.details }}</li>
+                <li>{{ activity.timestamp[:16] | replace('T', ' ') }}: {{ activity.activity_type | replace('_', ' ') }} {{ activity.details }}</li>
                 {% else %}
                 <li>No recent activity.</li>
                 {% endfor %}
