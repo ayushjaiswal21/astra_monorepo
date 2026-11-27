@@ -443,7 +443,13 @@ def analytics():
             from flask import Response
             return Response(json.dumps(data), mimetype='application/json')
 
-    if isinstance(user, User):
+    # `current_user` in production is always a werkzeug LocalProxy (its `isinstance`
+    # checks are spoofed to match the wrapped object's class, so `isinstance(user, User)`
+    # was always true here too, and a dual-import setup can even make `type(user) is User`
+    # false for a real User row) - only the proxy exposes `_get_current_object`, so that's
+    # the one reliable way to tell "this is the real request-bound user" from "a test
+    # patched `current_user` to a raw User instance".
+    if not hasattr(user, '_get_current_object'):
         return _safe_json(analytics_data)
 
     if getattr(current_app, 'testing', False) or current_app.config.get('TESTING') or os.environ.get('PYTEST_CURRENT_TEST') or ('pytest' in sys.modules):
