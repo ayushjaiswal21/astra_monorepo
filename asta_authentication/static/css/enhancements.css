@@ -147,6 +147,8 @@ i.fas, i.far, i.fab, svg.icon {
   box-shadow: var(--shadow-soft-sm);
 }
 .btn:focus-visible { box-shadow: var(--focus-ring); }
+.btn-sm { padding: var(--space-1) var(--space-3); font-size: 0.875rem; }
+.btn-lg { padding: var(--space-3) var(--space-6); font-size: 1.125rem; }
 
 /* ============================================================
    Cards / surfaces: hairline borders, soft big-blur shadow,
@@ -176,6 +178,14 @@ i.fas, i.far, i.fab, svg.icon {
   margin: var(--space-6) calc(var(--space-6) * -1) calc(var(--space-6) * -1);
   border-radius: 0 0 calc(var(--radius-outer) - 2px) calc(var(--radius-outer) - 2px);
 }
+.card-title { font-weight: 700; margin-bottom: var(--space-2); }
+.card-text { margin-bottom: var(--space-2); }
+/* Bootstrap-style sizing/flex utilities not produced by the purged
+   Tailwind build (it only has Tailwind's own spelling: h-full, flex-col). */
+.h-100 { height: 100%; }
+.w-100 { width: 100%; }
+.flex-grow-1 { flex-grow: 1; }
+.flex-column { display: flex; flex-direction: column; }
 
 /* nav-tabs: plain tab-button row, reusing accent/border tokens */
 .nav-tabs { display: flex; gap: var(--space-2); border-bottom: var(--border-hairline); flex-wrap: wrap; }
@@ -426,6 +436,14 @@ input[type="number"]:focus, input[type="date"]:focus, textarea:focus, select:foc
 .list-group-item-action:hover { background: var(--surface-1); }
 .list-group-flush .list-group-item { border-left: none; border-right: none; }
 
+.badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
+}
 .badge.bg-success { background: #16a34a; color: #FFFFFF; }
 .badge.bg-danger { background: #dc2626; color: #FFFFFF; }
 .badge.bg-warning { background: #d97706; color: #FFFFFF; }

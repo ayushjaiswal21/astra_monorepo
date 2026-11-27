@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>AstraLearn Network</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind-built.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -90,7 +91,9 @@
                                 <h3 class="font-semibold text-gray-900">{{ user.name or user.username }}</h3>
                                 <p class="text-xs text-gray-600">{{ user.headline or '' }}</p>
                             </a>
-                            <button class="mt-4 px-4 py-2 text-white text-sm font-medium rounded-full focus:outline-none focus:ring-2" style="background: var(--accent);">Connect</button>
+                            {% if user.id != current_user.id %}
+                            <button onclick="sendNetworkConnectionRequest(this, {{ user.id }})" class="mt-4 px-4 py-2 text-white text-sm font-medium rounded-full focus:outline-none focus:ring-2" style="background: var(--accent);">Connect</button>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
@@ -110,5 +113,31 @@
         </div>
     </div>
     <script src="{{ url_for('static', filename='js/site-chrome.js') }}" defer></script>
+    <script>
+        function sendNetworkConnectionRequest(btn, userId) {
+            btn.disabled = true;
+            fetch(`/profile/api/user/${userId}/connect`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                if (ok && data.success) {
+                    btn.textContent = data.status === 'connected' ? 'Connected' : 'Request Sent';
+                } else {
+                    btn.textContent = data.error || 'Failed';
+                    btn.disabled = false;
+                }
+            })
+            .catch(() => {
+                btn.textContent = 'Error, try again';
+                btn.disabled = false;
+            });
+        }
+    </script>
 </body>
 </html>

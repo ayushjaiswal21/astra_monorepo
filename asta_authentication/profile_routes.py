@@ -9,12 +9,12 @@ from sqlalchemy import or_
 
 try:
     from .utils import api_login_required as login_required
-    from .models import db, User, Education, Experience, Skill, Certification, ProfileView, Post, CareerGPS, LearningPath
+    from .models import db, User, Education, Experience, Skill, Certification, ProfileView, Post, CareerGPS, LearningPath, Connection, Notification
     from .main_routes import log_activity
     from .routes import allowed_file
 except ImportError:
     from utils import api_login_required as login_required
-    from models import db, User, Education, Experience, Skill, Certification, ProfileView, Post, CareerGPS, LearningPath
+    from models import db, User, Education, Experience, Skill, Certification, ProfileView, Post, CareerGPS, LearningPath, Connection, Notification
     from main_routes import log_activity
     from routes import allowed_file
 
@@ -25,8 +25,6 @@ profile_bp = Blueprint('profile', __name__, url_prefix='/profile')
 @login_required
 def send_connection_request(user_id):
     try:
-        from .models import User, Connection, db, Notification
-        
         # Check if user exists
         target_user = User.query.get_or_404(user_id)
         
@@ -167,7 +165,8 @@ def view_profile(username):
         CareerGPS.user_id == user.id,
         CareerGPS.selected_career.isnot(None)
     ).order_by(CareerGPS.updated_at.desc()).first()
-    return render_template('profile/profile_view.html', user=user, posts=posts, pagination=pagination, career_gps=career_gps)
+    is_connected = current_user.id == user.id or current_user.is_connected(user)
+    return render_template('profile/profile_view.html', user=user, posts=posts, pagination=pagination, career_gps=career_gps, is_connected=is_connected)
 
 @profile_bp.route('/edit-about', methods=['POST'])
 @login_required
