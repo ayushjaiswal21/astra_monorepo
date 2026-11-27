@@ -277,11 +277,29 @@ i.fas, i.far, i.fab, svg.icon {
    ============================================================ */
 .form-group, .mb-3 { margin-bottom: var(--space-4); }
 .form-label { display: block; margin-bottom: var(--space-1); }
-.form-control {
+
+/* `html { color-scheme: light dark; }` lets the browser render form
+   controls with its own native dark background in dark mode - but many
+   inputs across this app (e.g. signin_email.html's plain <input
+   class="... text-gray-700">) set an explicit dark TEXT color via Tailwind
+   with no explicit background of their own. The result: the browser's
+   native dark input background + that hardcoded dark text = unreadable
+   black-on-black. Giving every text input/textarea/select an explicit,
+   token-driven background and text color fixes this everywhere at once,
+   and makes dark mode actually correct (both flip together via our own
+   vars) instead of fighting the browser's native auto-dark styling. */
+input[type="text"], input[type="email"], input[type="password"],
+input[type="tel"], input[type="search"], input[type="url"], input[type="number"],
+input[type="date"], textarea, select, .form-control {
+  background: var(--surface-0);
+  color: var(--text-primary);
   border: var(--border-hairline);
   border-radius: var(--radius-sm);
   min-height: 44px; /* comfortable hit target, well over the 6px minimum */
 }
+input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus,
+input[type="tel"]:focus, input[type="search"]:focus, input[type="url"]:focus,
+input[type="number"]:focus, input[type="date"]:focus, textarea:focus, select:focus,
 .form-control:focus {
   box-shadow: var(--focus-ring);
   border-color: var(--accent);
