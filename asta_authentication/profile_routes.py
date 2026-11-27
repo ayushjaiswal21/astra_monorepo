@@ -102,7 +102,7 @@ def send_connection_request(user_id):
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f'Error in send_connection_request: {str(e)}')
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'Could not send connection request. Please try again.'}), 500
 
 # --- API Endpoint for Profile --- 
 @profile_bp.route('/', methods=['GET'])

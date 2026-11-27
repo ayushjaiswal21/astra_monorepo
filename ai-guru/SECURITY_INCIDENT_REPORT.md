@@ -7,6 +7,8 @@
 **Severity**: CRITICAL  
 **Status**: RESOLVED
 
+**2026-11-27 status note**: this doc's remediation plan below says `MONGODB_URI` was made a hard requirement (`raise RuntimeError` if unset). The *current* `ai-guru/backend/config.py` does not do this — it falls back to `mongodb://localhost:27017/` if `MONGODB_URI` is unset, so the app degrades gracefully (chat still works, personalization/learning silently disables — see `tracker.md`) rather than failing hard. That's an intentional, safer-for-this-app choice made later, not a regression; flagging here so this doc doesn't mislead anyone into thinking a missing env var crashes the app. The leaked credential string that was here has been redacted from this file and scrubbed from git history; the credential itself was rotated and is no longer in use.
+
 ---
 
 ## 🚨 SECURITY VULNERABILITIES FOUND

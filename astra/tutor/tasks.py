@@ -146,7 +146,8 @@ def generate_course_content(course_id, topic):
         return f"Successfully generated all content for course {course_id}."
 
     except Exception as e:
+        logger.error("Failed to generate content for course %s: %s", course_id, e, exc_info=True)
         if course:
-            course.description = f"### Error Generating Course Content\n\nWe encountered an issue while building this course: `{str(e)}`\n\nPlease try deleting this course and creating it again."
+            course.description = "### Error Generating Course Content\n\nWe encountered an issue while building this course.\n\nPlease try deleting this course and creating it again."
             course.save()
-        return f"Failed to generate content for course {course_id}: {str(e)}"
+        return f"Failed to generate content for course {course_id}"

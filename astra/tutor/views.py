@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 from datetime import timedelta
 from django.shortcuts import render, get_object_or_404, redirect
@@ -20,6 +21,14 @@ def call_ollama(prompt):
 from .models import Course, Module, Lesson, Quiz, Question, Choice, UserProgress, UserQuizAttempt, ModuleProgress, CourseTestSession, CourseTestQuestion, CourseTestAttempt
 from .prompts import get_test_generation_prompt
 from .tasks import generate_course_content
+
+logger = logging.getLogger(__name__)
+
+
+def _safe_error_response(exc, status=500, generic_message="An unexpected error occurred. Please try again."):
+    """Log the real exception server-side; never echo exception internals to the client."""
+    logger.error("Unhandled error: %s", exc, exc_info=True)
+    return JsonResponse({'error': generic_message}, status=status)
 
 
 def _get_adjacent_lessons(course_id, lesson):
@@ -123,8 +132,7 @@ def create_course(request):
         return JsonResponse({'success': True, 'course_id': course.id})
 
     except Exception as e:
-        # Catches critical errors
-        return JsonResponse({'error': f'A critical error occurred: {str(e)}'}, status=500)
+        return _safe_error_response(e)
 
 
 
@@ -140,12 +148,24 @@ def course_list_api(request):
         })
     return JsonResponse({'courses': course_list})
 
+GENERATION_STALE_AFTER = timedelta(minutes=3)
+GENERATION_PLACEHOLDER_TEXT = "Course content is being generated in the background."
+
 def course_detail(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     modules = course.modules.all().prefetch_related('lessons').order_by('order')
+    # If a course is still showing the "being generated" placeholder well
+    # past when generation should have finished, the Celery worker is
+    # probably down/stuck — surface that instead of letting the user wait
+    # forever with no feedback.
+    generation_possibly_stuck = (
+        GENERATION_PLACEHOLDER_TEXT in (course.description or '')
+        and timezone.now() - course.created_at > GENERATION_STALE_AFTER
+    )
     return render(request, 'tutor/course_detail.html', {
         'course': course,
         'modules': modules,
+        'generation_possibly_stuck': generation_possibly_stuck,
     })
 
 def lesson_detail(request, course_id, module_id, lesson_id):
@@ -261,9 +281,10 @@ def submit_quiz(request, quiz_id):
         })
     
     except Exception as e:
+        logger.error("Unhandled error in submit_quiz: %s", e, exc_info=True)
         return JsonResponse({
             'success': False,
-            'error': str(e)
+            'error': "Could not submit quiz. Please try again."
         }, status=400)
 
 @require_http_methods(["POST"])
@@ -302,7 +323,7 @@ def ai_assistant(request):
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return _safe_error_response(e)
 
 # Analytics endpoint for aggregated learning data
 @require_http_methods(["GET"])
@@ -349,7 +370,7 @@ def analytics(request, user_id):
             'recent_activity': recent_progress,
         })
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return _safe_error_response(e)
 
 @require_http_methods(["POST"])
 def delete_course(request, course_id):
@@ -359,7 +380,7 @@ def delete_course(request, course_id):
         return JsonResponse({'success': True, 'message': 'Course deleted successfully.'})
 
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return _safe_error_response(e)
 
 @require_http_methods(["POST"])
 def mark_lesson_complete(request, lesson_id):
@@ -414,7 +435,7 @@ def simplify_content(request, lesson_id):
             "use simple language, and keep it concise.\nLesson Title: {title}\nLesson Content:\n{content}"
         )
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return _safe_error_response(e)
 
 @require_http_methods(["GET"])
 def generate_example(request, lesson_id):
@@ -426,7 +447,7 @@ def generate_example(request, lesson_id):
             "demonstrating the main concepts in a concise way.\nLesson Title: {title}\nLesson Content:\n{content}"
         )
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return _safe_error_response(e)
 
 # --- Comprehensive Test Views ---
 
@@ -479,7 +500,8 @@ def generate_course_test_api(request, course_id):
         return JsonResponse({'test_session_id': test_session.id, 'questions': sanitized_questions})
 
     except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Failed to generate test: {str(e)}'}, status=500)
+        logger.error("Unhandled error in generate_course_test_api: %s", e, exc_info=True)
+        return JsonResponse({'success': False, 'error': 'Failed to generate test. Please try again.'}, status=500)
 
 @require_http_methods(["POST"])
 def submit_course_test_api(request, test_session_id):
@@ -542,4 +564,4 @@ def submit_course_test_api(request, test_session_id):
         })
 
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return _safe_error_response(e)

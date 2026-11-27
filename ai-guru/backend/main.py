@@ -460,7 +460,12 @@ async def chat_endpoint(request: ChatRequest, http_request: Request):
             "response": bot_response,
             "session_id": session_id,
             "interaction_id": interaction_id,
-            "personalization_active": bool(database.is_db_available())
+            "personalization_active": bool(database.is_db_available()),
+            # Lets a caller tell a real Gemini reply apart from a canned
+            # "mocked AI reply" string — without this, a missing/invalid
+            # GEMINI_API_KEY in production looks identical to a working
+            # deployment that just always says the same thing.
+            "mock_mode": bool(config.USE_MOCK),
         }
 
         if should_display:
@@ -953,7 +958,8 @@ def get_learning_analytics():
         }
         
     except Exception as e:
-        return {"error": f"Failed to get learning analytics: {str(e)}"}
+        print(f"[ERROR] Failed to get learning analytics: {e}")
+        return {"error": "Failed to get learning analytics."}
 
 def calculate_learning_effectiveness():
     """Calculate how well the AI is learning from feedback"""
@@ -985,7 +991,8 @@ def calculate_learning_effectiveness():
         }
         
     except Exception as e:
-        return f"Error calculating effectiveness: {str(e)}"
+        print(f"[ERROR] Error calculating effectiveness: {e}")
+        return "Error calculating effectiveness"
 
 # Analytics endpoint for aggregated data
 @app.get("/analytics")
@@ -1040,7 +1047,8 @@ def get_analytics():
         }
         
     except Exception as e:
-        return {"error": str(e)}
+        print(f"[ERROR] Failed to compute feedback stats: {e}")
+        return {"error": "Failed to compute feedback stats."}
 
 # Import the Career GPS service
 import services.career_gps_service as career_gps_service

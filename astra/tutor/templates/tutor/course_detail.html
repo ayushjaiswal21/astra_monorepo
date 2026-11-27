@@ -13,6 +13,14 @@
     <p class="mt-2 text-gray-600 max-w-4xl">{{ course.description }}</p>
     <p class="mt-1 text-xs text-gray-400">Last updated {{ course.updated_at|date:"M d, Y" }}</p>
 
+    {% if generation_possibly_stuck %}
+    <div class="mt-4 p-4 rounded-lg" style="background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E;">
+        This course has been "generating" for a while — the background worker may be stuck or down.
+        Try <a href="{% url 'tutor:course_detail' course.id %}" class="underline font-semibold">refreshing</a>,
+        or delete this course and create it again if it doesn't finish soon.
+    </div>
+    {% endif %}
+
     <div class="mt-6">
         <a href="{% url 'tutor:start_course_test' course.id %}" class="inline-block bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200">
             🚀 Start Comprehensive Test
