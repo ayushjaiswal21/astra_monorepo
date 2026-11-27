@@ -297,6 +297,13 @@
             gap: var(--space-4);
             color: var(--text-secondary);
         }
+        /* The generic Tailwind `.hidden{display:none}` utility (specificity
+           0,1,0) can never beat this ID selector's own `display: flex`
+           (specificity 1,0,0), so `classList.add('hidden')` in
+           dismissCookieBanner() silently did nothing - the class was added,
+           but the banner never actually disappeared. Match the ID's own
+           specificity so the override actually wins. */
+        #cookie-banner.hidden { display: none; }
 
         /* Floating contact button */
         #contact-fab {
