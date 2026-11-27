@@ -16,6 +16,32 @@ import sys
 from datetime import datetime, timedelta
 import requests
 import json
+import jwt
+
+# Shared secret all three apps (this Flask hub, the Django LMS, the FastAPI
+# chat backend) use to verify a short-lived SSO handoff token. A real
+# deployment sets this to a real random value via env var on all three
+# services - the default here is a dev-only placeholder, same pattern as
+# this app's own SECRET_KEY fallback.
+SSO_SHARED_SECRET = os.environ.get('SSO_SHARED_SECRET', 'dev-sso-shared-secret-change-in-production')
+ASTRALEARN_BASE_URL = os.environ.get('ASTRALEARN_BASE_URL', 'http://localhost:8000')
+AI_GURU_BASE_URL = os.environ.get('AI_GURU_FRONTEND_BASE_URL', 'http://localhost:3000')
+
+
+def _issue_sso_token(user):
+    """A short-lived (2 minute) signed handoff token - just enough for the
+    target app to verify who this is and create/attach its OWN local
+    session. Never used as a long-lived cross-app session itself."""
+    now = datetime.utcnow()
+    payload = {
+        'sub': str(user.id),
+        'email': user.email,
+        'username': user.username,
+        'role': user.role,
+        'iat': now,
+        'exp': now + timedelta(minutes=2),
+    }
+    return jwt.encode(payload, SSO_SHARED_SECRET, algorithm='HS256')
 
 def save_uploaded_file(file):
     if not file or file.filename == '':
@@ -209,6 +235,24 @@ def index():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
     return render_template('index.html')
+
+@main_bp.route('/sso/astralearn')
+@login_required
+def sso_astralearn():
+    """Hand off to AstraLearn (Django) already logged in as this user."""
+    token = _issue_sso_token(current_user)
+    return redirect(f"{ASTRALEARN_BASE_URL}/sso/login/?token={token}")
+
+
+@main_bp.route('/sso/ai-guru')
+@login_required
+def sso_ai_guru():
+    """Hand off to AI Guru (React/FastAPI) carrying this user's identity,
+    so chat personalization ties to the real account instead of a random
+    per-browser session id."""
+    token = _issue_sso_token(current_user)
+    return redirect(f"{AI_GURU_BASE_URL}/?sso_token={token}")
+
 
 @main_bp.route('/dashboard')
 @login_required

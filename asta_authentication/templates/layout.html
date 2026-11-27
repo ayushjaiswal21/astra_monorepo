@@ -34,6 +34,18 @@
                     <li class="nav-item">
                         <a class="nav-link block py-2 lg:py-4 lg:px-3" href="{{ url_for('main.events') }}">Events</a>
                     </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link block py-2 lg:py-4 lg:px-3" href="{{ url_for('main.sso_astralearn') }}">
+                            <i class="fas fa-graduation-cap"></i> AstraLearn
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link block py-2 lg:py-4 lg:px-3" href="{{ url_for('main.sso_ai_guru') }}">
+                            <i class="fas fa-robot"></i> AI Guru
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
                 <ul class="flex flex-col lg:flex-row lg:items-center">
                     {% if current_user.is_authenticated %}
