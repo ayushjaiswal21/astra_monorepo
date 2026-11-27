@@ -441,6 +441,19 @@ def health_check():
         "chat_available": True
     }
 
+def _map_gemini_error(e: Exception) -> tuple[int, str]:
+    """Maps a raw Gemini/google.api_core exception to an HTTP status + user-facing
+    message. Shared by /chat and /image-chat so a 429 (quota) looks the same from
+    either endpoint instead of one giving a clear message and the other a generic 500."""
+    error_message = str(e).lower()
+    if "quota" in error_message or "429" in error_message:
+        return 429, "API quota exceeded. Please try again later or check your billing settings."
+    if "model not found" in error_message or "404" in error_message:
+        return 404, "The requested model is not available. Please check the API configuration."
+    if "api key" in error_message or "authentication" in error_message:
+        return 401, "Invalid API key. Please check your Gemini API key configuration."
+    return 500, "An internal server error occurred while processing your request."
+
 @app.post("/chat")
 async def chat_endpoint(request: ChatRequest, http_request: Request):
     try:
@@ -520,22 +533,7 @@ async def chat_endpoint(request: ChatRequest, http_request: Request):
         print(f"An unexpected error occurred in chat endpoint: {str(e)}")
         import traceback
         print(traceback.format_exc())
-        
-        # Handle specific known errors and map to appropriate HTTP responses
-        error_message = str(e).lower()
-        status_code = 500
-        error_detail = "An internal server error occurred while processing your request."
-
-        if "quota" in error_message or "429" in error_message:
-            status_code = 429
-            error_detail = "API quota exceeded. Please try again later or check your billing settings."
-        elif "model not found" in error_message or "404" in error_message:
-            status_code = 404
-            error_detail = "The requested model is not available. Please check the API configuration."
-        elif "api key" in error_message or "authentication" in error_message:
-            status_code = 401
-            error_detail = "Invalid API key. Please check your Gemini API key configuration."
-        
+        status_code, error_detail = _map_gemini_error(e)
         raise HTTPException(status_code=status_code, detail=error_detail)
 
 # Test endpoint to verify Gemini API connection
@@ -620,8 +618,8 @@ async def image_chat(image: UploadFile = File(...), text: str = Body(..., embed=
         raise http_exc
     except Exception as e:
         print(f"An unexpected error occurred in image_chat endpoint: {str(e)}")
-        # Optionally log traceback here
-        raise HTTPException(status_code=500, detail="An internal server error occurred while processing the image.")
+        status_code, error_detail = _map_gemini_error(e)
+        raise HTTPException(status_code=status_code, detail=error_detail)
 
 # Endpoint to fetch all chat history grouped by sessions
 @app.get("/chat-history")

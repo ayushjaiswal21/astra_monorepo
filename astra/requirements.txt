@@ -1,5 +1,13 @@
 Django==5.0.3
 celery==5.3.6
+# kombu pinned below 5.5.0: kombu 5.5+'s redis transport added a binding-expiry
+# Lua script using `ZADD ... GT`, which requires Redis >= 6.2. The dev redis-server
+# here is 5.0.14.1, so that script fails with "ResponseError: ERR syntax error"
+# and crashes the celery worker on startup (during mingle/pidbox HELLO). kombu
+# 5.4.2 is the last release without that script and satisfies celery 5.3.6's
+# own constraint (kombu>=5.3.4,<6.0). Verified: worker starts and processes a
+# real tutor.tasks.generate_course_content task against redis 5.0.14.1.
+kombu==5.4.2
 redis==8.2.0
 gunicorn==21.2.0
 dj-database-url==3.0.1

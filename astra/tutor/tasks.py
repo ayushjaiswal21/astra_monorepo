@@ -3,6 +3,7 @@ import logging
 import re
 import httpx
 import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted
 from celery import shared_task
 from pydantic import ValidationError
 from django.conf import settings
@@ -151,6 +152,17 @@ def generate_course_content(course_id, topic):
                             )
 
         return f"Successfully generated all content for course {course_id}."
+
+    except ResourceExhausted as e:
+        # Gemini 429 (quota/rate-limit). Give a specific, actionable message instead
+        # of the generic failure below; no DB rows are created before this point
+        # (lesson/module creation is inside the atomic block further down), so
+        # nothing is orphaned.
+        logger.error("Gemini quota exceeded while generating course %s: %s", course_id, e)
+        if course:
+            course.description = "### AI Quota Exceeded\n\nThe AI service's usage quota has been reached. Please try generating this course again in a few minutes."
+            course.save()
+        return f"Failed to generate content for course {course_id}: AI quota exceeded"
 
     except ValidationError as e:
         bad_fields = ", ".join(".".join(str(p) for p in err["loc"]) for err in e.errors())
