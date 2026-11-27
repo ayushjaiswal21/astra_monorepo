@@ -52,7 +52,7 @@ TOP_K = 3
 _text_model = None
 if not config.USE_MOCK and config.GEMINI_API_KEY:
     genai.configure(api_key=config.GEMINI_API_KEY)
-    _text_model = genai.GenerativeModel('gemini-pro')
+    _text_model = genai.GenerativeModel('gemini-2.5-flash')
 
 
 def chunk_text(text, max_chars=CHUNK_MAX_CHARS, overlap=CHUNK_OVERLAP):

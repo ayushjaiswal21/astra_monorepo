@@ -53,8 +53,8 @@ import config
 if not config.USE_MOCK and config.GEMINI_API_KEY:
     genai.configure(api_key=config.GEMINI_API_KEY)
     # Initialize the generative models
-    text_model = genai.GenerativeModel('gemini-pro')
-    vision_model = genai.GenerativeModel('gemini-pro-vision')
+    text_model = genai.GenerativeModel('gemini-2.5-flash')
+    vision_model = genai.GenerativeModel('gemini-2.5-flash')
 else:
     text_model = None
     vision_model = None
@@ -397,6 +397,7 @@ async def add_security_headers(request: Request, call_next):
 allowed_origins = [
     "http://localhost:3000",
     "http://localhost:3001",
+    "http://localhost:8000",  # astra Django dev server (lesson-page /simplify-text fallback)
     # Add your production domains here
     # "https://your-app.vercel.app"
 ]

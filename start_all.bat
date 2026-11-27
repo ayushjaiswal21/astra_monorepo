@@ -26,7 +26,9 @@ echo [1/5] Starting Astra Authentication (Flask on port 5000)...
 start "Astra Auth" cmd /k "python -m asta_authentication.app"
 
 echo [2/5] Starting AI Guru Backend (FastAPI on port 8001)...
-start "AI Guru Backend" cmd /k "cd ai-guru && python -m uvicorn backend.main:app --port 8001"
+echo       Uses its own venv at ai-guru\backend\.venv (see ai-guru/backend/requirements.txt).
+echo       Create it once with: cd ai-guru\backend ^&^& python -m venv .venv ^&^& .venv\Scripts\pip install -r requirements.txt
+start "AI Guru Backend" cmd /k "cd ai-guru\backend && .venv\Scripts\python.exe -m uvicorn main:app --port 8001"
 
 echo [3/5] Starting AI Guru Frontend (React on port 3000)...
 start "AI Guru Frontend" cmd /k "cd ai-guru\frontend && npm install && npm start"

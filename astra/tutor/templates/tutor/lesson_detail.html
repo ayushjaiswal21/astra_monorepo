@@ -313,7 +313,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tabName === 'simplify' && !activePanel.dataset.loaded) {
                 fetchAndDisplay(
                     `/api/lesson/{{ lesson.id }}/simplify/`,
-                    activePanel
+                    activePanel,
+                    simplifyLocalFallback
                 );
             } else if (tabName === 'example' && !activePanel.dataset.loaded) {
                 fetchAndDisplay(
@@ -324,24 +325,57 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    async function fetchAndDisplay(url, panelElement) {
+    async function fetchAndDisplay(url, panelElement, onFail) {
         try {
             const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            
+
             if (data.content) {
                 panelElement.innerHTML = marked.parse(data.content); // Use marked.js to render markdown
                 addCodeCopyButtons();
+            } else if (onFail) {
+                await onFail(panelElement);
             } else {
                 panelElement.innerHTML = `<p class="text-red-500">${data.error || 'Failed to load content.'}</p>`;
             }
             panelElement.dataset.loaded = 'true'; // Mark as loaded
         } catch (error) {
             console.error('Fetch error:', error);
-            panelElement.innerHTML = `<p class="text-red-500">An error occurred while fetching the content. Please try again later.</p>`;
+            if (onFail) {
+                await onFail(panelElement);
+                panelElement.dataset.loaded = 'true';
+            } else {
+                panelElement.innerHTML = `<p class="text-red-500">An error occurred while fetching the content. Please try again later.</p>`;
+            }
+        }
+    }
+
+    // Fallback for the Simplify tab: the primary Gemini-based simplify call
+    // (above) failed (quota/error), so fall back to AI Guru's small local
+    // transformer at /simplify-text. It's a known-overfit tiny model, not a
+    // drop-in Gemini replacement, so the result is clearly labeled as such.
+    async function simplifyLocalFallback(panelElement) {
+        try {
+            const resp = await fetch(`{{ AI_GURU_BASE_URL }}/simplify-text`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: "{{ lesson.content|escapejs }}" })
+            });
+            if (!resp.ok) {
+                throw new Error(`HTTP error! status: ${resp.status}`);
+            }
+            const data = await resp.json();
+            panelElement.innerHTML =
+                '<p class="text-sm font-semibold" style="color:#b45309;">' +
+                'Simplified using local fallback (lower quality while our main AI service is unavailable)</p>' +
+                marked.parse(data.simplified_text || '');
+            addCodeCopyButtons();
+        } catch (error) {
+            console.error('Local fallback fetch error:', error);
+            panelElement.innerHTML = `<p class="text-red-500">Both the main simplifier and the local fallback are unavailable right now. Please try again later.</p>`;
         }
     }
 });

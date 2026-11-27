@@ -22,7 +22,9 @@ Write-Host "[1/5] Starting Astra Authentication (Flask on port 5000)..."
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location 'c:\Users\MAHAJAN ASHOK\OneDrive\Desktop\astra_monorepo\asta_authentication'; python app.py"
 
 Write-Host "[2/5] Starting AI Guru Backend (FastAPI on port 8001)..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location 'c:\Users\MAHAJAN ASHOK\OneDrive\Desktop\astra_monorepo\ai-guru\backend'; python -m uvicorn main:app --port 8001"
+Write-Host "      Uses its own venv at ai-guru\backend\.venv - create once with:"
+Write-Host "      cd ai-guru\backend; python -m venv .venv; .venv\Scripts\pip install -r requirements.txt"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location 'c:\Users\MAHAJAN ASHOK\OneDrive\Desktop\astra_monorepo\ai-guru\backend'; .venv\Scripts\python.exe -m uvicorn main:app --port 8001"
 
 Write-Host "[3/5] Starting AI Guru Frontend (React on port 3000)..."
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location 'c:\Users\MAHAJAN ASHOK\OneDrive\Desktop\astra_monorepo\ai-guru\frontend'; npm install; npm start"

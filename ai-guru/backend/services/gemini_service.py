@@ -15,8 +15,8 @@ text_model = None
 vision_model = None
 if not config.USE_MOCK and config.GEMINI_API_KEY:
     genai.configure(api_key=config.GEMINI_API_KEY)
-    text_model = genai.GenerativeModel('gemini-pro')
-    vision_model = genai.GenerativeModel('gemini-pro-vision')
+    text_model = genai.GenerativeModel('gemini-2.5-flash')
+    vision_model = genai.GenerativeModel('gemini-2.5-flash')
 
 @trace_llm_call(call_type="chat")
 async def generate_text_response(text, recent_context, learned_prefs, detected_lang, language_name, should_display, rag_context=""):
