@@ -185,6 +185,9 @@ OPENROUTER_MODEL = os.getenv('OPENROUTER_MODEL', 'nvidia/nemotron-3.5-lightning:
 # AI Guru (ai-guru/backend) base URL, for the embedded-tutor RAG integration
 # on a lesson page — a separate FastAPI service/process, not a shared DB.
 AI_GURU_BASE_URL = os.getenv('AI_GURU_BASE_URL', 'http://localhost:8001')
+# AI Guru's React frontend (ai-guru/frontend) - a different host/port than
+# the API above - for the "AI Guru" nav links a human actually clicks.
+AI_GURU_FRONTEND_BASE_URL = os.getenv('AI_GURU_FRONTEND_BASE_URL', 'http://localhost:3000')
 
 # Cross-app SSO handoff from Astra Auth (Flask hub) - shared JWT secret and the
 # hub's own base URL, used by the "Back to Astra Auth" sidebar link.

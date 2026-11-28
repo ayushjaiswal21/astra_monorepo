@@ -243,9 +243,16 @@ def index():
 @main_bp.route('/sso/astralearn')
 @login_required
 def sso_astralearn():
-    """Hand off to AstraLearn (Django) already logged in as this user."""
+    """Hand off to AstraLearn (Django) already logged in as this user.
+    An optional ?next=/some/path lands the user on a specific AstraLearn
+    page (e.g. /create/) instead of always its dashboard - only a
+    same-site relative path is forwarded, to avoid an open redirect."""
     token = _issue_sso_token(current_user)
-    return redirect(f"{ASTRALEARN_BASE_URL}/sso/login/?token={token}")
+    next_path = request.args.get('next', '')
+    url = f"{ASTRALEARN_BASE_URL}/sso/login/?token={token}"
+    if next_path.startswith('/') and not next_path.startswith('//'):
+        url += f"&next={next_path}"
+    return redirect(url)
 
 
 @main_bp.route('/sso/ai-guru')

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ChatHistory from './ChatHistory';
 
+const ASTRA_AUTH_URL = process.env.REACT_APP_ASTRA_AUTH_URL || "http://localhost:5000";
+
 const Sidebar = ({
     sidebarCollapsed,
     setSidebarCollapsed,
@@ -107,7 +109,7 @@ const Sidebar = ({
 
       <div className="p-4 border-t border-gray-200">
         <a
-          href="http://localhost:5000/dashboard"
+          href={`${ASTRA_AUTH_URL}/dashboard`}
           className="btn-outline"
           style={{ width: "100%", display: "block", textAlign: "center", textDecoration: "none" }}
         >

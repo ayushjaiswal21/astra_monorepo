@@ -287,7 +287,7 @@
               <p class="text-xs text-gray-600 mb-3">{{ user.role }}</p>
               <div class="border-t border-gray-200 pt-3 text-xs">
                 <a
-                  href="http://localhost:3000"
+                  href="{{ url_for('main.sso_ai_guru') }}"
                   target="_blank"
                   class="flex justify-between py-1.5 hover:bg-gray-50 px-2 rounded cursor-pointer"
                 >
@@ -295,7 +295,7 @@
                   <span class="font-semibold" style="color: var(--accent)">AI Guru 🤖</span>
                 </a>
                 <a
-                  href="http://localhost:8000"
+                  href="{{ url_for('main.sso_astralearn') }}"
                   target="_blank"
                   class="flex justify-between py-1.5 hover:bg-gray-50 px-2 rounded cursor-pointer"
                 >
@@ -337,7 +337,7 @@
                 >Internships</a
               >
               <a
-                href="http://localhost:3000"
+                href="{{ url_for('main.sso_ai_guru') }}"
                 target="_blank"
                 class="block py-1.5 px-2 hover:bg-gray-50 rounded font-semibold"
                 style="color: var(--accent)"
@@ -372,7 +372,7 @@
                 <span class="text-sm font-medium">Media</span>
               </a>
               <a
-                href="http://localhost:8000/create/"
+                href="{{ url_for('main.sso_astralearn', next='/create/') }}"
                 target="_blank"
                 class="btn-action flex items-center space-x-2 text-gray-600"
               >

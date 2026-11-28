@@ -79,6 +79,8 @@ services:
         value: https://asta-authentication.onrender.com
       - key: AI_GURU_BASE_URL
         value: https://ai-guru-backend-v7q3.onrender.com
+      - key: AI_GURU_FRONTEND_BASE_URL
+        value: https://ai-guru-frontend.onrender.com
       - key: SSO_SHARED_SECRET
         fromService:
           type: web
@@ -116,3 +118,5 @@ services:
     envVars:
       - key: REACT_APP_API_URL
         value: https://ai-guru-backend-v7q3.onrender.com # baked in at build time (CRA) - rebuild if this ever changes
+      - key: REACT_APP_ASTRA_AUTH_URL
+        value: https://asta-authentication.onrender.com # "Back to Astra Auth" link - also baked in at build time

@@ -385,7 +385,7 @@
                     <a href="{% url 'tutor:create_course_page' %}" class="sidebar-link {% if request.resolver_match.url_name == 'create_course_page' %}active{% endif %}">
                         <i class="fas fa-plus mr-2"></i>Create Course
                     </a>
-                    <a href="http://localhost:3000" class="sidebar-link" target="_blank">
+                    <a href="{{ AI_GURU_FRONTEND_BASE_URL }}" class="sidebar-link" target="_blank">
                         <i class="fas fa-robot mr-2"></i>AI Guru
                     </a>
                 </nav>

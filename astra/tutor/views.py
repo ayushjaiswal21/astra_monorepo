@@ -647,6 +647,9 @@ def sso_login(request):
     )
 
     login(request, user)
+    next_path = request.GET.get('next', '')
+    if next_path.startswith('/') and not next_path.startswith('//'):
+        return redirect(next_path)
     return redirect('tutor:dashboard')
 
 
