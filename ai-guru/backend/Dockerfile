@@ -22,7 +22,12 @@ COPY . .
 
 EXPOSE 8001
 
-# Production ASGI invocation: multiple worker processes, no --reload.
-# Each worker is a separate process and lazy-loads its own copy of the
-# simplify-text transformer (~48MB) on first use - expected and safe.
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "4"]
+# Single worker, not --reload. Render's free plan gives ~512MB RAM; each
+# worker is a separate process that lazy-loads its OWN copy of torch +
+# the simplify-text transformer on first use. 4 workers each doing that
+# was confirmed in production to OOM-kill the whole container every time
+# /simplify-text was hit - every endpoint went down, not just that one,
+# until Render restarted it. One worker is what this instance can actually
+# afford; it's also what a single small free-tier CPU instance meaningfully
+# benefits from anyway.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "1"]
