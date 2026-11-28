@@ -252,22 +252,35 @@ def signin_email():
 def join_form():
     email = request.form.get('email')
     password = request.form.get('password')
-    username = email.split('@')[0] # Simple username generation
+
+    if not email:
+        flash("Email is required.", "danger")
+        return redirect(url_for('auth.join'))
 
     if not password or len(password) < 6:
         flash("Password must be at least 6 characters long.", "danger")
         return redirect(url_for('auth.join'))
 
-    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-    
     if User.query.filter_by(email=email).first():
         flash("An account with this email already exists.", "danger")
         return redirect(url_for('auth.join'))
 
+    # The local part of an email isn't unique across domains (john@gmail.com
+    # vs john@yahoo.com both want "john"), but `username` has a unique DB
+    # constraint - so pick the next free "john", "john1", "john2", ...
+    base_username = email.split('@')[0]
+    username = base_username
+    suffix = 1
+    while User.query.filter_by(username=username).first():
+        username = f"{base_username}{suffix}"
+        suffix += 1
+
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+
     new_user = User(email=email, username=username, password=hashed_password)
     db.session.add(new_user)
     db.session.commit()
-    
+
     login_user(new_user)
     return redirect(url_for('auth.role_selection'))
 
