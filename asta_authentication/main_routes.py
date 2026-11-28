@@ -240,6 +240,14 @@ def index():
         return redirect(url_for('main.dashboard'))
     return render_template('index.html')
 
+@main_bp.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@main_bp.route('/terms')
+def terms():
+    return render_template('terms.html')
+
 @main_bp.route('/sso/astralearn')
 @login_required
 def sso_astralearn():
