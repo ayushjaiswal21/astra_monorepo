@@ -10,10 +10,10 @@ from datetime import datetime, timedelta
 from sqlalchemy import exc
 try:
     from .models import db, User, PasswordResetToken
-    from .utils import rate_limit
+    from .utils import rate_limit, generate_unique_username
 except ImportError:
     from models import db, User, PasswordResetToken
-    from utils import rate_limit
+    from utils import rate_limit, generate_unique_username
 from flask_login import login_user, logout_user, current_user
 
 auth_bp = Blueprint('auth', __name__)
@@ -28,7 +28,7 @@ def register_mock_oauth_routes(app):
         def mock_login(email):
             user = User.query.filter_by(email=email).first()
             if not user:
-                username = email.split('@')[0]
+                username = generate_unique_username(email)
                 user = User(email=email, username=username, password=generate_password_hash("mockpass", method='pbkdf2:sha256'))
                 db.session.add(user)
                 db.session.commit()
@@ -75,7 +75,7 @@ def api_register():
         if User.query.filter_by(email=email).first():
             return jsonify({'error': 'User with this email already exists.'}), 409
 
-        username = email.split('@')[0]
+        username = generate_unique_username(email)
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         
         new_user = User(email=email, username=username, password=hashed_password)
@@ -265,16 +265,7 @@ def join_form():
         flash("An account with this email already exists.", "danger")
         return redirect(url_for('auth.join'))
 
-    # The local part of an email isn't unique across domains (john@gmail.com
-    # vs john@yahoo.com both want "john"), but `username` has a unique DB
-    # constraint - so pick the next free "john", "john1", "john2", ...
-    base_username = email.split('@')[0]
-    username = base_username
-    suffix = 1
-    while User.query.filter_by(username=username).first():
-        username = f"{base_username}{suffix}"
-        suffix += 1
-
+    username = generate_unique_username(email)
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
 
     new_user = User(email=email, username=username, password=hashed_password)
@@ -354,7 +345,7 @@ def google_login_callback():
             if user:
                 user.google_id = google_id
             else:
-                username = email.split('@')[0]
+                username = generate_unique_username(email)
                 user = User(email=email, google_id=google_id, username=username)
                 db.session.add(user)
             db.session.commit()

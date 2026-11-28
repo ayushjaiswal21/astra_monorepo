@@ -5,6 +5,24 @@ from functools import wraps
 from flask import request, jsonify, current_app
 from flask_login import current_user, login_required as flask_login_required
 
+
+def generate_unique_username(email):
+    """Derive a username from an email's local part, falling back to
+    name1, name2, ... since `username` has a unique DB constraint but two
+    different emails (e.g. john@gmail.com, john@yahoo.com) can share a
+    local part."""
+    try:
+        from .models import User
+    except ImportError:
+        from models import User
+    base_username = email.split('@')[0]
+    username = base_username
+    suffix = 1
+    while User.query.filter_by(username=username).first():
+        username = f"{base_username}{suffix}"
+        suffix += 1
+    return username
+
 # shortcut: in-memory, per-process sliding-window limiter — fine for a
 # single-worker prototype deployment, resets on restart, and won't share
 # state across multiple processes/workers. Upgrade to Flask-Limiter + Redis
