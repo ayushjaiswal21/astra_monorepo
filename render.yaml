@@ -92,7 +92,11 @@ services:
     plan: free
     envVars:
       - key: GEMINI_API_KEY
-        sync: false # leave blank if this project's billing isn't set up
+        sync: false # leave blank if this project's billing isn't set up - OpenRouter covers it
+      - key: OPENROUTER_API_KEY
+        sync: false # free, no card - get one at openrouter.ai/keys (same key as astra-web's)
+      - key: OPENROUTER_MODEL
+        value: nvidia/nemotron-3.5-lightning:free # verified working; check openrouter.ai/models?max_price=0 if this one stops being free
       - key: MONGODB_URI
         sync: false # paste your Atlas connection string (include a database name, e.g. .../ai_guru_db)
       - key: ALLOWED_ORIGINS
