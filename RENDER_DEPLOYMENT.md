@@ -93,8 +93,10 @@ SESSION_COOKIE_SECURE=True
 CSRF_COOKIE_SECURE=True
 USE_X_FORWARDED_PROTO=True
 CELERY_ENABLED=False
-GEMINI_API_KEY=<your real key>
-OLLAMA_URL=                 # leave blank - no VM to run Ollama on in this path, Gemini-only
+GEMINI_API_KEY=<your real key, if its project has billing enabled>
+OLLAMA_URL=                 # leave blank - no VM to run Ollama on in this path
+OPENROUTER_API_KEY=<your free OpenRouter key - console at openrouter.ai/keys, no card needed>
+OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct:free   # check openrouter.ai/models?max_price=0 for current free models
 ASTRA_AUTH_BASE_URL=https://<your-asta-authentication-service>.onrender.com
 AI_GURU_BASE_URL=https://<your-ai-guru-backend-service>.onrender.com
 SSO_SHARED_SECRET=<the same shared value as above>
@@ -147,8 +149,12 @@ REACT_APP_API_URL=https://<your-ai-guru-backend-service>.onrender.com
 
 ## What this path explicitly does NOT give you (vs. the Oracle/Docker path)
 
-- No free Ollama - there's no VM to install it on, so `astra` is
-  Gemini-only here (quota limits apply directly, with no local fallback).
+- No free Ollama - there's no VM to install it on. `astra` falls back to
+  OpenRouter's free tier instead (see `OPENROUTER_API_KEY` above) - genuinely
+  free and needs no card, but free-tier rate limits (tens of requests/day,
+  check current limits at openrouter.ai) apply, and free model availability
+  changes over time - treat this as "works for a student project's traffic
+  level," not an unlimited substitute for Ollama running locally.
 - No real background job queue - synchronous generation only.
 - Free services sleep when idle and take a moment to wake up.
 - Neon/Atlas free tiers have their own storage/compute limits - fine for a
