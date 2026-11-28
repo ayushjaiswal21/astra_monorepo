@@ -1,0 +1,109 @@
+# Render Blueprint - deploys all 3 apps + the ai-guru frontend in one go.
+# See RENDER_DEPLOYMENT.md for the full walkthrough (what each env var means,
+# where to get Neon/Atlas/OpenRouter credentials, post-deploy one-time steps).
+#
+# Service URLs are predictable from each service's `name` below
+# (https://<name>.onrender.com) - that's how the cross-app *_BASE_URL values
+# are filled in here without needing to know them in advance.
+#
+# Secrets are never hardcoded here (this file is committed to git). Anything
+# marked `sync: false` prompts you for the real value once, in Render's
+# dashboard, when you create the Blueprint - it is not stored in this repo.
+
+services:
+  - type: web
+    name: asta-authentication
+    runtime: docker
+    rootDir: asta_authentication
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false # paste your Neon connection string for this app's own database
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: SSO_SHARED_SECRET
+        generateValue: true
+      - key: ASTRALEARN_BASE_URL
+        value: https://astra-web.onrender.com
+      - key: AI_GURU_BASE_URL
+        value: https://ai-guru-backend.onrender.com
+      - key: AI_GURU_FRONTEND_BASE_URL
+        value: https://ai-guru-frontend.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://astra-web.onrender.com,https://ai-guru-frontend.onrender.com
+
+  - type: web
+    name: astra-web
+    runtime: docker
+    rootDir: astra
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false # paste your Neon connection string for this app's own database
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: astra-web.onrender.com
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: SESSION_COOKIE_SECURE
+        value: "True"
+      - key: CSRF_COOKIE_SECURE
+        value: "True"
+      - key: USE_X_FORWARDED_PROTO
+        value: "True"
+      - key: CELERY_ENABLED
+        value: "False" # no free background-worker service on Render - see tasks.py
+      - key: GEMINI_API_KEY
+        sync: false # leave blank if this project's billing isn't set up - OpenRouter covers it
+      - key: OLLAMA_URL
+        value: "" # no VM to run Ollama on in this path - leave blank
+      - key: OPENROUTER_API_KEY
+        sync: false # free, no card - get one at openrouter.ai/keys
+      - key: OPENROUTER_MODEL
+        value: nvidia/nemotron-3.5-lightning:free # verified working; check openrouter.ai/models?max_price=0 if this one stops being free
+      - key: ASTRA_AUTH_BASE_URL
+        value: https://asta-authentication.onrender.com
+      - key: AI_GURU_BASE_URL
+        value: https://ai-guru-backend.onrender.com
+      - key: SSO_SHARED_SECRET
+        fromService:
+          type: web
+          name: asta-authentication
+          envVarKey: SSO_SHARED_SECRET
+
+  - type: web
+    name: ai-guru-backend
+    runtime: docker
+    rootDir: ai-guru/backend
+    plan: free
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false # leave blank if this project's billing isn't set up
+      - key: MONGODB_URI
+        sync: false # paste your Atlas connection string (include a database name, e.g. .../ai_guru_db)
+      - key: ALLOWED_ORIGINS
+        value: https://astra-web.onrender.com,https://ai-guru-frontend.onrender.com
+      - key: SSO_SHARED_SECRET
+        fromService:
+          type: web
+          name: asta-authentication
+          envVarKey: SSO_SHARED_SECRET
+
+  - type: web
+    name: ai-guru-frontend
+    runtime: static
+    rootDir: ai-guru/frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://ai-guru-backend.onrender.com # baked in at build time (CRA) - rebuild if this ever changes
