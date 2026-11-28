@@ -1,0 +1,21 @@
+name: Keep Render services awake
+
+# Render's free web-service plan sleeps a service after ~15 minutes with no
+# traffic (next request pays a 30-60s cold-start). A periodic ping keeps all
+# three backend services warm. The static frontend isn't pinged - Render's
+# free static sites don't sleep.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping asta-authentication
+        run: curl -s -m 30 -o /dev/null -w "asta-authentication: %{http_code}\n" https://asta-authentication.onrender.com/ || true
+      - name: Ping astra-web
+        run: curl -s -m 30 -o /dev/null -w "astra-web: %{http_code}\n" https://astra-web-txuw.onrender.com/ || true
+      - name: Ping ai-guru-backend
+        run: curl -s -m 30 -o /dev/null -w "ai-guru-backend: %{http_code}\n" https://ai-guru-backend-v7q3.onrender.com/health || true

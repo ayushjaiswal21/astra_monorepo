@@ -2,9 +2,14 @@
 # See RENDER_DEPLOYMENT.md for the full walkthrough (what each env var means,
 # where to get Neon/Atlas/OpenRouter credentials, post-deploy one-time steps).
 #
-# Service URLs are predictable from each service's `name` below
-# (https://<name>.onrender.com) - that's how the cross-app *_BASE_URL values
-# are filled in here without needing to know them in advance.
+# Service URLs are USUALLY predictable from each service's `name` below
+# (https://<name>.onrender.com), but Render appends a random suffix if that
+# exact name is already taken by any account globally. astra-web and
+# ai-guru-backend hit that collision on this deploy, so the *_BASE_URL
+# values below are hardcoded to the REAL deployed URLs
+# (astra-web-txuw.onrender.com, ai-guru-backend-v7q3.onrender.com), not the
+# plain <name>.onrender.com form. If you redeploy under different names,
+# update these to match your own actual Render dashboard URLs.
 #
 # Secrets are never hardcoded here (this file is committed to git). Anything
 # marked `sync: false` prompts you for the real value once, in Render's
@@ -30,13 +35,13 @@ services:
       - key: SSO_SHARED_SECRET
         generateValue: true
       - key: ASTRALEARN_BASE_URL
-        value: https://astra-web.onrender.com
+        value: https://astra-web-txuw.onrender.com
       - key: AI_GURU_BASE_URL
-        value: https://ai-guru-backend.onrender.com
+        value: https://ai-guru-backend-v7q3.onrender.com
       - key: AI_GURU_FRONTEND_BASE_URL
         value: https://ai-guru-frontend.onrender.com
       - key: CORS_ALLOWED_ORIGINS
-        value: https://astra-web.onrender.com,https://ai-guru-frontend.onrender.com
+        value: https://astra-web-txuw.onrender.com,https://ai-guru-frontend.onrender.com
 
   - type: web
     name: astra-web
@@ -51,7 +56,7 @@ services:
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
-        value: astra-web.onrender.com
+        value: astra-web-txuw.onrender.com
       - key: SECURE_SSL_REDIRECT
         value: "True"
       - key: SESSION_COOKIE_SECURE
@@ -73,7 +78,7 @@ services:
       - key: ASTRA_AUTH_BASE_URL
         value: https://asta-authentication.onrender.com
       - key: AI_GURU_BASE_URL
-        value: https://ai-guru-backend.onrender.com
+        value: https://ai-guru-backend-v7q3.onrender.com
       - key: SSO_SHARED_SECRET
         fromService:
           type: web
@@ -91,7 +96,7 @@ services:
       - key: MONGODB_URI
         sync: false # paste your Atlas connection string (include a database name, e.g. .../ai_guru_db)
       - key: ALLOWED_ORIGINS
-        value: https://astra-web.onrender.com,https://ai-guru-frontend.onrender.com
+        value: https://astra-web-txuw.onrender.com,https://ai-guru-frontend.onrender.com
       - key: SSO_SHARED_SECRET
         fromService:
           type: web
@@ -106,4 +111,4 @@ services:
     staticPublishPath: ./build
     envVars:
       - key: REACT_APP_API_URL
-        value: https://ai-guru-backend.onrender.com # baked in at build time (CRA) - rebuild if this ever changes
+        value: https://ai-guru-backend-v7q3.onrender.com # baked in at build time (CRA) - rebuild if this ever changes
