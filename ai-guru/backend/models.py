@@ -20,7 +20,10 @@ class ChatRequest(BaseModel):
     @field_validator('session_id')
     @classmethod
     def validate_session_id(cls, v):
-        if v and not re.match(r'^[a-zA-Z0-9-]+$', v):
+        # SSO-linked sessions are "sso_" + a hex hash (see /sso/verify) -
+        # the underscore must be allowed or every SSO-authenticated user's
+        # very first chat message 422s.
+        if v and not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError('Invalid session ID format')
         return v
 
