@@ -180,7 +180,7 @@ OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'phi3:mini')
 # free model at https://openrouter.ai/models?max_price=0 - free model
 # availability/names change over time, so this default may need updating.
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
-OPENROUTER_MODEL = os.getenv('OPENROUTER_MODEL', 'meta-llama/llama-3.3-70b-instruct:free')
+OPENROUTER_MODEL = os.getenv('OPENROUTER_MODEL', 'nvidia/nemotron-3.5-lightning:free')
 
 # AI Guru (ai-guru/backend) base URL, for the embedded-tutor RAG integration
 # on a lesson page — a separate FastAPI service/process, not a shared DB.
