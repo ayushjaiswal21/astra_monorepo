@@ -173,6 +173,15 @@ JUDGE0_API_KEY = os.getenv('JUDGE0_API_KEY') or 'your-judge0-api-key-placeholder
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434/api/generate')
 OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'phi3:mini')
 
+# OpenRouter (https://openrouter.ai) - a free-tier, no-credit-card LLM API
+# used as a fallback when Ollama isn't reachable (e.g. no VM to run it on,
+# a free-tier host) and Gemini is unavailable/quota-exceeded. Leave
+# OPENROUTER_API_KEY unset to skip this provider entirely. Pick a current
+# free model at https://openrouter.ai/models?max_price=0 - free model
+# availability/names change over time, so this default may need updating.
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
+OPENROUTER_MODEL = os.getenv('OPENROUTER_MODEL', 'meta-llama/llama-3.3-70b-instruct:free')
+
 # AI Guru (ai-guru/backend) base URL, for the embedded-tutor RAG integration
 # on a lesson page — a separate FastAPI service/process, not a shared DB.
 AI_GURU_BASE_URL = os.getenv('AI_GURU_BASE_URL', 'http://localhost:8001')

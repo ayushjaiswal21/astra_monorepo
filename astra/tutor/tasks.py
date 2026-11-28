@@ -55,9 +55,40 @@ def call_ollama(prompt, timeout=30):
     return response.json()["response"]
 
 
+def call_openrouter(prompt, timeout=60):
+    """
+    Calls OpenRouter's free tier (OpenAI-chat-completions-compatible, no credit
+    card required - see settings.OPENROUTER_MODEL). Returns the generated text
+    (str). Raises httpx.HTTPError/httpx.TimeoutException on failure, same as
+    call_ollama, so callers can catch those and fall back to another provider.
+    Raises RuntimeError immediately if no API key is configured, so callers can
+    skip straight past this provider without wasting a network round-trip.
+    """
+    if not settings.OPENROUTER_API_KEY:
+        raise RuntimeError("OPENROUTER_API_KEY is not configured")
+    response = httpx.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers={"Authorization": f"Bearer {settings.OPENROUTER_API_KEY}"},
+        json={
+            "model": settings.OPENROUTER_MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+        },
+        timeout=timeout,
+    )
+    response.raise_for_status()
+    return response.json()["choices"][0]["message"]["content"]
+
+
 def generate_structure_via_ollama(topic, difficulty="intermediate"):
     """Asks Ollama for the course structure (titles only) and returns the validated dict."""
     raw_text = call_ollama(get_structure_generation_prompt(topic, difficulty))
+    parsed = clean_gemini_response(raw_text)
+    return StructureResponse.model_validate(parsed).model_dump()
+
+
+def generate_structure_via_openrouter(topic, difficulty="intermediate"):
+    """Same structure-only prompt as Ollama, answered by OpenRouter's free tier instead."""
+    raw_text = call_openrouter(get_structure_generation_prompt(topic, difficulty))
     parsed = clean_gemini_response(raw_text)
     return StructureResponse.model_validate(parsed).model_dump()
 
@@ -69,6 +100,40 @@ def generate_structure_via_gemini(topic, difficulty="intermediate"):
     response = model.generate_content(get_course_generation_prompt(topic, difficulty))
     parsed = clean_gemini_response(response.text)
     return CourseGenerationResponse.model_validate(parsed).model_dump()
+
+
+def generate_structure_via_openrouter_full(topic, difficulty="intermediate"):
+    """Fallback: asks OpenRouter for the full course (structure + content) in one
+    call, same prompt/shape as generate_structure_via_gemini - used when neither
+    Ollama nor Gemini are usable (e.g. a free host with no Gemini billing set up
+    and nowhere to run Ollama)."""
+    raw_text = call_openrouter(get_course_generation_prompt(topic, difficulty))
+    parsed = clean_gemini_response(raw_text)
+    return CourseGenerationResponse.model_validate(parsed).model_dump()
+
+
+def generate_lesson_content_text(prompt):
+    """
+    Generates one lesson's content + quiz. Tries Gemini first (if configured),
+    falls back to OpenRouter on any Gemini failure (quota, no key, transient
+    error) or if Gemini was never configured - mirrors the Ollama/OpenRouter/
+    Gemini fallback chain used for the course structure, but Gemini is tried
+    first here since it was already the one always used for lesson content.
+    Raises whatever the last attempted provider raised if all fail.
+    """
+    has_real_gemini_key = bool(settings.GEMINI_API_KEY) and settings.GEMINI_API_KEY != 'your-gemini-api-key-placeholder'
+    if has_real_gemini_key:
+        try:
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            model = genai.GenerativeModel('gemini-1.5-flash-latest')
+            return model.generate_content(prompt).text
+        except Exception as e:
+            logger.warning(
+                "Gemini lesson-content call failed (falling back to OpenRouter if configured): %s", e,
+            )
+            if not settings.OPENROUTER_API_KEY:
+                raise
+    return call_openrouter(prompt)
 
 
 def _lookup_difficulty(session_key, skill_name):
@@ -101,19 +166,33 @@ def generate_course_content(course_id, topic, session_key=None):
         course_difficulty = _lookup_difficulty(session_key, topic)
 
         structure_only = True
+        structure_errors = []
+        ai_response_json = None
         try:
             ai_response_json = generate_structure_via_ollama(topic, course_difficulty)
         except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPError, ValueError, KeyError, ValidationError) as e:
-            logger.warning(
-                "Ollama unreachable or returned an invalid structure (falling back to Gemini-only "
-                "structure generation) at %s: %s",
-                settings.OLLAMA_URL, e,
-            )
-            ai_response_json = generate_structure_via_gemini(topic, course_difficulty)
-            structure_only = False  # Gemini fallback already includes lesson content + quizzes
+            structure_errors.append(("Ollama", e))
 
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        content_model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        if ai_response_json is None and settings.OPENROUTER_API_KEY:
+            try:
+                ai_response_json = generate_structure_via_openrouter(topic, course_difficulty)
+            except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPError, RuntimeError, ValueError, KeyError, ValidationError) as e:
+                structure_errors.append(("OpenRouter", e))
+
+        if ai_response_json is None:
+            # Last resort: one Gemini call that produces structure + content +
+            # quizzes together, instead of Ollama/OpenRouter's structure-only
+            # response (which needs a second call per lesson below).
+            ai_response_json = generate_structure_via_gemini(topic, course_difficulty)
+            structure_only = False
+
+        if structure_errors:
+            logger.warning(
+                "Structure generation fell through %d provider(s) before succeeding: %s",
+                len(structure_errors),
+                "; ".join(f"{name}: {err}" for name, err in structure_errors),
+            )
+
         course_title = ai_response_json.get('course_title', course.title)
 
         with transaction.atomic():
@@ -135,13 +214,14 @@ def generate_course_content(course_id, topic, session_key=None):
                     lesson_title = lesson_data.get('lesson_title', 'Untitled Lesson')
 
                     if structure_only:
-                        # Ollama only gave us the title; ask Gemini for this lesson's content.
+                        # Ollama/OpenRouter only gave us the title; ask for this
+                        # lesson's content (Gemini first, OpenRouter fallback).
                         lesson_difficulty = _lookup_difficulty(session_key, lesson_title)
-                        content_response = content_model.generate_content(
+                        content_text = generate_lesson_content_text(
                             get_lesson_content_prompt(course_title, module.title, lesson_title, lesson_difficulty)
                         )
                         lesson_content_json = LessonContentResponse.model_validate(
-                            clean_gemini_response(content_response.text)
+                            clean_gemini_response(content_text)
                         ).model_dump()
                     else:
                         # Gemini fallback already produced content + quiz for every lesson.
