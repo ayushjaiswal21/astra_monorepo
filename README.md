@@ -1,211 +1,174 @@
-# 🌟 Astra — Authentication, AI Learning & Course Platform (Monorepo)
+# Astra — AI-Powered Learning & Professional Networking Ecosystem
 
-A modern, AI-powered learning and networking ecosystem built with **Flask**, **FastAPI + React**, and **Django**.
+A single sign-on ecosystem of three connected products: a LinkedIn-style
+professional network built for students/educators, an AI course-generation
+LMS, and an AI mentor chatbot — sharing one identity layer across all three.
 
-Astra combines:
+**Live:**
+- Auth / Network hub: https://asta-authentication.onrender.com
+- AstraLearn (courses): https://astra-web-txuw.onrender.com
+- AI Guru chat (frontend): https://ai-guru-frontend.onrender.com
+- AI Guru backend (API docs): https://ai-guru-backend-v7q3.onrender.com/docs
 
-* 🔐 **Authentication & Profile Management**
-* 🤖 **AI-Guru – Personal AI Mentor**
-* 📚 **AstraLearn – Course Creation & Learning Dashboard**
-
-All inside one monorepo.
-
----
-
-## 🚀 Project Modules
-
-### 🔐 1. Astra Authentication (Flask – Port 5000)
-
-Handles account creation, user roles, networking, and profile management.
-
-#### ✨ Features
-
-* Email signup & login
-* Provider / Seeker role selection
-* Profile editing (About, Experience, Education, Skills, Certifications)
-* Profile picture & certificate uploads
-* Create posts (LinkedIn-style)
-* Dynamic dashboard feed
-* Clean UI built with TailwindCSS
-* View connections & profiles
+*(Render appends a random suffix to a service's URL if the exact name is
+already taken by another account - check your own Render dashboard if
+these don't match after a redeploy.)*
 
 ---
 
-### 🤖 2. AI Guru (FastAPI + React – Ports 8001 & 3000)
+## What this is
 
-Interactive AI-driven chat experience for learning & career support.
+Three independently-deployable apps, one shared login:
 
-#### ✨ Features
+| App | Stack | What it does |
+|---|---|---|
+| **`asta_authentication`** | Flask + Socket.IO | The identity hub. Sign up once, use everywhere. LinkedIn-style profile, networking, jobs/internships/events, real-time chat, groups, a career-path recommendation quiz. |
+| **`astra`** | Django + Celery | AstraLearn - type a topic, get a full AI-generated course (modules, lessons, quizzes). Difficulty adapts to how you're actually doing. |
+| **`ai-guru`** | FastAPI + React | An AI mentor chatbot with document-grounded answers (RAG), streaming responses, voice input/output, and image chat. |
 
-* Fully functional React chat UI
-* FastAPI backend with mock AI responses
-* Sidebar, chat history, message bubbles
-* Smooth navigation from Django dashboard
-* Extendable to real AI APIs (OpenAI, Gemini, etc.)
-
----
-
-### 📚 3. AstraLearn Courses (Django – Port 8000)
-
-Complete learning platform with dashboards, courses, and progress tracking.
-
-#### ✨ Features
-
-* Student dashboard
-* Course list / My Courses
-* Course detail pages
-* Enroll system working
-* AI-based course creation (prototype-ready)
-* Progress tracking UI
-* Fully responsive templates
-* Admin panel support
+A short-lived signed token (`SSO_SHARED_SECRET`) lets the auth hub hand off a
+logged-in session to either of the other two apps without a second login.
 
 ---
 
-## 🧪 Testing Summary
+## Features
 
-Testing included **manual verification**, **service health checks**, and **post-cleanup validation**.
+### Astra Auth (the hub)
+- Profile (education, experience, skills, certifications) with real CRUD
+- Connections/networking, real-time chat (Socket.IO)
+- Jobs, internships, workshops, events - post, apply, register, with real
+  applicant tracking
+- Groups - create, join, post
+- A LinkedIn-style post feed: like, comment, repost, send-as-DM, saved items
+- News feed (manually curated + live API articles)
+- **Career GPS**: an embedding-based quiz that ranks real career paths
+  against your stated skills/interests (not a hardcoded lookup table)
+- AI-generated learning paths, with one markable "active" path
+- A real password-reset flow (token-based, with an email fallback)
+- Analytics dashboard, dark mode, a consistent design system site-wide
 
-### ✔ Verified Working
+### AstraLearn (course generation)
+- **Multi-provider AI pipeline with automatic failover**: tries Ollama
+  (free, local) first, falls back to OpenRouter (free, no card) if that's
+  unavailable, falls back to Gemini last - a single point of failure in any
+  one provider never takes the feature down
+- **Adaptive difficulty**: a lightweight mastery-scoring model tracks how
+  you do on quizzes and feeds that back into the next generated content's
+  difficulty level
+- A from-scratch-pruned, fine-tuned **local Transformer model** (11.9M
+  params, ~48MB) as a free, offline fallback for lesson simplification when
+  no external AI is reachable
+- Lesson pages with Content / Simplified / Example / Quiz tabs, plus
+  text-to-speech ("read aloud")
+- Comprehensive test generation (MCQs + coding problems)
+- Per-course ownership and permission checks
 
-* Signup / Login (Flask)
-* Role selection
-* Full profile editing
-* Posting & dynamic feed
-* AI Guru chat UI + backend communication
-* Django course listing, enrollment, dashboard
-* All 3 services start cleanly with no route errors
-* Static files, templates, Tailwind styling
-
-### 🗑 Removed Testing Artifacts
-
-* Cypress tests
-* Pytest files
-* Mock servers
-* All debug logs & backups
-* Cache folders
-* Cleanup scripts
-
-The repo is now clean and stable.
+### AI Guru (mentor chatbot)
+- **Streaming chat** - responses render progressively, not as one block
+- **RAG**: index documents, get answers grounded in them, with a lexical
+  fallback that works even without a live embeddings API or a database
+- Voice input (browser speech recognition) and voice output
+  (text-to-speech "Listen" button on every response)
+- Image-based chat
+- Session-aware personalization (remembers your preferred response style)
 
 ---
 
-## 🏃‍♂️ How to Run the Project
+## Architecture
 
-Run each service in a separate terminal.
+```
+                     ┌─────────────────────┐
+                     │   asta_authentication│  (the SSO hub)
+                     │   Flask · :5000       │
+                     └──────────┬───────────┘
+                     signed SSO │ handoff token
+              ┌──────────────────┴──────────────────┐
+              ▼                                      ▼
+     ┌─────────────────┐                   ┌─────────────────┐
+     │  astra (Django)  │  ── cross-app ──▶ │  ai-guru backend │
+     │  AstraLearn       │     AI calls     │  FastAPI · :8001 │
+     │  :8000            │                   └────────┬────────┘
+     └──────────────────┘                             │
+                                             ┌─────────▼────────┐
+                                             │ ai-guru frontend  │
+                                             │ React (static)    │
+                                             └───────────────────┘
 
-### 🔐 Flask Authentication
-
-```bash
-cd asta_authentication
-flask run --port 5000
+Each app owns its own database (Postgres in production, SQLite locally).
+AstraLearn's AI pipeline: Ollama → OpenRouter → Gemini (first one that
+answers wins). ai-guru's RAG store is a local vector store (not tied to
+MongoDB's uptime); MongoDB (when configured) adds persistent chat history.
 ```
 
-### 🤖 AI Guru Backend (FastAPI)
+---
 
-```bash
-cd ai-guru/backend
-python main.py
-```
+## Tech stack
 
-### 💬 AI Guru Frontend (React)
-
-```bash
-cd ai-guru/frontend
-npm install
-npm start
-```
-
-### 📚 AstraLearn (Django)
-
-```bash
-cd astra
-python manage.py runserver 8000
-```
-
-### Service URLs
-
-| Service             | URL                                            |
-| ------------------- | ---------------------------------------------- |
-| Flask Auth          | [http://127.0.0.1:5000](http://127.0.0.1:5000) |
-| AI Guru Frontend    | [http://127.0.0.1:3000](http://127.0.0.1:3000) |
-| AI Guru Backend     | [http://127.0.0.1:8001](http://127.0.0.1:8001) |
-| AstraLearn (Django) | [http://127.0.0.1:8000](http://127.0.0.1:8000) |
+**Backends:** Flask, Django, FastAPI · **Frontend:** React, server-rendered
+Jinja/Django templates · **Databases:** PostgreSQL (Neon), MongoDB Atlas,
+SQLite (local dev) · **AI/ML:** Google Gemini, Ollama (local LLMs),
+OpenRouter, a custom pruned-and-fine-tuned encoder-decoder Transformer
+(PyTorch/HuggingFace), retrieval-augmented generation · **Real-time:**
+Flask-SocketIO, FastAPI streaming responses · **Infra:** Docker,
+Docker Compose, Render.com, Celery + Redis (background jobs)
 
 ---
 
-## 📁 Project Structure (Simplified)
+## Repo layout
 
 ```
 astra_monorepo/
-│
-├── asta_authentication/        # Flask Auth & Profiles
+├── asta_authentication/   # Flask auth/network hub
+├── astra/                 # Django course platform (AstraLearn)
 ├── ai-guru/
-│   ├── backend/                # FastAPI AI Guru Backend
-│   └── frontend/               # React Chat UI
-│
-├── astra/                      # Django course system
-│   ├── astralearn/
-│   └── tutor/
-│
-├── instance/                   # Local SQLite DBs
-├── README.md
-├── start_all.bat / start_all.ps1
+│   ├── backend/            # FastAPI chatbot + RAG + local transformer
+│   └── frontend/           # React chat UI
+├── docker-compose.yml      # Run all 3 apps + databases together
+├── render.yaml             # One-click Render.com Blueprint deploy
+├── DEPLOYMENT.md           # Deploy guide: single VM + Docker Compose
+└── RENDER_DEPLOYMENT.md    # Deploy guide: Render free tier, no card needed
 ```
 
 ---
 
-## 🛠 Tech Stack
+## Running it locally
 
-### Backend
+Each app has its own `requirements.txt`/`package.json` and `.env.example`.
+Quick version (see each app's own README/`.env.example` for the full list
+of env vars):
 
-* Flask
-* FastAPI
-* Django
-* SQLAlchemy
-* SQLite
+```bash
+# 1. asta_authentication
+cd asta_authentication && pip install -r requirements.txt
+cp .env.example .env   # fill in real values
+python app.py          # http://localhost:5000
 
-### Frontend
+# 2. astra
+cd astra && pip install -r requirements.txt
+cp .env.example .env
+python manage.py migrate && python manage.py runserver   # http://localhost:8000
 
-* React
-* TailwindCSS
-* Vanilla JS / HTML templates
+# 3. ai-guru backend
+cd ai-guru/backend && pip install -r requirements.txt
+cp .env.example .env
+uvicorn main:app --reload --port 8001
 
-### Tools & Features
+# 4. ai-guru frontend
+cd ai-guru/frontend && npm install && npm start   # http://localhost:3000
+```
 
-* Celery-ready architecture
-* Local file storage
-* JWT & login management
-* REST APIs
-* Async chat responses
-
----
-
-## 📌 Current Status
-
-✔ All core features working
-✔ Clean repo (no test/debug clutter)
-✔ Fully stable local development setup
-✔ Routes and services functioning end-to-end
-✔ Professional UI & UX across modules
-✔ Ready for GitHub, submission, or deployment
+Or run everything at once with `docker-compose.yml` (needs Docker) - see
+`DEPLOYMENT.md`. To deploy for free without a credit card, see
+`RENDER_DEPLOYMENT.md` and `render.yaml` (one-click Render Blueprint).
 
 ---
 
-## 🔮 Future Improvements
+## Known limitations
 
-* Replace mock AI with real LLM APIs
-* Add WebSockets for real-time chat
-* Add search & filters to posts and courses
-* Add quizzes & certificates to courses
-* Add full automated testing suite
-
----
-
-## 🙌 Author
-
-**Ayush Jaiswal**
-3rd Year CSE • AI/ML & Full-Stack Developer
-Building modern AI-first learning tools 🚀
-
----
+- Render's free tier sleeps services after ~15 minutes idle (expect a
+  30-60s cold start on the first request after a gap).
+- The local Transformer fallback is a genuine from-scratch fine-tune, not a
+  production-grade model - it generalizes correctly but output fluency is
+  rough compared to Gemini/OpenRouter.
+- Course generation is synchronous (not backgrounded) on the free-hosting
+  path, since free tiers typically don't offer a background-worker service.
