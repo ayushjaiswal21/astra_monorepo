@@ -1,5 +1,6 @@
 import logging
 import sys
+import certifi
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 import config
@@ -31,7 +32,15 @@ try:
         connectTimeoutMS=5000,
         socketTimeoutMS=5000,
         maxPoolSize=50, # Allow more connections
-        minPoolSize=5
+        minPoolSize=5,
+        # Minimal Docker base images (python:slim) often ship an outdated/
+        # incomplete system CA bundle, which Atlas's TLS handshake rejects
+        # with a cryptic "TLSV1_ALERT_INTERNAL_ERROR" rather than a clear
+        # certificate error. certifi ships its own current, complete CA
+        # bundle - pointing tlsCAFile at it is the standard fix for exactly
+        # this failure mode (confirmed: this app worked fine connecting from
+        # a normal dev machine, only failed inside the slim container).
+        tlsCAFile=certifi.where(),
     )
     # Test the connection
     client.admin.command('ping')
