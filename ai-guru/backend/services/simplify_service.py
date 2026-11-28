@@ -14,11 +14,14 @@ made two real architecture changes:
      first N, since adjacent early blocks tend to be the most redundant).
      This drops total transformer-block parameters by ~50% while keeping
      one block per stack that has seen the "late" learned representations.
-  2. Fine-tuned the pruned model (60 epochs over 15 example pairs, CPU,
-     AdamW) on a deterministic, rule-based simplification task (see
-     build_model.py used to produce this checkpoint), because
-     t5-efficient-tiny is only pretrained (span-corruption) and produces
-     unusable output on a downstream task with zero fine-tuning.
+  2. Fine-tuned the pruned model on real human-written simplification pairs
+     from the ASSET corpus (facebook/asset on HF Hub - 880 train / 120 val
+     examples, 12 epochs, AdamW lr=3e-4, best-val-loss checkpoint kept),
+     because t5-efficient-tiny is only pretrained (span-corruption) and
+     produces unusable output on a downstream task with zero fine-tuning.
+     An earlier version fine-tuned on only 15 synthetic examples for 60
+     epochs badly overfit and regurgitated memorized training topics on
+     novel input - see simplify_model/model_card.json for the full history.
 
 Loaded lazily on first request so importing this module (and therefore
 main.py) never requires torch/transformers to be installed in every
@@ -84,10 +87,13 @@ def simplify(text: str, max_new_tokens: int = 60):
         # no_repeat_ngram_size/repetition_penalty: the retrained model (see
         # simplify_model/model_card.json) occasionally loops on a short
         # phrase under plain greedy decoding; this suppresses that without
-        # changing latency.
+        # changing latency. num_beams=4: verified on real sentences that
+        # greedy (beam=1) regularly hallucinates unrelated words ("moisture",
+        # stray "ad") that beam search doesn't - at comparable latency, since
+        # the model is only 11.9M params.
         out_ids = _model.generate(
-            **inputs, max_new_tokens=max_new_tokens, num_beams=1,
-            no_repeat_ngram_size=3, repetition_penalty=1.3,
+            **inputs, max_new_tokens=max_new_tokens, num_beams=4,
+            no_repeat_ngram_size=3, repetition_penalty=1.3, early_stopping=True,
         )
     simplified = _tokenizer.decode(out_ids[0], skip_special_tokens=True)
     latency = time.time() - t0

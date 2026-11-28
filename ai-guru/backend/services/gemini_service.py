@@ -1,6 +1,7 @@
 import google.generativeai as genai
 import sys
 import os
+import time
 import asyncio
 import httpx # Async HTTP client; used instead of requests so mock calls don't block the event loop
 import json # Import json for handling mock responses
@@ -17,6 +18,23 @@ if not config.USE_MOCK and config.GEMINI_API_KEY:
     genai.configure(api_key=config.GEMINI_API_KEY)
     text_model = genai.GenerativeModel('gemini-2.5-flash')
     vision_model = genai.GenerativeModel('gemini-2.5-flash')
+
+# When Gemini is configured but actually broken (e.g. billing not enabled on
+# the key), every single request used to pay for a full failed Gemini round
+# trip before falling back to OpenRouter. Skip Gemini for a cooldown window
+# after a failure instead - only when OpenRouter is there to answer anyway,
+# so a real transient Gemini blip never costs availability, only latency.
+_GEMINI_COOLDOWN_SECONDS = 300
+_gemini_broken_until = 0
+
+
+def _gemini_on_cooldown():
+    return config.OPENROUTER_API_KEY and time.time() < _gemini_broken_until
+
+
+def _mark_gemini_broken():
+    global _gemini_broken_until
+    _gemini_broken_until = time.time() + _GEMINI_COOLDOWN_SECONDS
 
 async def call_openrouter(prompt, timeout=30):
     """Free, no-card fallback for when Gemini's key/billing isn't usable -
@@ -51,13 +69,14 @@ async def generate_text_response(text, recent_context, learned_prefs, detected_l
     system_prompt = _build_system_prompt(text, recent_context, learned_prefs, detected_lang, language_name, should_display, rag_context)
     full_prompt = system_prompt + text.strip()
 
-    if text_model is not None:
+    if text_model is not None and not _gemini_on_cooldown():
         try:
             response = text_model.generate_content(full_prompt)
             if response.text:
                 return response.text
         except Exception as e:
             print(f"Gemini call failed: {e}. Falling back to OpenRouter if configured.")
+            _mark_gemini_broken()
 
     if config.OPENROUTER_API_KEY:
         try:
@@ -85,8 +104,7 @@ async def generate_text_response_stream(text, recent_context, learned_prefs, det
     chunked word-by-word with a tiny delay to produce the same visible typing
     effect client-side.
     """
-    gemini_api_base_url = os.getenv('GEMINI_API_BASE_URL')
-    if gemini_api_base_url or config.USE_MOCK or text_model is None:
+    async def _chunked_fallback():
         full_text = await generate_text_response(
             text, recent_context, learned_prefs, detected_lang, language_name, should_display, rag_context
         )
@@ -97,18 +115,38 @@ async def generate_text_response_stream(text, recent_context, learned_prefs, det
                 chunk += ' '
             yield chunk
             await asyncio.sleep(_SIM_CHUNK_DELAY_S)
-    else:
-        system_prompt = _build_system_prompt(text, recent_context, learned_prefs, detected_lang, language_name, should_display, rag_context)
-        full_prompt = system_prompt + text.strip()
+
+    gemini_api_base_url = os.getenv('GEMINI_API_BASE_URL')
+    if gemini_api_base_url or config.USE_MOCK or text_model is None or _gemini_on_cooldown():
+        async for chunk in _chunked_fallback():
+            yield chunk
+        return
+
+    system_prompt = _build_system_prompt(text, recent_context, learned_prefs, detected_lang, language_name, should_display, rag_context)
+    full_prompt = system_prompt + text.strip()
+    got_any = False
+    try:
         response = text_model.generate_content(full_prompt, stream=True)
-        got_any = False
         for chunk in response:
             if chunk.text:
                 got_any = True
                 yield chunk.text
             await asyncio.sleep(0)  # yield control back to the event loop between chunks
-        if not got_any:
-            yield "Sorry, I couldn't generate a response."
+    except Exception as e:
+        # Real Gemini streaming has no built-in fallback like the non-streaming
+        # path does - without this, a broken/quota-exhausted Gemini key meant
+        # every /chat/stream call either raised or silently produced nothing,
+        # even though OpenRouter was configured and working.
+        print(f"Gemini streaming failed: {e}. Falling back to OpenRouter if configured.")
+        _mark_gemini_broken()
+        if got_any:
+            return  # already streamed real content - can't restart cleanly, stop here
+        async for chunk in _chunked_fallback():
+            yield chunk
+        return
+
+    if not got_any:
+        yield "Sorry, I couldn't generate a response."
 
 
 @trace_llm_call(call_type="vision")
