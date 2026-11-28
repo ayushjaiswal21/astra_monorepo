@@ -53,6 +53,12 @@ class CareerGPSRequest(BaseModel):
     learning_style: str = ""
     user_profile: Optional[dict] = None
 
+class LearningPathRequest(BaseModel):
+    career_name: str
+    career_summary: str = ""
+    match_percentage: int = 75
+    user_profile: Optional[dict] = None
+
 class FeedbackRequest(BaseModel):
     interaction_id: str
     session_id: str

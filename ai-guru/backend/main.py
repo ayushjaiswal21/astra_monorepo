@@ -33,7 +33,7 @@ import uuid
 import re
 import hashlib
 import jwt
-from models import ChatRequest, FeedbackRequest, RagIndexRequest, RagQueryRequest, CareerGPSRequest, SimplifyTextRequest
+from models import ChatRequest, FeedbackRequest, RagIndexRequest, RagQueryRequest, CareerGPSRequest, LearningPathRequest, SimplifyTextRequest
 from collections import defaultdict
 from datetime import timedelta
 import langdetect
@@ -1228,16 +1228,22 @@ async def get_career_roadmap(career_name: str, progress: int = 0):
     return roadmap
 
 @app.post("/career-gps/learning-path")
-async def generate_learning_path(
-    career_name: str,
-    career_summary: str = "",
-    match_percentage: int = 75,
-    user_profile: Optional[dict] = None
-):
+async def generate_learning_path(req: LearningPathRequest):
     """
     Generate a comprehensive personalized learning path for a selected career.
     This is called when a seeker clicks "View Details" and wants to see the learning path.
+
+    Takes a single JSON body (LearningPathRequest) instead of separate plain
+    params - FastAPI treats un-annotated plain params as query params, not
+    body fields, the same gotcha already fixed on /career-gps/recommendations
+    right above this (see its own docstring) - so every real caller (which
+    POSTs one JSON body) got a 422 here and silently fell back to the
+    caller's own default template instead of ever getting a real AI-
+    generated learning path.
     """
+    career_name, career_summary, match_percentage, user_profile = (
+        req.career_name, req.career_summary, req.match_percentage, req.user_profile
+    )
     try:
         print(f"🎓 Generating learning path for: {career_name}")
         learning_path = career_gps_service.generate_personalized_learning_path(
