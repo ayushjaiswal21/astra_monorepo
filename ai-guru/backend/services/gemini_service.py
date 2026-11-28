@@ -18,27 +18,54 @@ if not config.USE_MOCK and config.GEMINI_API_KEY:
     text_model = genai.GenerativeModel('gemini-2.5-flash')
     vision_model = genai.GenerativeModel('gemini-2.5-flash')
 
+async def call_openrouter(prompt, timeout=30):
+    """Free, no-card fallback for when Gemini's key/billing isn't usable -
+    same provider/model astra's course generator already relies on."""
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        resp = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={"Authorization": f"Bearer {config.OPENROUTER_API_KEY}"},
+            json={
+                "model": config.OPENROUTER_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+            },
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"]
+
+
 @trace_llm_call(call_type="chat")
 async def generate_text_response(text, recent_context, learned_prefs, detected_lang, language_name, should_display, rag_context=""):
     gemini_api_base_url = os.getenv('GEMINI_API_BASE_URL')
-    if gemini_api_base_url or config.USE_MOCK or text_model is None:
-        # Use mock server
+    if gemini_api_base_url:
+        # Test mock server path
         try:
-            if gemini_api_base_url:
-                async with httpx.AsyncClient() as client:
-                    mock_response = await client.post(gemini_api_base_url, json={"message": text})
-                    mock_response.raise_for_status()
-                    return mock_response.json().get("response", "mocked AI reply")
-            # No mock server provided; return static mock
-            return "mocked AI reply"
+            async with httpx.AsyncClient() as client:
+                mock_response = await client.post(gemini_api_base_url, json={"message": text})
+                mock_response.raise_for_status()
+                return mock_response.json().get("response", "mocked AI reply")
         except httpx.HTTPError as e:
             print(f"Error connecting to mock Gemini API: {e}. Falling back to default mock response.")
             return "mocked AI reply"
-    else:
-        system_prompt = _build_system_prompt(text, recent_context, learned_prefs, detected_lang, language_name, should_display, rag_context)
-        full_prompt = system_prompt + text.strip()
-        response = text_model.generate_content(full_prompt)
-        return response.text if response.text else "Sorry, I couldn't generate a response."
+
+    system_prompt = _build_system_prompt(text, recent_context, learned_prefs, detected_lang, language_name, should_display, rag_context)
+    full_prompt = system_prompt + text.strip()
+
+    if text_model is not None:
+        try:
+            response = text_model.generate_content(full_prompt)
+            if response.text:
+                return response.text
+        except Exception as e:
+            print(f"Gemini call failed: {e}. Falling back to OpenRouter if configured.")
+
+    if config.OPENROUTER_API_KEY:
+        try:
+            return await call_openrouter(full_prompt)
+        except Exception as e:
+            print(f"OpenRouter call failed: {e}. Falling back to mock response.")
+
+    return "mocked AI reply"
 
 # Chunk size/delay for simulated typing (mock mode, or splitting any already-
 # complete text). Not used for real Gemini streaming - that yields the SDK's
